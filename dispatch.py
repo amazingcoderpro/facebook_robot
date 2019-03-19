@@ -16,22 +16,17 @@ TASK_MAP = {0: schedule_feed_account, 1: schedule_feed_account}
 
 
 def schedule_job(task, account, func):
-    # 先构建Job
-    job = Job()
-    job.task = task.id
-    job.account = account.account
-    job.password = account.password
     task_sch = TaskOpt.get_task_scheduler(task.id)
     if task_sch.category == 0:
-        aps_job = scheduler.add_job(func, args=(task.id, account.account, account.password))
+        aps_job = scheduler.add_job(func, args=(task.id, account))
     elif task_sch.category == 1:
-        aps_job = scheduler.add_job(func, 'interval', seconds=task_sch.interval, args=(task.id, account.account, account.password))
+        aps_job = scheduler.add_job(func, 'interval', seconds=task_sch.interval, args=(task.id, account))
     elif task_sch.category == 2:
         func(task.id, account.account, account.password)
-        aps_job = scheduler.add_job(func, 'interval', seconds=task_sch.interval, args=(task.id, account.account, account.password))
+        aps_job = scheduler.add_job(func, 'interval', seconds=task_sch.interval, args=(task.id, account))
     elif task_sch.category == 3:
         print("date task...")
-        aps_job = scheduler.add_job(func, 'date', run_date=task_sch.date, args=(task.id, account.account, account.password))
+        aps_job = scheduler.add_job(func, 'date', run_date=task_sch.date, args=(task.id, account))
 
     # 将aps id 更新到数据库中
     TaskAccountGroupOpt.set_aps_id(task.id, account.id, aps_job.id)

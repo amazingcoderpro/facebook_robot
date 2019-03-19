@@ -12,14 +12,18 @@ from db.dao import JobOpt
 
 # @app.task(ignore_result=True)
 @app.task
-def feed_account(task_id, account, password, to_post=False):
-    print("execute task")
-    job = JobOpt.save_job(task_id, account, password, status=2, start_time=datetime.datetime.now())
-    res = service.feed_account(account, password, to_post)
-    if res:
-        job.status = 1
-    else:
-        job.status = 0
+def feed_account(task_id, account):
+    print("execute task task id={}, account={}".format(task_id, account.account))
+    job = JobOpt.save_job(task_id, account.id, status=2, start_time=datetime.datetime.now())
+
+    # 执行任务
+    res = service.feed_account(account)
+
+    # 更新job状态
+    job.status = res[0]
+    job.result = res[1]
+
+    return res
 
 
 # 处理beat的定时任务, 暂不用
@@ -30,9 +34,9 @@ def execute_feed_account():
                   queue='feed_account', routing_key='for_feed_account')
 
 
-def schedule_feed_account(task_id, account, password):
-    print("{} send task: task_id:{} account:{}, password:{}".format(datetime.datetime.now(), task_id, account, password))
+def schedule_feed_account(task_id, account):
+    print("{} send task: task_id:{} account:{} ".format(datetime.datetime.now(), task_id, account.account))
     app.send_task('tasks.feed_account.feed_account',
-                  args=(task_id, account, password),
+                  args=(task_id, account),
                   queue='feed_account_queue',
                   routing_key='for_feed_account')

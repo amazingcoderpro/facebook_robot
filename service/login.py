@@ -13,7 +13,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def feed_account(account, password, to_post=False, keep=120):
+def feed_account(account, mode=0):
+    """
+    养号任务实现
+    :param account: Account类的实例，其中包含了账号相关的属性信息
+    :param mode: 养号模式，0-代表自动模式，程序将会根据账号历史操作情况自动决定养号流程， 1-仅浏览 2-发状态 3-随机点赞 4-随机聊天
+    :return: （code, result) code: 0-代表失败，1-代表成功， result： 处理结果描述
+    """
+    account_num = account.account
+    password = account.password
+
     chrome_options = webdriver.ChromeOptions()
     # chrome_options.add_argument('headless')
     chrome_options.add_argument('window-size=1200x600')
@@ -25,7 +34,7 @@ def feed_account(account, password, to_post=False, keep=120):
     try:
         # email_box = driver.find_element_by_name('email')
         email_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'email')))
-        email_box.send_keys(account)
+        email_box.send_keys(account_num)
         time.sleep(0.5)
         password_box = driver.find_element_by_name('pass')
         password_box.send_keys(password)
@@ -86,10 +95,10 @@ def feed_account(account, password, to_post=False, keep=120):
         # post_btn = driver.find_element_by_css_selector("button[type='submit'")
         #
         # post_btn.click()
-        if to_post:
-            posts.send_keys(Keys.CONTROL+Keys.ENTER)
-        else:
-            posts.send_keys(Keys.CANCEL)
+        # if to_post:
+        #     posts.send_keys(Keys.CONTROL+Keys.ENTER)
+        # else:
+        #     posts.send_keys(Keys.CANCEL)
 
         # ptn = driver.find_element_by_link_text("Post")
         # ptn.click()
