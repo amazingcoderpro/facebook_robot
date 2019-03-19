@@ -155,17 +155,21 @@ class TaskOpt:
         return db_session.query().filter(Task.status == 'failed').all()
 
     @classmethod
-    def save_task(cls, category_id, creator_id, scheduler_id, account_ids, **kwargs):
+    def save_task(cls, name, category_id, creator_id, scheduler_id, account_ids, **kwargs):
         task = Task()
+        task.name = name
         task.category = category_id
         task.creator = creator_id
         task.scheduler = scheduler_id
+
         for k, v in kwargs.items():
             if hasattr(task, k):
                 setattr(task, k, v)
 
         db_session.add(task)
         db_session.commit()
+
+        # task.accounts = account_ids   # account_ids只是id列表，不能赋值
         for acc_id in account_ids:
             tag = TaskAccountGroup()
             tag.task_id = task.id
@@ -243,6 +247,7 @@ class TaskAccountGroupOpt:
 
     @classmethod
     def set_aps_id(cls, task_id, account_id, aps_id):
+        # 更新apscheduler任务调度产生的id,用以暂停、重启一个子任务
         tag = db_session.query(TaskAccountGroup).filter(and_(TaskAccountGroup.task_id == task_id,
                                                              TaskAccountGroup.account_id == account_id)).first()
         if tag:
@@ -397,9 +402,9 @@ def init_db_data():
                             name='Alana Williamson', register_time='2017-9-2')
 
     # 创建任务
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2])
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4])
-    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], keep_time=600)
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2], name='养个号')
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name='刷个好评', ads_code='orderplus888')
+    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], keep_time=900, name='登录浏览就行了')
 
 
 def show_test_data():
