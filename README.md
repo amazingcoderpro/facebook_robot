@@ -1,2 +1,2 @@
-# research_code
-for research
+# facebook_auto
+facebook automatic click farming
