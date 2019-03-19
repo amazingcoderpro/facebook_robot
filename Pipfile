@@ -1,0 +1,22 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+requests = "*"
+selenium = "*"
+celery = "*"
+redis = "*"
+ipdb = "*"
+pycallgraph = "*"
+bs4 = "*"
+pyyaml = "*"
+sqlalchemy = "*"
+apscheduler = "*"
+pymysql = "*"
+
+[requires]
+python_version = "3.6"

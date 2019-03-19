@@ -1,0 +1,14 @@
+redis:
+    host: 10.252.252.67 #127.0.0.1
+    port: 6379
+    password: 'charles'
+    broker: 5                    # broker for celery
+    backend: 6                   # backed for celery
+
+db:
+    host: 10.252.252.67 #
+    port: 3306
+    user: charles
+    password: 123456
+    db_name: facebook
+    db_type: mysql
