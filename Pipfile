@@ -17,6 +17,11 @@ pyyaml = "*"
 sqlalchemy = "*"
 apscheduler = "*"
 pymysql = "*"
+django = "*"
+mysqlclient = "*"
+djangorestframework = "*"
+markdown = "*"
+django-filter = "*"
 
 [requires]
 python_version = "3.6"

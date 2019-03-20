@@ -106,3 +106,7 @@ cache/
 
 # pycharm
 .idea
+
+# test.html
+test.html
+/web_service/data/static/test.html
