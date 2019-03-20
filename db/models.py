@@ -200,6 +200,18 @@ class AccountCategory(Base):
     name = Column(String(255), default='', server_default='')
 
 
+class Agent(Base):
+    __tablename__ = 'agent'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # 该agent绑定的任务队列， job将根据与其最亲近的agent的queue名来被分发
+    queue = Column(String(255))
+    # 0-idle, 1-normal, 2-busy, 3-disable
+    status = Column(Integer, default=1, server_default='1')
+    ip = Column(String(255))
+    area = Column(String(255), default='', server_default='')
+    config = Column(String(2048), default='', server_default='')
+
+
 if __name__ == '__main__':
     while True:
         res = input("What do you want to do, create or drop? \n")

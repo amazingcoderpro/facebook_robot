@@ -6,46 +6,51 @@
 
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
-from tasks.feed_account import schedule_feed_account
-from db.dao import TaskOpt, TaskAccountGroupOpt
-from db.models import Job
+from db.dao import TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt
+from tasks.processor import *
 
 scheduler = BackgroundScheduler()
 
-TASK_MAP = {0: schedule_feed_account, 1: schedule_feed_account}
 
+def schedule_job(task, account, processor):
+    task_sch = SchedulerOpt.get_scheduler(task.scheduler)
 
-def schedule_job(task, account, func):
-    task_sch = TaskOpt.get_task_scheduler(task.id)
-    if task_sch.category == 0:
-        aps_job = scheduler.add_job(func, args=(task.id, account))
-    elif task_sch.category == 1:
-        aps_job = scheduler.add_job(func, 'interval', seconds=task_sch.interval, args=(task.id, account))
-    elif task_sch.category == 2:
-        func(task.id, account.account, account.password)
-        aps_job = scheduler.add_job(func, 'interval', seconds=task_sch.interval, args=(task.id, account))
-    elif task_sch.category == 3:
+    # 根据任务计划模式的不同启动不同的定时任务
+    # 执行模式：
+    # 0 - 立即执行（只执行一次）， 1 - 间隔执行并不立即开始（间隔一定时间后开始执行，并按设定的间隔周期执行下去）
+    # 2 - 间隔执行，但立即开始， 3 - 定时执行，指定时间执行
+    processor_func = eval(processor)
+    if task_sch.mode == 0:
+        aps_job = scheduler.add_job(processor_func, args=(task, account))
+    elif task_sch.mode == 1:
+        processor_func(task, account)
+        aps_job = scheduler.add_job(processor_func, 'interval', seconds=task_sch.interval, args=(task, account))
+    elif task_sch.mode == 2:
+        processor_func(task, account)
+        aps_job = scheduler.add_job(processor_func, 'interval', seconds=task_sch.interval, args=(task, account))
+    elif task_sch.mode == 3:
         print("date task...")
-        aps_job = scheduler.add_job(func, 'date', run_date=task_sch.date, args=(task.id, account))
+        aps_job = scheduler.add_job(processor_func, 'date', run_date=task_sch.date, args=(task, account))
 
-    # 将aps id 更新到数据库中
+    # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复
     TaskAccountGroupOpt.set_aps_id(task.id, account.id, aps_job.id)
+
+    # 一旦任务被加入到定时程序中，即使没有立即执行，但任务的状也是running, 代表也已经在处理中了
+    TaskOpt.set_task_status(task.id, 'running')
+
     print(TaskAccountGroupOpt.get_aps_ids_by_task(task.id))
 
+    return True
 
-def main():
-    try:
-        scheduler.start()
-        tasks = TaskOpt.get_all_need_restart_task()
-        for task in tasks:
-            print("process feed account task.")
-            for account in task.accounts:
-                schedule_job(task, account, TASK_MAP.get(task.category))
 
-        while True:
-            time.sleep(2)
-    except (KeyboardInterrupt, SystemExit):
-        scheduler.shutdown()
+def insert_tasks(tasks):
+    for task in tasks:
+        task_processor = TaskCategoryOpt.get_processor(task.category)
+        if not task_processor:
+            continue
+
+        for account in task.accounts:
+            schedule_job(task, account, task_processor)
 
 
 def dispatch_test():
@@ -61,5 +66,16 @@ def dispatch_test():
         time.sleep(600)
 
 
+def run():
+    try:
+        scheduler.start()
+        while True:
+            time.sleep(2)
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
+
+
 if __name__ == '__main__':
-    main()
+    tasks = TaskOpt.get_all_need_restart_task()
+    insert_tasks(tasks)
+    run()

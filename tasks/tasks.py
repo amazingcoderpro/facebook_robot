@@ -12,7 +12,7 @@ from db.dao import JobOpt
 
 # @app.task(ignore_result=True)
 @app.task
-def feed_account(task_id, account):
+def fb_auto_feed(task_id, account):
     print("execute task task id={}, account={}".format(task_id, account.account))
     job = JobOpt.save_job(task_id, account.id, status=2, start_time=datetime.datetime.now())
 
@@ -28,15 +28,10 @@ def feed_account(task_id, account):
 
 # 处理beat的定时任务, 暂不用
 @app.task(ignore_result=True)
-def execute_feed_account():
+def execute_fb_auto_feed():
     task_id, account, password = "", "", ""
-    app.send_task('tasks.feed_account.feed_account', args=(account, password, ),
+    app.send_task('tasks.tasks.fb_auto_feed', args=(account, password, ),
                   queue='feed_account', routing_key='for_feed_account')
 
 
-def schedule_feed_account(task_id, account):
-    print("{} send task: task_id:{} account:{} ".format(datetime.datetime.now(), task_id, account.account))
-    app.send_task('tasks.feed_account.feed_account',
-                  args=(task_id, account),
-                  queue='feed_account_queue',
-                  routing_key='for_feed_account')
+

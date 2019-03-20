@@ -13,7 +13,7 @@ from config import get_broker_and_backend
 # platforms.C_FORCE_ROOT = True
 
 tasks = [
-    'tasks.feed_account', 'tasks.click_farming'
+    'tasks.tasks'
 ]
 
 broker, backend = get_broker_and_backend()
@@ -33,10 +33,10 @@ app.conf.update(
     CELERY_TASK_SERIALIZER='json',
     CELERY_RESULT_SERIALIZER='json',
     CELERY_QUEUEs=(
-        Queue('feed_account_queue', exchange=Exchange('feed_account', type='direct'),
-              routing_key='for_feed_account'),
-        Queue('click_farming_queue', exchange=Exchange('click_farming_queue', type='direct'),
-              routing_key='for_click_farming'),
+        Queue('agent1', exchange=Exchange('agent1', type='direct'),
+              routing_key='for_agent1'),
+        Queue('agent2', exchange=Exchange('agent2', type='direct'),
+              routing_key='for_agent2'),
     )
 )
 
