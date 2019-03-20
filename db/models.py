@@ -14,9 +14,9 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    account = Column(String(255), unique=True)
-    password = Column(String(255))
-    name = Column(String(255), default='', server_default='')
+    # account = Column(String(255), unique=True)
+    # password = Column(String(255))
+    # name = Column(String(255), default='', server_default='')
     category = Column(Integer, ForeignKey('user_category.category'))
     # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id)， 以分号分割"1;2;3", 默认为空，代表可以创建所有类型的任务
     enable_tasks = Column(String(255), default='', server_default='')
@@ -211,7 +211,7 @@ class Agent(Base):
     __tablename__ = 'agent'
     id = Column(Integer, primary_key=True, autoincrement=True)
     # 该agent绑定的任务队列， job将根据与其最亲近的agent的queue名来被分发
-    queue = Column(String(255))
+    queue_name = Column(String(255))
     # 0-idle, 1-normal, 2-busy, 3-disable
     status = Column(Integer, default=1, server_default='1')
     ip = Column(String(255))

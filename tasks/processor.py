@@ -5,7 +5,7 @@
 
 
 from .workers import app
-from db.dao import AgentOpt
+from db.dao import AgentOpt, AccountOpt
 
 
 # TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed')
@@ -17,11 +17,12 @@ from db.dao import AgentOpt
 # TaskCategoryOpt.save_task_category(category=7, name=u'facebook聊天', processor='fb_chat')
 # TaskCategoryOpt.save_task_category(category=8, name=u'facebook编辑个人信息', processor='fb_edit')
 
-def get_agent_by_account(account):
+def get_agent_by_account(account_id):
     agents = list(AgentOpt.get_enable_agents())
     if not agents:
         return None
 
+    account = AccountOpt.get_account(account_id)
     if account.active_ip:
         for agent in agents:
             if account.ip == agent.ip:
@@ -34,19 +35,14 @@ def get_agent_by_account(account):
         return agents[0]
 
 
-def fb_auto_feed(task, account):
+def fb_auto_feed(task_id, account_id):
     print(1111)
-    agent = get_agent_by_account(account)
-
+    agent = get_agent_by_account(account_id)
     if agent:
-        queue = agent.queue
-        queue_name = queue.split(';')[0]
-        routing_key = queue.split(';')[1]
-
         app.send_task('tasks.tasks.fb_auto_feed',
-                      args=(task, account, agent.id),
-                      queue=queue_name,
-                      routing_key=routing_key)
+                      args=(task_id, account_id, agent.id),
+                      queue=agent.queue_name,
+                      routing_key='rk_'+agent.queue_name)
 
 
 def fb_click_farming(task, account):

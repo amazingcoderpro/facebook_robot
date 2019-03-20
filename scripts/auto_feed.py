@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def feed_account(account, mode=0):
+def auto_feed(account, mode=0):
     """
     养号任务实现
     :param account: Account类的实例，其中包含了账号相关的属性信息
@@ -22,6 +22,7 @@ def feed_account(account, mode=0):
     """
     account_num = account.account
     password = account.password
+    print('script runing:{},{}'.format(account_num, password))
 
     chrome_options = webdriver.ChromeOptions()
     # chrome_options.add_argument('headless')
@@ -147,4 +148,4 @@ def post(driver, content='love and peace!'):
 
 
 if __name__ == '__main__':
-    feed_account("codynr4nzxh@outlook.com", "qVhgldHmgp")
+    auto_feed("codynr4nzxh@outlook.com", "qVhgldHmgp")

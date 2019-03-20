@@ -12,8 +12,9 @@ from tasks.processor import *
 scheduler = BackgroundScheduler()
 
 
-def schedule_job(task, account, processor):
-    task_sch = SchedulerOpt.get_scheduler(task.scheduler)
+def schedule_job(task_id, account_id, processor):
+
+    task_sch = SchedulerOpt.get_scheduler(TaskOpt.get_task(task_id).scheduler)
 
     # 根据任务计划模式的不同启动不同的定时任务
     # 执行模式：
@@ -21,24 +22,24 @@ def schedule_job(task, account, processor):
     # 2 - 间隔执行，但立即开始， 3 - 定时执行，指定时间执行
     processor_func = eval(processor)
     if task_sch.mode == 0:
-        aps_job = scheduler.add_job(processor_func, args=(task, account))
+        aps_job = scheduler.add_job(processor_func, args=(task_id, account_id))
     elif task_sch.mode == 1:
-        processor_func(task, account)
-        aps_job = scheduler.add_job(processor_func, 'interval', seconds=task_sch.interval, args=(task, account))
+        processor_func(task_id, account_id)
+        aps_job = scheduler.add_job(processor_func, 'interval', seconds=task_sch.interval, args=(task_id, account_id))
     elif task_sch.mode == 2:
-        processor_func(task, account)
-        aps_job = scheduler.add_job(processor_func, 'interval', seconds=task_sch.interval, args=(task, account))
+        processor_func(task_id, account_id)
+        aps_job = scheduler.add_job(processor_func, 'interval', seconds=task_sch.interval, args=(task_id, account_id))
     elif task_sch.mode == 3:
         print("date task...")
-        aps_job = scheduler.add_job(processor_func, 'date', run_date=task_sch.date, args=(task, account))
+        aps_job = scheduler.add_job(processor_func, 'date', run_date=task_sch.date, args=(task_id, account_id))
 
     # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复
-    TaskAccountGroupOpt.set_aps_id(task.id, account.id, aps_job.id)
+    TaskAccountGroupOpt.set_aps_id(task_id, account_id, aps_job.id)
 
     # 一旦任务被加入到定时程序中，即使没有立即执行，但任务的状也是running, 代表也已经在处理中了
-    TaskOpt.set_task_status(task.id, 'running')
+    TaskOpt.set_task_status(task_id, 'running')
 
-    print(TaskAccountGroupOpt.get_aps_ids_by_task(task.id))
+    print(TaskAccountGroupOpt.get_aps_ids_by_task(task_id))
 
     return True
 
@@ -50,7 +51,7 @@ def insert_tasks(tasks):
             continue
 
         for account in task.accounts:
-            schedule_job(task, account, task_processor)
+            schedule_job(task.id, account.id, task_processor)
 
 
 def dispatch_test():

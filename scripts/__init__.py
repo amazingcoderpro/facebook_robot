@@ -3,4 +3,4 @@
 # Created by Charles on 19-3-15
 # Function: 
 
-from .login import feed_account
+from .auto_feed import auto_feed

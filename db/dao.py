@@ -343,11 +343,11 @@ class TaskCategoryOpt:
 
 class AgentOpt:
     @classmethod
-    def save_agent(cls, queue, ip, status=1, area='', config=''):
+    def save_agent(cls, queue_name, ip, status=1, area='', config=''):
         agent = Agent()
-        agent.queue = queue
-        agent.status = status
+        agent.queue_name = queue_name
         agent.ip = ip
+        agent.status = status
         agent.area = area
         agent.config = config
         db_session.add(agent)
@@ -380,8 +380,8 @@ def init_db_data():
     :return:
     """
     # 初始化用户类别表
-    UserCategoryOpt.save_user_category(category=1, name='普通用户', description='可以创建部分或所有类型任务，但无权修改服务器资源')
-    UserCategoryOpt.save_user_category(category=2, name='管理员', description='可创建所有类型任务， 且可以管理服务器资源、修改服务器配置等')
+    # UserCategoryOpt.save_user_category(category=1, name='普通用户', description='可以创建部分或所有类型任务，但无权修改服务器资源')
+    # UserCategoryOpt.save_user_category(category=2, name='管理员', description='可创建所有类型任务， 且可以管理服务器资源、修改服务器配置等')
 
     # 初始化任务类别表
     # 1--fb自动养账号， 2-fb刷广告好评， 3- fb仅登录浏览， 4- fb点赞, 5- fb发表评论， 6- fb post状态, 7- fb 聊天， 8- fb 编辑个人信息， 未完待续...
@@ -401,9 +401,9 @@ def init_db_data():
     AccountCategoryOpt.save_account_category(category=3, name='Instagram账号')
 
     # 增加测试用户
-    UserOpt.save_user(account='user1', password='user1', category=1, enable_tasks='1;2;3', name='张三')
-    UserOpt.save_user(account='user2', password='user2', category=1, enable_tasks='4;5;6', name='李四')
-    UserOpt.save_user(account='admin', password='admin', category=2, enable_tasks='', name='大哥大')
+    # UserOpt.save_user(account='user1', password='user1', category=1, enable_tasks='1;2;3', name='张三')
+    # UserOpt.save_user(account='user2', password='user2', category=1, enable_tasks='4;5;6', name='李四')
+    # UserOpt.save_user(account='admin', password='admin', category=2, enable_tasks='', name='大哥大')
 
     # 增加任务计划
     # category: 0-立即执行（只执行一次）， 1-间隔执行并不立即开始（间隔一定时间后开始执行，并按设定的间隔周期执行下去） 2-间隔执行，但立即开始， 3-定时执行，指定时间执行
@@ -450,9 +450,9 @@ def init_db_data():
     TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name='刷个好评', ads_code='orderplus888')
     TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], keep_time=900, name='登录浏览就行了')
 
-    AgentOpt.save_agent('agent1;for_agent1', '1.1.1.1', status=1)
-    AgentOpt.save_agent('agent2;for_agent2', '2.2.2.2', status=0)
-    AgentOpt.save_agent('agent3;for_agent3', '3.3.3.3', status=2)
+    AgentOpt.save_agent('agent1_queue', '1.1.1.1', status=1)
+    AgentOpt.save_agent('agent2_queue', '2.2.2.2', status=0)
+    AgentOpt.save_agent('agent3_queue', '3.3.3.3', status=2)
 
 
 def show_test_data():
