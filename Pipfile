@@ -18,6 +18,11 @@ sqlalchemy = "*"
 apscheduler = "*"
 pymysql = "*"
 flower = "*"
+django = "*"
+mysqlclient = "*"
+djangorestframework = "*"
+markdown = "*"
+django-filter = "*"
 
 [requires]
 python_version = "3.6"

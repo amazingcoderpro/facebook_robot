@@ -14,9 +14,9 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    # account = Column(String(255), unique=True)
-    # password = Column(String(255))
-    # name = Column(String(255), default='', server_default='')
+    account = Column(String(255), unique=True)
+    password = Column(String(255))
+    name = Column(String(255), default='', server_default='')
     category = Column(Integer, ForeignKey('user_category.category'))
     # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id)， 以分号分割"1;2;3", 默认为空，代表可以创建所有类型的任务
     enable_tasks = Column(String(255), default='', server_default='')
@@ -134,7 +134,6 @@ class Job(Base):
     status = Column(String(20), default='pending', server_default='pending')
     start_time = Column(DateTime(3))
     result = Column(String(2048), default='', server_default='')
-    execute_agent = Column(Integer, ForeignKey('agent.id'))
 
     def __repr__(self):
         return "id:{}, task:{}, account:{}, start_time:{}, status:{}, result:{}. ".format(
@@ -181,13 +180,6 @@ class Account(Base):
     # 一个账号有可能同是被多个任务占用，逻辑上是可以的， 但实际操作上应该尽量避免此种情况，以规避多IP同时登录带来的封号风险
     tasks = relationship("Task", secondary=task_account_group_table)  # ,back_populates='children')
 
-    # 账号的活跃ip
-    active_ip = Column(String(255), default='', server_default='')
-    # 账号的活跃位置
-    active_area = Column(String(255), default='', server_default='')
-    # 账号的活跃浏览器
-    active_browser = Column(String(2048), default='', server_default='')
-
     def __repr__(self):
         return "id:{}, account:{}, password:{}, email={}, email_pwd:{}, gender:{}, birthday:{}, national_id:{}, " \
                "register_time:{}, name:{}, profile_id:{}, status:{}, owner:{}, usage:{}, last_login:{}, last_post:{}, " \
@@ -218,7 +210,6 @@ class Agent(Base):
     ip = Column(String(255))
     area = Column(String(255), default='', server_default='')
     config = Column(String(2048), default='', server_default='')
-
 
 
 if __name__ == '__main__':

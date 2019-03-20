@@ -35,28 +35,38 @@ class SchedulerOpt:
         return False
 
     @classmethod
-    def get_scheduler(cls, scheduler_id):
-        return db_session.query(Scheduler).filter(Scheduler.id == scheduler_id).first()
+    def get_scheduler(cls, id):
+        return db_session.query(Scheduler).filter(Scheduler.id == id).first()
 
 
 class UserOpt:
     @classmethod
-    def save_user(cls, auth_id, category=0, enable_tasks=''):
+    def save_user(cls, account, password, category=0, enable_tasks='', name=''):
         user = User()
-        user.auth_id = auth_id
+        user.account = account
+        user.password = password
         user.category = category
         user.enable_tasks = enable_tasks
+        user.name = name
         db_session.add(user)
         db_session.commit()
         return user
 
     @classmethod
-    def get_user_enable_tasks(cls, user_id):
-        res = db_session.query(User.enable_tasks).filter(User.id == user_id).first()
-        if res:
-            return res[0].split(';')
+    def is_user_exist(cls, account):
+        user = db_session.query(User).filter(User.account == account).first()
+        if user:
+            return True
         else:
-            return None
+            return False
+
+    @classmethod
+    def check_user(cls, account, password):
+        user = db_session.query(User).filter(and_(User.account == account, User.password == password)).first()
+        if user:
+            return True
+        else:
+            return False
 
 
 class UserCategoryOpt:
@@ -108,8 +118,8 @@ class AccountOpt:
         return False
 
     @classmethod
-    def get_account(cls, account_id):
-        return db_session.query(Account).filter(Account.id == account_id).first()
+    def get_account(cls, id):
+        return db_session.query(Account).filter(Account.id == id).first()
 
 
 class TaskOpt:
@@ -362,32 +372,30 @@ def init_db_data():
     :return:
     """
     # 初始化用户类别表
-    # UserCategoryOpt.save_user_category(category=1, name='普通用户', description='可以创建部分或所有类型任务，但无权修改服务器资源')
-    # UserCategoryOpt.save_user_category(category=2, name='管理员', description='可创建所有类型任务， 且可以管理服务器资源、修改服务器配置等')
-    #
-    # # 增加测试用户
-    # UserOpt.save_user(account='user1', password='user1', category=1, enable_tasks='1;2;3', name='张三')
-    # UserOpt.save_user(account='user2', password='user2', category=1, enable_tasks='4;5;6', name='李四')
-    # UserOpt.save_user(account='admin', password='admin', category=2, enable_tasks='', name='大哥大')
+    UserCategoryOpt.save_user_category(category=1, name='普通用户', description='可以创建部分或所有类型任务，但无权修改服务器资源')
+    UserCategoryOpt.save_user_category(category=2, name='管理员', description='可创建所有类型任务， 且可以管理服务器资源、修改服务器配置等')
 
-    # return
     # 初始化任务类别表
     # 1--fb自动养账号， 2-fb刷广告好评， 3- fb仅登录浏览， 4- fb点赞, 5- fb发表评论， 6- fb post状态, 7- fb 聊天， 8- fb 编辑个人信息， 未完待续...
-    TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed')
-    TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming')
-    TaskCategoryOpt.save_task_category(category=3, name=u'facebook登录浏览', processor='fb_login')
-    TaskCategoryOpt.save_task_category(category=4, name=u'facebook点赞', processor='fb_thumb')
-    TaskCategoryOpt.save_task_category(category=5, name=u'facebook发表评论', processor='fb_comment')
-    TaskCategoryOpt.save_task_category(category=6, name=u'facebook发表状态', processor='fb_post')
-    TaskCategoryOpt.save_task_category(category=7, name=u'facebook聊天', processor='fb_chat')
-    TaskCategoryOpt.save_task_category(category=8, name=u'facebook编辑个人信息', processor='fb_edit')
+    TaskCategoryOpt.save_task_category(category=1, name='facebook自动养号', processor='fb_auto_feed')
+    TaskCategoryOpt.save_task_category(category=2, name='facebook刷好评', processor='fb_click_farming')
+    TaskCategoryOpt.save_task_category(category=3, name='facebook登录浏览', processor='fb_login')
+    TaskCategoryOpt.save_task_category(category=4, name='facebook点赞', processor='fb_thumb')
+    TaskCategoryOpt.save_task_category(category=5, name='facebook发表评论', processor='fb_comment')
+    TaskCategoryOpt.save_task_category(category=6, name='facebook发表状态', processor='fb_post')
+    TaskCategoryOpt.save_task_category(category=7, name='facebook聊天', processor='fb_chat')
+    TaskCategoryOpt.save_task_category(category=8, name='facebook编辑个人信息', processor='fb_edit')
 
     # 初始化账号类别表
     # 该账号所属类别，1--facebook账号，2--twitter账号， 3--Ins账号
-    AccountCategoryOpt.save_account_category(category=1, name=u'Facebook账号')
-    AccountCategoryOpt.save_account_category(category=2, name=u'Twitter账号')
-    AccountCategoryOpt.save_account_category(category=3, name=u'Instagram账号')
+    AccountCategoryOpt.save_account_category(category=1, name='Facebook账号')
+    AccountCategoryOpt.save_account_category(category=2, name='Twitter账号')
+    AccountCategoryOpt.save_account_category(category=3, name='Instagram账号')
 
+    # 增加测试用户
+    UserOpt.save_user(account='user1', password='user1', category=1, enable_tasks='1;2;3', name='张三')
+    UserOpt.save_user(account='user2', password='user2', category=1, enable_tasks='4;5;6', name='李四')
+    UserOpt.save_user(account='admin', password='admin', category=2, enable_tasks='', name='大哥大')
 
     # 增加任务计划
     # category: 0-立即执行（只执行一次）， 1-间隔执行并不立即开始（间隔一定时间后开始执行，并按设定的间隔周期执行下去） 2-间隔执行，但立即开始， 3-定时执行，指定时间执行
@@ -395,6 +403,8 @@ def init_db_data():
     SchedulerOpt.save_scheduler(mode=1, interval=600)
     SchedulerOpt.save_scheduler(mode=2, interval=900)
     SchedulerOpt.save_scheduler(mode=3, date=datetime.datetime.now()+datetime.timedelta(hours=5))
+
+
 
     # 添加账号
     AccountOpt.save_account(account='codynr4nzxh@outlook.com',
@@ -428,9 +438,9 @@ def init_db_data():
                             name='Alana Williamson', register_time='2017-9-2')
 
     # 创建任务
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2], name=u'养个号')
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name=u'刷个好评', ads_code='orderplus888')
-    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], keep_time=900, name=u'登录浏览就行了')
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2], name='养个号')
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name='刷个好评', ads_code='orderplus888')
+    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], keep_time=900, name='登录浏览就行了')
 
     AgentOpt.save_agent('agent1;for_agent1', '1.1.1.1', status=1)
     AgentOpt.save_agent('agent2;for_agent2', '2.2.2.2', status=0)
@@ -444,7 +454,7 @@ def show_test_data():
         for acc in task.accounts:
             print(acc.account)
 
-    acc = AccountOpt.get_account(account_id=0)
+    acc = AccountOpt.get_account(id=0)
     print(acc)
 
     TaskOpt.set_task_status(1, 1)
@@ -461,9 +471,6 @@ def show_test_data():
     # jobs = JobOpt.get_job_by_task_id(1)
     # for j in jobs:
     #     print(j)
-    print(UserOpt.get_user_enable_tasks(1))
-    print(UserOpt.get_user_enable_tasks(2))
-    print(UserOpt.get_user_enable_tasks(3))
 
 
 if __name__ == '__main__':
