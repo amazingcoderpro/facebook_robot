@@ -316,16 +316,16 @@ class TaskCategoryOpt:
 
     @classmethod
     def get_processor(cls, category):
-        tcg = db_session.query(TaskCategory).filter(TaskCategory.category == category).first()
+        tcg = db_session.query(TaskCategory.processor).filter(TaskCategory.category == category).first()
         if tcg:
-            return tcg.processor
+            return tcg[0]
         else:
             return None
 
 
 class AgentOpt:
     @classmethod
-    def save_agent(cls, queue, ip, status='normal', area='', config=''):
+    def save_agent(cls, queue, ip, status=1, area='', config=''):
         agent = Agent()
         agent.queue = queue
         agent.status = status
@@ -343,6 +343,17 @@ class AgentOpt:
             return res[0]
         else:
             return None
+
+    @classmethod
+    def get_agents(cls, status=-1):
+        if status >= 0:
+            return db_session.query(Agent).filter().all(Agent.status == status)
+        else:
+            return db_session.query(Agent).filter().all()
+
+    @classmethod
+    def get_enable_agents(cls):
+        return db_session.query(Agent).filter(Agent.status != 3).order_by(Agent.status)
 
 
 def init_db_data():
@@ -383,7 +394,7 @@ def init_db_data():
     SchedulerOpt.save_scheduler(mode=0)
     SchedulerOpt.save_scheduler(mode=1, interval=600)
     SchedulerOpt.save_scheduler(mode=2, interval=900)
-    SchedulerOpt.save_scheduler(mode=3, date=datetime.datetime.now()+datetime.timedelta(hours=1))
+    SchedulerOpt.save_scheduler(mode=3, date=datetime.datetime.now()+datetime.timedelta(hours=5))
 
     # 添加账号
     AccountOpt.save_account(account='codynr4nzxh@outlook.com',
@@ -421,6 +432,10 @@ def init_db_data():
     TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name=u'刷个好评', ads_code='orderplus888')
     TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], keep_time=900, name=u'登录浏览就行了')
 
+    AgentOpt.save_agent('agent1;for_agent1', '1.1.1.1', status=1)
+    AgentOpt.save_agent('agent2;for_agent2', '2.2.2.2', status=0)
+    AgentOpt.save_agent('agent3;for_agent3', '3.3.3.3', status=2)
+
 
 def show_test_data():
     tasks = TaskOpt.get_all_need_restart_task()
@@ -452,7 +467,7 @@ def show_test_data():
 
 
 if __name__ == '__main__':
-    # init_db_data()
+    init_db_data()
     show_test_data()
 
 

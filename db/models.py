@@ -213,8 +213,8 @@ class Agent(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     # 该agent绑定的任务队列， job将根据与其最亲近的agent的queue名来被分发
     queue = Column(String(255))
-    # normal, busy, offline, idle
-    status = Column(String(20), default='normal', server_default='normal')
+    # 0-idle, 1-normal, 2-busy, 3-disable
+    status = Column(Integer, default=1, server_default='1')
     ip = Column(String(255))
     area = Column(String(255), default='', server_default='')
     config = Column(String(2048), default='', server_default='')
