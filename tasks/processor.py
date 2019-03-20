@@ -18,7 +18,7 @@ from db.dao import AgentOpt, AccountOpt
 # TaskCategoryOpt.save_task_category(category=8, name=u'facebook编辑个人信息', processor='fb_edit')
 
 def get_agent_by_account(account_id):
-    agents = list(AgentOpt.get_enable_agents())
+    agents = AgentOpt.get_enable_agents()
     if not agents:
         return None
 

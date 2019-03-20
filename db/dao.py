@@ -371,7 +371,7 @@ class AgentOpt:
 
     @classmethod
     def get_enable_agents(cls):
-        return db_session.query(Agent).filter(Agent.status != 3).order_by(Agent.status)
+        return db_session.query(Agent).filter(Agent.status != 3).order_by(Agent.status).all()
 
 
 def init_db_data():
@@ -482,9 +482,8 @@ def show_test_data():
 
 
 if __name__ == '__main__':
-    init_db_data()
+    # init_db_data()
     show_test_data()
-
 
 
 

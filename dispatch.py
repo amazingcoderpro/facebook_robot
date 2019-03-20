@@ -24,7 +24,6 @@ def schedule_job(task_id, account_id, processor):
     if task_sch.mode == 0:
         aps_job = scheduler.add_job(processor_func, args=(task_id, account_id))
     elif task_sch.mode == 1:
-        processor_func(task_id, account_id)
         aps_job = scheduler.add_job(processor_func, 'interval', seconds=task_sch.interval, args=(task_id, account_id))
     elif task_sch.mode == 2:
         processor_func(task_id, account_id)

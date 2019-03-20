@@ -52,11 +52,11 @@ def auto_feed(account, mode=0):
 
         driver.get_screenshot_as_file('home1.png')
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
-        for i in range(20):
+        for i in range(50):
             ActionChains(driver).key_down(Keys.DOWN).perform()
             time.sleep(0.5)
 
-        for i in range(10):
+        for i in range(50):
             ActionChains(driver).key_down(Keys.UP).perform()
             time.sleep(0.5)
 
@@ -65,11 +65,11 @@ def auto_feed(account, mode=0):
 
         # 跳去个人页面
         # profile = driver.find_element_by_css_selector('a[href^="https://www.facebook.com/profile"')
-        profile = driver.find_element_by_css_selector('a[href^="https://www.facebook.com/"')
+        # profile = driver.find_element_by_css_selector('a[href^="https://www.facebook.com/"')
         # profile = driver.find_element_by_css_selector('a[title^="Profile"')#也有可能叫个人主页
-        profile_url = profile.get_attribute("href")
-        print("profile url: ", profile_url)
-        driver.get(profile_url)
+        # profile_url = profile.get_attribute("href")
+        # print("profile url: ", profile_url)
+        # driver.get(profile_url)
 
         time.sleep(5)
         print("111")
@@ -81,10 +81,9 @@ def auto_feed(account, mode=0):
         # search.send_keys(Keys.ENTER)
 
 
-        posts = driver.find_element_by_css_selector("div[aria-autocomplete='list'")
-        time.sleep(2)
-        # posts[0].click()
-        posts.send_keys("You make a better world by make yourself a better person.")
+        # posts = driver.find_element_by_css_selector("div[aria-autocomplete='list'")
+        # time.sleep(2)
+        # posts.send_keys("You make a better world by make yourself a better person.")
 
         time.sleep(1)
 
@@ -106,14 +105,14 @@ def auto_feed(account, mode=0):
 
         time.sleep(3)
         driver.get_screenshot_as_file("afterpost.png")
-        time.sleep(3600)
+        time.sleep(500)
     except Exception as e:
         print("login failed, e={}".format(e))
-        return "failed feed"
+        return 'failed', str(e)
     finally:
         driver.quit()
 
-    return 'success feed'
+    return 'succeed', 'success feed'
 
 
 def post(driver, content='love and peace!'):
