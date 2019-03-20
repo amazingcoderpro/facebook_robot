@@ -261,11 +261,12 @@ class TaskAccountGroupOpt:
 
 class JobOpt:
     @classmethod
-    def save_job(cls, task_id, account_id, execute_id='', status=-1, start_time=datetime.datetime.now()):
+    def save_job(cls, task_id, account_id, agent_id, execute_id='', status='pending', start_time=datetime.datetime.now()):
         # status-- -1-pending, 0-failed, 1-succeed, 2-running
         job = Job()
         job.task = task_id
         job.account = account_id
+        job.agent = agent_id
         job.status = status
         job.execute_id = execute_id
         job.start_time = start_time
@@ -285,6 +286,13 @@ class JobOpt:
     @classmethod
     def get_jobs_by_task_id(cls, task_id):
         return db_session.query(Job).filter(Job.task == task_id).all()
+
+    @classmethod
+    def get_jobs_by_agent_id(cls, agent_id, status='running'):
+        if status:
+            return db_session.query(Job).filter(Job.agent_id == agent_id, Job.status == status).all()
+        else:
+            return db_session.query(Job).filter(Job.agent_id == agent_id).all()
 
     @classmethod
     def set_job_status(cls, job_id, status):

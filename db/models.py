@@ -129,6 +129,9 @@ class Job(Base):
     # 这个job执行时被分配的id,用以在结果队列中跟踪job执行情况
     execute_id = Column(String(255), default='', server_default='')
 
+    # 这个任务被分配到了哪个agent上，用上计算agent的负载
+    agent = Column(Integer, ForeignKey('agent.id'))
+
     # -1-pending, 0-failed, 1-succeed, 2-running
     # status = Column(Integer, default=-1, server_default='-1')
     status = Column(String(20), default='pending', server_default='pending')
@@ -177,6 +180,10 @@ class Account(Base):
     last_farming = Column(DateTime(3))
     last_comment = Column(DateTime(3))
     last_edit = Column(DateTime(3))
+
+    active_ip = Column(String(255), default='', server_default='')
+    active_area = Column(String(255), default='', server_default='')
+    active_browser = Column(String(2048), default='', server_default='')
     # 一个账号有可能同是被多个任务占用，逻辑上是可以的， 但实际操作上应该尽量避免此种情况，以规避多IP同时登录带来的封号风险
     tasks = relationship("Task", secondary=task_account_group_table)  # ,back_populates='children')
 

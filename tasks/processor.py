@@ -17,7 +17,7 @@ from db.dao import AgentOpt
 # TaskCategoryOpt.save_task_category(category=7, name=u'facebook聊天', processor='fb_chat')
 # TaskCategoryOpt.save_task_category(category=8, name=u'facebook编辑个人信息', processor='fb_edit')
 
-def get_queue_by_account(account):
+def get_agent_by_account(account):
     agents = list(AgentOpt.get_enable_agents())
     if not agents:
         return None
@@ -25,24 +25,26 @@ def get_queue_by_account(account):
     if account.active_ip:
         for agent in agents:
             if account.ip == agent.ip:
-                return agent.queue
+                return agent
     elif account.active_area:
         for agent in agents:
             if account.active_area == agent.area:
-                return agent.queue
+                return agent
     else:
-        return agents[0].queue
+        return agents[0]
 
 
 def fb_auto_feed(task, account):
     print(1111)
-    queue = get_queue_by_account(account)
-    if queue:
+    agent = get_agent_by_account(account)
+
+    if agent:
+        queue = agent.queue
         queue_name = queue.split(';')[0]
         routing_key = queue.split(';')[1]
 
         app.send_task('tasks.tasks.fb_auto_feed',
-                      args=(task, account),
+                      args=(task, account, agent.id),
                       queue=queue_name,
                       routing_key=routing_key)
 
