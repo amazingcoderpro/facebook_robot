@@ -5,19 +5,26 @@ define(['vue'], function(Vue) {
           el: '.content-header',
           data: {module: {}}
         }),
-        mainSidebar = new Vue({
-          el: '.main-sidebar',
-          data: {
-            user: user,
-            module: {}
-          }
-        }),
         // 设置模块信息
         initModule=function(module){
-            mainSidebar.module = contentHeader.module = module
+            contentHeader.module = module;
+            // 设置当前侧栏菜单状态
+            var parent=$('.sidebar-menu');
+            $.each(module.path, function(i, item){
+                var li=parent.children('li[data-module="'+item+'"]');
+                if(li.length==0)li=parent.children('ul').children('ul>li[data-module="'+item+'"]');
+                if(li.length==0)return;
+                li.addClass('active');
+                if(li.hasClass('treeview'))li.addClass('menu-open');
+                parent=li;
+            })
         };
     new Vue({
       el: '.user',
+      data: user
+    });
+    new Vue({
+      el: '.user-panel',
       data: user
     });
 
