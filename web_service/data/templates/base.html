@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>{{business.name}} 运营平台</title>
+  <title>Facebook Auto</title>
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
   <!-- Bootstrap 3.3.7 -->
@@ -22,7 +22,6 @@
   <!-- AdminLTE Skins. Choose a skin from the css/skins
        folder instead of downloading all of them to reduce the load. -->
   <link rel="stylesheet" href="/static/AdminLTE-2.4.10/dist/css/skins/_all-skins.min.css">
-  <link rel="stylesheet" href="/layout/css/op/AdminLTE.custom.css?v={{static.main}}">
   <style>control-sidebar-heading,.control-sidebar-heading{padding:0}</style>
   <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
   <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -41,11 +40,11 @@
   <header class="main-header">
 
     <!-- Logo -->
-    <a href="/com/console" class="logo">
+    <a href="/console/dashboard" class="logo">
       <!-- mini logo for sidebar mini 50x50 pixels -->
-      <span class="logo-mini"><b>营</b></span>
+      <span class="logo-mini"><b>FB</b></span>
       <!-- logo for regular state and mobile devices -->
-      <span class="logo-lg"><b>运营</b>平台</span>
+      <span class="logo-lg"><b>Facebook</b> Auto</span>
     </a>
 
     <!-- Header Navbar: style can be found in header.less -->
@@ -257,17 +256,17 @@
           <!-- User Account: style can be found in dropdown.less -->
           <li class="dropdown user user-menu">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-              <img src="/layout/img/user/avatar.png" class="user-image" alt="User Image">
-              <span class="hidden-xs">{{master.fullname}}</span>
+              <img src="/static/img/user/avatar.png" class="user-image" alt="User Image">
+              <span class="hidden-xs">{% templatetag openvariable %}fullname{% templatetag closevariable %}</span>
             </a>
             <ul class="dropdown-menu">
               <!-- User image -->
               <li class="user-header">
-                <img src="/layout/img/user/avatar.png" class="img-circle" alt="User Image">
+                <img src="/static/img/user/avatar.png" class="img-circle" alt="User Image">
 
                 <p>
-                  {{master.fullname}}
-                  <small>Member since {{master.time}}</small>
+                  {% templatetag openvariable %}fullname{% templatetag closevariable %}
+                  <small class="hide">Member since {{master.time}}</small>
                 </p>
               </li>
               <!-- Menu Body -->
@@ -291,7 +290,7 @@
                   <a href="#" class="btn btn-default btn-flat">Profile</a>
                 </div>
                 <div class="pull-right">
-                  <a href="/" class="btn btn-default btn-flat">Sign out</a>
+                  <a href="/user/login" class="btn btn-default btn-flat">Sign out</a>
                 </div>
               </li>
             </ul>
@@ -312,10 +311,10 @@
       <!-- Sidebar user panel -->
       <div class="user-panel">
         <div class="pull-left image">
-          <img src="/layout/img/user/avatar.png" class="img-circle" alt="User Image">
+          <img src="/static/img/user/avatar.png" class="img-circle" alt="User Image">
         </div>
         <div class="pull-left info">
-          <p>{{master.fullname}}</p>
+          <p>{% templatetag openvariable%}fullname{% templatetag closevariable%}</p>
           <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
         </div>
       </div>
@@ -334,64 +333,24 @@
       <!-- sidebar menu: : style can be found in sidebar.less -->
       <ul class="sidebar-menu" data-widget="tree">
         <li class="header">导航</li>
-        <li data-module="lab" class="active">
-          <a href="/com/console">
+        <li data-module="dashboard">
+          <a href="/console/dashboard">
             <i class="fa fa-pie-chart"></i> <span>控制台</span>
           </a>
         </li>
-        <li class="treeview" data-module="mall">
-          <a href="/com/">
+        <li class="treeview" data-module="user">
+          <a href="#">
             <i class="fa fa-book"></i>
-            <span>商城</span>
+            <span>用户</span>
             <span class="pull-right-container">
               <i class="fa fa-angle-left pull-right"></i>
             </span>
           </a>
           <ul class="treeview-menu">
-            <li data-module="catalogue"><a href="/com/mall/catalogue/"><i class="fa fa-circle-o"></i> 分类管理</a></li>
-            <li data-module="product"><a href="/com/mall/product/"><i class="fa fa-circle-o"></i> 商品管理</a></li>
-            <!--<li data-module="order" class="treeview">-->
-              <!--<a href="#"><i class="fa fa-circle-o"></i> 订单管理-->
-                <!--<span class="pull-right-container">-->
-                  <!--<i class="fa fa-angle-left pull-right"></i>-->
-                <!--</span>-->
-              <!--</a>-->
-              <!--<ul class="treeview-menu">-->
-                <!--<li data-module="ws"><a href="/com/mall/order/scheduling/"><i class="fa fa-circle-o"></i> 待调度订单</a></li>-->
-                <!--<li data-module="shipping"><a href="/com/mall/order/shipping/"><i class="fa fa-circle-o"></i> 运输中订单</a></li>-->
-                <!--<li data-module="all"><a href="/com/mall/order/"><i class="fa fa-circle-o"></i> 全部订单</a></li>-->
-              <!--</ul>-->
-            <!--</li>-->
+            <li data-module="user"><a href="/user/user/"><i class="fa fa-circle-o"></i> 普通用户管理</a></li>
+            <li data-module="admin"><a href="/user/admin/"><i class="fa fa-circle-o"></i> 管理员管理</a></li>
           </ul>
         </li>
-        <!--<li data-module="tanker">-->
-          <!--<a href="/com/tanker/"><i class="fa fa-share"></i> <span>车辆管理</span></a>-->
-        <!--</li>-->
-        <!--<li data-module="staff">-->
-          <!--<a href="/com/user/staff/">-->
-            <!--<i class="fa fa-laptop"></i> <span>运营人员管理</span>-->
-          <!--</a>-->
-        <!--</li>-->
-        <!--<li data-module="salesman">-->
-          <!--<a href="/com/user/salesman/">-->
-            <!--<i class="fa fa-th"></i> <span>业务员管理</span>-->
-          <!--</a>-->
-        <!--</li>-->
-        <!--<li data-module="middleman">-->
-          <!--<a href="/com/user/middleman/">-->
-            <!--<i class="fa fa-th"></i> <span>介绍人管理</span>-->
-          <!--</a>-->
-        <!--</li>-->
-        <!--<li data-module="member">-->
-          <!--<a href="/com/user/member/">-->
-            <!--<i class="fa fa-th"></i> <span>会员管理</span>-->
-          <!--</a>-->
-        <!--</li>-->
-        <!--<li data-module="user">-->
-          <!--<a href="/com/user/point/">-->
-            <!--<i class="fa fa-table"></i> <span>积分消费</span>-->
-          <!--</a>-->
-        <!--</li>-->
       </ul>
     </section>
     <!-- /.sidebar -->
@@ -401,10 +360,10 @@
   <div class="content-wrapper">
     <!-- Content Header (Page header) -->
     <section class="content-header">
-      <h1>{{module.title}}<small>{{module.sub}}</small></h1>
+      <h1>{% templatetag openvariable%}module.title{% templatetag closevariable%}<small>{% templatetag openvariable%}module.sub{% templatetag closevariable%}</small></h1>
       <ol class="breadcrumb">
-        <li><a href="/com/console"><i class="fa fa-dashboard"></i> 首页</a></li>
-        <li class="active">{{module.title}}</li>
+        <li><a href="/console/dashboard"><i class="fa fa-dashboard"></i> 首页</a></li>
+        <li class="active">{% templatetag openvariable%}module.title{% templatetag closevariable%}</li>
       </ol>
     </section>
 
@@ -416,9 +375,9 @@
 
   <footer class="main-footer">
     <div class="pull-right hidden-xs">
-      <b>Version</b> 1.0
+      <b>Version</b> 0.0.1
     </div>
-    <strong>Copyright &copy; 2014-2019 <a href="https://easylab.xyz/">西安冬夏信息技术有限公司</a>.</strong> All rights
+    <strong>Copyright &copy; 2019 <a href="https://easylab.xyz/">西安澳鹏网络科技有限公司</a>.</strong> All rights
     reserved.
   </footer>
 
@@ -436,19 +395,12 @@
         <h3 class="control-sidebar-heading">支持和帮助</h3>
         <ul class="control-sidebar-menu">
           <li>
-            <a href="mailto:guangda.li@anyany.org">
-              <i class="menu-icon fa fa-envelope-o bg-light-blue"></i>
-
-              <div class="menu-info">
-                <h4 class="control-sidebar-subheading">反馈或需要帮助</h4>
-                <p>guangda.li@anyany.org</p>
-              </div>
-            </a>
+            
           </li>
         </ul>
         <!-- /.control-sidebar-menu -->
         <!--<div class="form-group">-->
-          <!--<img src="/layout/img/donate/lucky.png" style="width:100%;height:auto" />-->
+
         <!--</div>-->
 
       </div>
@@ -559,6 +511,7 @@
     var require = {
         baseUrl: window.STATIC_PATH + 'js/',
         paths: {
+          vue: 'vue{% if not static.debug %}.min{%endif%}'
         },
         map: {
 			'*': {'css': 'css'}
