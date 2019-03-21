@@ -11,7 +11,7 @@ from web_service.settings import DEBUG
 
 GLOBAL_CONTEXT = {
     'static': {
-        'main': 15,
+        'main': 21,
         'require': 1,
         'debug': DEBUG
     }
