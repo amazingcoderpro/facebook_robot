@@ -13,15 +13,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def auto_feed(account, mode=0):
+def auto_feed(inputs):
     """
     养号任务实现
     :param account: Account类的实例，其中包含了账号相关的属性信息
     :param mode: 养号模式，0-代表自动模式，程序将会根据账号历史操作情况自动决定养号流程， 1-仅浏览 2-发状态 3-随机点赞 4-随机聊天
     :return: （code, result) code: 0-代表失败，1-代表成功， result： 处理结果描述
     """
-    account_num = account.account
-    password = account.password
+    account_num = inputs['account']
+    password = inputs['password']
     print('script runing:{},{}'.format(account_num, password))
 
     chrome_options = webdriver.ChromeOptions()

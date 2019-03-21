@@ -5,8 +5,7 @@
 
 
 from .workers import app
-from db.dao import AgentOpt, AccountOpt
-
+from db.dao import TaskOpt, JobOpt
 
 # TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed')
 # TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming')
@@ -17,46 +16,56 @@ from db.dao import AgentOpt, AccountOpt
 # TaskCategoryOpt.save_task_category(category=7, name=u'facebook聊天', processor='fb_chat')
 # TaskCategoryOpt.save_task_category(category=8, name=u'facebook编辑个人信息', processor='fb_edit')
 
-def get_agent_by_account(account_id):
-    agents = AgentOpt.get_enable_agents()
-    if not agents:
-        return None
 
-    account = AccountOpt.get_account(account_id)
-    if account.active_ip:
-        for agent in agents:
-            if account.ip == agent.ip:
-                return agent
-    elif account.active_area:
-        for agent in agents:
-            if account.active_area == agent.area:
-                return agent
+PROCESSOR_MAP = {
+    'fb_auto_feed': 'tasks.tasks.fb_auto_feed',
+    'fb_click_farming': 'tasks.tasks.fb_click_farming',
+    'fb_login': 'tasks.tasks.fb_login',
+    'fb_thumb': '',
+    'fb_comment': ''
+}
+
+
+def on_task_message(msg):
+    # 根据各agent的反馈结果，更新任务状态
+    print('on_task_message:\r\n', msg)
+    status_map = {'SUCCESS': 'succeed', 'FAILURE': 'failed', 'PENDING': 'pending', 'RUNNING': 'running'}
+    status = msg.get('status', '')
+    result = msg.get('result', '')
+    traceback = msg.get('traceback', '')
+    JobOpt.set_job_by_track_id(track_id=msg.get('task_id', ''),
+                               status=status_map.get(status, status),
+                               result='' if not result else str(result)[0:2048],
+                               traceback='' if not traceback else str(traceback)[0:2048])
+
+
+def dispatch_processor(processor_name, inputs):
+    agent_queue_name = inputs.get('agent_queue_name', '')
+    task_id = inputs.get('task_id', '')
+    account_id = inputs.get('account_id', '')
+    agent_id = inputs.get('agent_id', '')
+    if not all([task_id, account_id, agent_id]):
+        pass
+
+    if agent_queue_name:
+        celery_task_name = PROCESSOR_MAP.get(processor_name)
+        track = app.send_task(
+            celery_task_name,
+            args=(inputs, ),
+            queue=agent_queue_name,
+            routing_key='rk_'+agent_queue_name
+        )
+
+        JobOpt.save_job(task_id, account_id, agent_id=agent_id, track_id=track.id, status='pending')
+        try:
+            track.get(on_message=on_task_message, propagate=False, interval=1, timeout=1)
+        except Exception as e:
+            print(111)
+
+        # 任务被分解并分发到任务队列了
+        TaskOpt.set_task_status(task_id, status='running')
     else:
-        return agents[0]
+        pass
 
+    return True
 
-def fb_auto_feed(task_id, account_id):
-    print(1111)
-    agent = get_agent_by_account(account_id)
-    if agent:
-        app.send_task('tasks.tasks.fb_auto_feed',
-                      args=(task_id, account_id, agent.id),
-                      queue=agent.queue_name,
-                      routing_key='rk_'+agent.queue_name)
-
-
-def fb_click_farming(task, account):
-    fb_auto_feed(task, account)
-    print('fb_click_farming')
-
-
-def fb_login(task, account):
-    print('fb_login')
-
-
-def fb_thumb(task, account):
-    print('fb_thumb')
-
-
-def fb_comment(task, account):
-    print('fb_comment')

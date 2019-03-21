@@ -49,7 +49,8 @@ task_account_group_table = Table(
     Column('task_id', Integer, ForeignKey("task.id")),
     Column('account_id', Integer, ForeignKey("account.id")),
     # 这个是在APScheduler中调度时的任务id, 用以暂停、重启、终止等 操作,一个任务+一个账号构成一个唯一的task
-    Column('aps_id', String(100))
+    Column('aps_id', String(100)),
+    Column('next_run_time', DateTime(3))
 )
 
 
@@ -80,10 +81,10 @@ class Task(Base):
     # 任务类型， 0-养账号，1-刷好评,其他待续
     category = Column(Integer, ForeignKey('task_category.category'))
 
-    # 任务状态， -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing
+    # 任务状态， -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing, new-新新，还没处理
     # status = Column(Integer, default=-1, server_default='-1')
     # 任务状态改用字符串是为了直观， 避免前后端转换的麻烦
-    status = Column(String(20), default='pending', server_default='pending')
+    status = Column(String(20), default='new', server_default='new')
 
     # 任务的创建者
     creator = Column(Integer, ForeignKey('user.id'))
@@ -96,14 +97,11 @@ class Task(Base):
                             secondary=task_account_group_table)  # ,
     # back_populates='parents')
 
-    # 单次执行的最大持续时长，默认为600秒
-    keep_time = Column(Integer, default=600, server_default='600')
+    # 第一次真正启动的时间
+    start_time = Column(DateTime(3), default=None)
 
-    # 广告码，只针对刷好评的任务
-    ads_code = Column(String(255), default='', server_default='')
-
-    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则等
-    description = Column(String(2048), default='', server_default='')
+    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time等
+    configure = Column(String(2048), default='', server_default='')
 
     result = Column(String(2048), default='', server_default='')
 
@@ -113,7 +111,7 @@ class Task(Base):
     def __repr__(self):
         return "id:{}, name:{}, category:{}, status:{}, creator:{}, scheduler:{}, accounts:{}, description:{}, " \
                "errors:{}. ".format(self.id, self.name, self.category, self.status, self.creator, self.scheduler,
-                                    self.accounts_list(), self.description, self.result)
+                                    self.accounts_list(), self.configure, self.result)
 
 
 class Job(Base):
@@ -127,7 +125,7 @@ class Job(Base):
     task = Column(Integer, ForeignKey('task.id'))
     account = Column(Integer, ForeignKey('account.id'))
     # 这个job执行时被分配的id,用以在结果队列中跟踪job执行情况
-    execute_id = Column(String(255), default='', server_default='')
+    track_id = Column(String(255), default='', server_default='', unique=True)
 
     # 这个任务被分配到了哪个agent上，用上计算agent的负载
     agent = Column(Integer, ForeignKey('agent.id'))
@@ -136,7 +134,9 @@ class Job(Base):
     # status = Column(Integer, default=-1, server_default='-1')
     status = Column(String(20), default='pending', server_default='pending')
     start_time = Column(DateTime(3))
+    end_time = Column(DateTime(3))
     result = Column(String(2048), default='', server_default='')
+    traceback = Column(String(2048), default='', server_default='')
 
     def __repr__(self):
         return "id:{}, task:{}, account:{}, start_time:{}, status:{}, result:{}. ".format(

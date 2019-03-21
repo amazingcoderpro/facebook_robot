@@ -3,35 +3,44 @@
 # Created by Charles on 19-3-15
 # Function: 养号任务入口
 
-
-import datetime
+import time
 from .workers import app
 import scripts
-from db.dao import JobOpt, AccountOpt
 
 
-# @app.task(ignore_result=True)
-@app.task
-def fb_auto_feed(task_id, account_id, agent_id):
-    print("execute fb_auto_feed task id={}, account id ={}".format(task_id, account_id))
-    job = JobOpt.save_job(task_id, account_id, agent_id=agent_id, status='running', start_time=datetime.datetime.now())
+@app.task(bind=True)
+def fb_auto_feed(self, inputs):
+    # 更新任务状态为running
+    self.update_state(state="running")
 
     # 执行任务
-    res = scripts.auto_feed(AccountOpt.get_account(account_id))
+    res = scripts.auto_feed(inputs)
 
-    # 更新job状态
-    job.status = res[0]
-    job.result = res[1]
-
+    self.update_state(state="succeed", meta={'result': res})
     return res
 
 
 # 处理beat的定时任务, 暂不用
 @app.task(ignore_result=True)
 def execute_fb_auto_feed():
-    task_id, account_id = "", ""
-    app.send_task('tasks.tasks.fb_auto_feed', args=(task_id, account_id),
+    inputs = {}
+    app.send_task('tasks.tasks.fb_auto_feed', args=(inputs, ),
                   queue='feed_account', routing_key='for_feed_account')
 
 
+@app.task(bind=True)
+def fb_click_farming(self, inputs):
+    self.update_state(state="running")
 
+    # 执行任务
+    time.sleep(2)
+    self.update_state(state="succeed", meta={'progress': 100})
+
+
+@app.task(bind=True)
+def fb_login(self, inputs):
+    self.update_state(state="running")
+
+    # 执行任务
+    time.sleep(2)
+    self.update_state(state="succeed", meta={'progress': 100})

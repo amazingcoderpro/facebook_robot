@@ -32,7 +32,7 @@ app.conf.update(
     CELERY_ACCEPT_CONTENT=['json'],
     CELERY_TASK_SERIALIZER='json',
     CELERY_RESULT_SERIALIZER='json',
-    CELERY_QUEUEs=(
+    CELERY_QUEUES=(
         Queue('agent1_queue', exchange=Exchange('agent1_queue', type='direct'),
               routing_key='rk_agent1_queue'),
         Queue('agent2_queue', exchange=Exchange('agent2_queue', type='direct'),
