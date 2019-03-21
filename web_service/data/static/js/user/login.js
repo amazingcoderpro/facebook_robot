@@ -1,7 +1,7 @@
 
 require([], function(){
-
-    var username=localStorage.getItem("authUsername"), showTip=function(msg){
+  localStorage.setItem('authUser', null);
+  var username=localStorage.getItem("authUsername"), showTip=function(msg){
      $('.callout').removeClass('hide').find('p').text(msg)
   };
   if(username){
@@ -14,8 +14,6 @@ require([], function(){
       increaseArea: '20%' /* optional */
     });
 
-
-
   $('button[type="button"]').on('click', function(){
     var param = {
         username: $('input[type="email"]').val().trim(),
@@ -27,11 +25,12 @@ require([], function(){
         type: "POST",
         url: '/api/user/auth',
         data: JSON.stringify(param),
-        success: function(){
+        success: function(req){
           if($('input[type="checkbox').prop('checked')){
              localStorage.setItem("authUsername", param.username);
           }
-          window.location.assign('/portal/console')
+          localStorage.setItem('authUser', JSON.stringify(req)),
+          window.location.assign('/console/dashboard')
         },
         dataType: 'json'
     })
