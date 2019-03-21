@@ -9,7 +9,7 @@ from django.shortcuts import render
 
 GLOBAL_CONTEXT = {
     'static': {
-        'main': 2,
+        'main': 7,
         'require': 1
     }
 }
