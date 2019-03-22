@@ -95,10 +95,6 @@ def insert_tasks(tasks):
 
 
 def dispatch_test():
-    logger.debug('aaaa')
-    logger.info('tttt')
-    logger.warning('wwww')
-    return
     import time
     from tasks.workers import app
     account_list = [("eddykkqf56@outlook.com", "nYGcEXNjGY")]
