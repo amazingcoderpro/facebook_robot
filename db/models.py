@@ -18,6 +18,7 @@ class User(Base):
     # password = Column(String(255))
     # name = Column(String(255), default='', server_default='')
     category = Column(Integer, ForeignKey('user_category.category'))
+    token = Column(String(255), default='', server_default='')
     # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id)， 以分号分割"1;2;3", 默认为空，代表可以创建所有类型的任务
     enable_tasks = Column(String(255), default='', server_default='')
 

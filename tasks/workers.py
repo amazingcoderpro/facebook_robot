@@ -47,4 +47,4 @@ app.conf.update(
 #         'options': {'queue': 'feed_account_queue', 'routing_key': 'for_feed_account'}
 #     }
 # }
-#celery -A tasks.workers -Q feed_account_queue worker -l info -c 1 -Ofair
+#celery -A tasks.workers -Q agent2_queue worker -l info -c 1 -Ofair -f log/celery.log

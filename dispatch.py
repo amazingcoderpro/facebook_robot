@@ -54,16 +54,26 @@ def find_optimal_agent(account, agents=None):
 
 
 def insert_tasks(tasks):
+    if not isinstance(tasks, list):
+        raise TypeError('tasks must be a list.')
+
+    logger.info('insert_tasks be called. tasks count={}'.format(len(tasks)))
+    agents = AgentOpt.get_enable_agents(status_order=True)
+    if not agents:
+        logger.error('There have no available agent.')
+        return
+
     for task in tasks:
         task_id = task.id
         task_configure = task.configure
         task_processor = TaskCategoryOpt.get_processor(task.category)
         scheduler_id = task.scheduler
-        agents = AgentOpt.get_enable_agents(status_order=True)
         # 每一个类型的任务都对应一个处理器
         if not task_processor:
+            logger.warning('Task(id={}) have no processor, ignore processing.'.format(task_id))
             continue
 
+        logger.info(u'Start processing task, task id={}, task configure={}'.format(task_id, task.configure))
         # 一旦任务被加入到定时程序中，即等待分发执行
         TaskOpt.set_task_status(task_id, 'pending')
 
@@ -71,6 +81,7 @@ def insert_tasks(tasks):
         for account in task.accounts:
             agent = find_optimal_agent(account=account, agents=agents)
             if not agent:
+                logger.warning('There have no optimal agent for task, task id={}, account id={}'.format(task_id, account.id))
                 continue
 
             # 构建任务执行必备参数
@@ -84,12 +95,16 @@ def insert_tasks(tasks):
                 'task_configure': task_configure
             }
 
+            logger.info('Start scheduling job, task id={}, account id={}, scheduler id={}, '
+                        'processor={}, inputs={}, agent_id={}.'.format(
+                            task_id, account.id, scheduler_id, task_processor, inputs, agent.id))
+
             aps_job = schedule_job(scheduler_id=scheduler_id, processor=task_processor, inputs=inputs)
 
             # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复
-            TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id,)#next_run_time=aps_job.trigger.run_date
-
-
+            TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id,)  # next_run_time=aps_job.trigger.run_date
+            logger.info('Scheduling job succeed, task id={}, account id={}, aps_job_id={}.'
+                        .format(task_id, account.id, aps_job.id))
 
     return True
 
@@ -110,15 +125,18 @@ def dispatch_test():
 def run():
     try:
         scheduler.start()
+        logger.info('Start scheduling.')
         while True:
             time.sleep(2)
     except (KeyboardInterrupt, SystemExit):
+        logger.warning('Scheduler have been stopped.')
         scheduler.shutdown()
 
 
 if __name__ == '__main__':
-    # tasks = TaskOpt.get_all_need_restart_task()
-    # insert_tasks(tasks)
-    # run()
+    logger.info('Start run..')
+    tasks = TaskOpt.get_all_need_restart_task()
+    insert_tasks(tasks)
+    run()
 
-    dispatch_test()
+    # dispatch_test()

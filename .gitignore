@@ -114,7 +114,7 @@ test.html
 /Pipfile.lock~4ca206d43160e756925c06f0c2a255771dc2b9ee
 
 # png
-.png
+*.png
 scripts/*.png
 
 # logs

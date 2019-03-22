@@ -41,32 +41,30 @@ class SchedulerOpt:
 
 class UserOpt:
     @classmethod
-    def save_user(cls, account, password, category=0, enable_tasks='', name=''):
+    def save_user(cls, account, password, category=0, enable_tasks='', token=''):
         user = User()
-        user.account = account
-        user.password = password
         user.category = category
         user.enable_tasks = enable_tasks
-        user.name = name
+        user.token = token
         db_session.add(user)
         db_session.commit()
         return user
 
-    @classmethod
-    def is_user_exist(cls, account):
-        user = db_session.query(User).filter(User.account == account).first()
-        if user:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def check_user(cls, account, password):
-        user = db_session.query(User).filter(and_(User.account == account, User.password == password)).first()
-        if user:
-            return True
-        else:
-            return False
+    # @classmethod
+    # def is_user_exist(cls, account):
+    #     user = db_session.query(User).filter(User.account == account).first()
+    #     if user:
+    #         return True
+    #     else:
+    #         return False
+    #
+    # @classmethod
+    # def check_user(cls, account, password):
+    #     user = db_session.query(User).filter(and_(User.account == account, User.password == password)).first()
+    #     if user:
+    #         return True
+    #     else:
+    #         return False
 
 
 class UserCategoryOpt:
@@ -519,7 +517,7 @@ def show_test_data():
 
 
 if __name__ == '__main__':
-    # init_db_data()
+    init_db_data()
     show_test_data()
 
  # pipenv run python web_service/initialization/users/new_user.py

@@ -56,11 +56,11 @@ def dispatch_processor(processor_name, inputs):
             routing_key='rk_'+agent_queue_name
         )
 
-        JobOpt.save_job(task_id, account_id, agent_id=agent_id, track_id=track.id, status='pending')
-        try:
-            track.get(on_message=on_task_message, propagate=False, interval=1, timeout=1)
-        except Exception as e:
-            print(111)
+        JobOpt.save_job(task_id, account_id, agent_id=agent_id, track_id=track.id, status='running')
+        # try:
+        #     track.get(on_message=on_task_message, propagate=False, interval=1, timeout=1)
+        # except Exception:
+        #     print(111)
 
         # 任务被分解并分发到任务队列了
         TaskOpt.set_task_status(task_id, status='running')

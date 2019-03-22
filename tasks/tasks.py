@@ -7,33 +7,37 @@ import time
 from .workers import app
 import scripts
 from celery import Task
+from config import logger
+from db.dao import JobOpt
 
-class my_task(Task):
-    def on_bound(cls, app):
-        print('task is bound')
-        pass
+class BaseTask(Task):
+    # @classmethod
+    # def on_bound(cls, app):
+    #     logger.info('task is bound')
+    #     pass
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        print('task is failed')
-        for a in locals():
-            print(a)
+        logger.error('celery task on_failed, task_id={}, exception={}, exception info={}. '.format(task_id, exc, einfo))
+        JobOpt.set_job_by_track_id(task_id, status='failed', result=str(exec), traceback=str(einfo))
 
     def on_success(self, retval, task_id, args, kwargs):
-        print('task is success')
-        for b in locals():
-            print(b)
+        logger.info('celery task on_success, task_id={}, retval={}. '.format(task_id, retval))
+        JobOpt.set_job_by_track_id(task_id, status='succeed', result=str(retval))
 
 
-
-@app.task(bind=True)
+@app.task(base=BaseTask, bind=True, max_retries=2, time_limit=30)
 def fb_auto_feed(self, inputs):
     # 更新任务状态为running
-    self.update_state(state="running")
+    # self.update_state(state="running")
+    time.sleep(3)
+    try:
+        # 执行任务
+        res = scripts.auto_feed(inputs)
+    except Exception as e:
+        logger.exception('fb_auto_feed catch exception.')
+        self.retry(countdown=10 ** self.request.retries)
 
-    # 执行任务
-    res = scripts.auto_feed(inputs)
-
-    self.update_state(state="succeed", meta={'result': res})
+    # self.update_state(state="succeed", meta={'result': res})
     return res
 
 
@@ -41,17 +45,15 @@ def fb_auto_feed(self, inputs):
 @app.task(ignore_result=True)
 def execute_fb_auto_feed():
     inputs = {}
-    app.send_task('tasks.tasks.fb_auto_feed', args=(inputs, ),
+    app.send_task('tasks.tasks.fb_auto_feed', args=(inputs,),
                   queue='feed_account', routing_key='for_feed_account')
 
 
-@app.task(bind=True)
-def fb_click_farming(self, inputs):
-    self.update_state(state="running")
-
+@app.task(base=BaseTask)
+def fb_click_farming(inputs):
     # 执行任务
     time.sleep(2)
-    self.update_state(state="succeed", meta={'progress': 100})
+    return 1
 
 
 @app.task(bind=True)
