@@ -147,4 +147,4 @@ def post(driver, content='love and peace!'):
 
 
 if __name__ == '__main__':
-    auto_feed("codynr4nzxh@outlook.com", "qVhgldHmgp")
+    auto_feed(inputs={'account':"codynr4nzxh@outlook.com", 'password':"qVhgldHmgp"})

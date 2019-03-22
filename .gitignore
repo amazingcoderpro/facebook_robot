@@ -115,3 +115,8 @@ test.html
 
 # png
 .png
+scripts/*.png
+
+# logs
+*.log
+logs

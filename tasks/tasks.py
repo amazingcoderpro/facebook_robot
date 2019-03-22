@@ -6,6 +6,23 @@
 import time
 from .workers import app
 import scripts
+from celery import Task
+
+class my_task(Task):
+    def on_bound(cls, app):
+        print('task is bound')
+        pass
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        print('task is failed')
+        for a in locals():
+            print(a)
+
+    def on_success(self, retval, task_id, args, kwargs):
+        print('task is success')
+        for b in locals():
+            print(b)
+
 
 
 @app.task(bind=True)

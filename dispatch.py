@@ -8,6 +8,7 @@ import time
 from apscheduler.schedulers.background import BackgroundScheduler
 from db.dao import TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt
 from tasks.processor import dispatch_processor
+from config import logger
 
 scheduler = BackgroundScheduler()
 
@@ -94,6 +95,10 @@ def insert_tasks(tasks):
 
 
 def dispatch_test():
+    logger.debug('aaaa')
+    logger.info('tttt')
+    logger.warning('wwww')
+    return
     import time
     from tasks.workers import app
     account_list = [("eddykkqf56@outlook.com", "nYGcEXNjGY")]
@@ -116,6 +121,8 @@ def run():
 
 
 if __name__ == '__main__':
-    tasks = TaskOpt.get_all_need_restart_task()
-    insert_tasks(tasks)
-    run()
+    # tasks = TaskOpt.get_all_need_restart_task()
+    # insert_tasks(tasks)
+    # run()
+
+    dispatch_test()

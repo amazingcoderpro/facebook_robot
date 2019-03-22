@@ -5,13 +5,18 @@
 
 
 import os
+import logging
 from yaml import load, FullLoader
+from log_config import log_config
+
 
 config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
 with open(config_path, encoding='utf-8') as f:
     content = f.read()
 
 cfg = load(content, Loader=FullLoader)
+log_config.init_log_config(file_prefix='facebook_auto')
+logger = logging.getLogger()
 
 
 def get_redis_args():
