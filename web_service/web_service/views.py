@@ -11,7 +11,7 @@ from web_service.settings import DEBUG
 
 GLOBAL_CONTEXT = {
     'static': {
-        'main': 21,
+        'main': 25,
         'require': 1,
         'debug': DEBUG
     }
@@ -22,7 +22,9 @@ GLOBAL_CONTEXT = {
 def render_page(request, url=''):
     if url == '':
         url = 'user/login'
-    if url == 'user/login':
+    if url == 'favicon.ico':
+        return HttpResponseRedirect('/static/img/favicon.ico')
+    elif url == 'user/login':
         from django.contrib.auth import logout
         logout(request)
         return render(request, url + '.html', GLOBAL_CONTEXT)

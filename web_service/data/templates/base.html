@@ -368,7 +368,13 @@
     </section>
 
     <!-- Main content -->
-    <section class="content">{% block content %}{% endblock %}</section>
+    <section class="content">
+      <div id="tip" class="callout callout-danger hide" :class="{hide: hide}">
+          <h4>{% templatetag openvariable%}title{% templatetag closevariable%}</h4>
+          <p>{% templatetag openvariable%}word{% templatetag closevariable%}</p>
+      </div>
+      {% block content %}{% endblock %}
+    </section>
     <!-- /.content -->
   </div>
   <!-- /.content-wrapper -->

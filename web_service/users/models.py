@@ -15,6 +15,9 @@ class UserCategory(models.Model):
     class Meta:
         db_table = 'user_category'
 
+    def __unicode__(self):
+        return self.name
+
 
 # 用户
 class User(models.Model):
@@ -22,7 +25,11 @@ class User(models.Model):
     auth = models.OneToOneField(AuthUser, on_delete=models.CASCADE)
     # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id)， 以分号分割"1;2;3", 默认为空，代表可以创建所有类型的任务
     enable_tasks = models.CharField(max_length=255, default='')
+    token = models.CharField(max_length=255, default='')
 
     class Meta:
         db_table = 'user'
+
+    def __unicode__(self):
+        return self.auth.username
 
