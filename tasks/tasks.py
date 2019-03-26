@@ -24,12 +24,17 @@ class BaseTask(Task):
         logger.info('celery task on_success, task_id={}, retval={}. '.format(task_id, retval))
         JobOpt.set_job_by_track_id(task_id, status='succeed', result=str(retval))
 
-
+import random
 @app.task(base=BaseTask, bind=True, max_retries=2, time_limit=30)
 def fb_auto_feed(self, inputs):
+
+    time.sleep(1)
     # 更新任务状态为running
-    # self.update_state(state="running")
-    time.sleep(3)
+    self.update_state(state="running")
+    time.sleep(4)
+    self.update_state(state="succeed")
+    return 1, 'success'
+
     try:
         # 执行任务
         res = scripts.auto_feed(inputs)
@@ -39,6 +44,10 @@ def fb_auto_feed(self, inputs):
 
     # self.update_state(state="succeed", meta={'result': res})
     return res
+
+@app.task
+def fb_login(inputs):
+    pass
 
 
 # 处理beat的定时任务, 暂不用
@@ -55,6 +64,9 @@ def fb_click_farming(inputs):
     time.sleep(2)
     return 1
 
+from celery import chain, signature
+r = chain(fb_auto_feed.s({}), fb_click_farming.s({}))
+r.apply_async()
 
 @app.task(bind=True)
 def fb_login(self, inputs):

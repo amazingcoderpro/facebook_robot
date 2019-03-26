@@ -6,9 +6,10 @@
 
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
-from db.dao import TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt
+from db import Task, TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt
 from tasks.processor import dispatch_processor
 from config import logger
+
 
 scheduler = BackgroundScheduler()
 
@@ -53,58 +54,53 @@ def find_optimal_agent(account, agents=None):
         return agents[0]
 
 
-def insert_tasks(tasks):
-    if not isinstance(tasks, list):
-        raise TypeError('tasks must be a list.')
-
-    logger.info('insert_tasks be called. tasks count={}'.format(len(tasks)))
+def process_task(task: Task) -> bool:
     agents = AgentOpt.get_enable_agents(status_order=True)
     if not agents:
         logger.error('There have no available agent.')
-        return
+        return False
 
-    for task in tasks:
-        task_id = task.id
-        task_configure = task.configure
-        task_processor = TaskCategoryOpt.get_processor(task.category)
-        scheduler_id = task.scheduler
-        # 每一个类型的任务都对应一个处理器
-        if not task_processor:
-            logger.warning('Task(id={}) have no processor, ignore processing.'.format(task_id))
+    task_id = task.id
+    task_configure = task.configure
+    task_processor = TaskCategoryOpt.get_processor(task.category)
+    scheduler_id = task.scheduler
+    # 每一个类型的任务都对应一个处理器
+    if not task_processor:
+        logger.warning('Task(id={}) have no processor, ignore processing.'.format(task_id))
+        return False
+
+    logger.info(u'Start processing task, task id={}, task configure={}'.format(task_id, task.configure))
+    # 一旦任务被加入到定时程序中，即等待分发执行
+    TaskOpt.set_task_status(task_id, 'pending')
+
+    # 一个任务会有多个账号， 按照账号对任务进行第一次拆分，针对每一个账号，启动一个定时任务，这样任务管理粒度更细，也更符合实际情况
+    for account in task.accounts:
+        agent = find_optimal_agent(account=account, agents=agents)
+        if not agent:
+            logger.warning('There have no optimal agent for task, task id={}, account id={}'.format(task_id, account.id))
             continue
 
-        logger.info(u'Start processing task, task id={}, task configure={}'.format(task_id, task.configure))
-        # 一旦任务被加入到定时程序中，即等待分发执行
-        TaskOpt.set_task_status(task_id, 'pending')
+        # 构建任务执行必备参数
+        inputs = {
+            'task_id': task_id,
+            'account_id': account.id,
+            'agent_id': agent.id,
+            'account': account.account,
+            'password': account.password,
+            'agent_queue_name': agent.queue_name,
+            'task_configure': task_configure
+        }
 
-        # 一个任务会有多个账号， 按照账号对任务进行第一次拆分，针对每一个账号，启动一个定时任务，这样任务管理粒度更细，也更符合实际情况
-        for account in task.accounts:
-            agent = find_optimal_agent(account=account, agents=agents)
-            if not agent:
-                logger.warning('There have no optimal agent for task, task id={}, account id={}'.format(task_id, account.id))
-                continue
+        logger.info('Start scheduling job, task id={}, account id={}, scheduler id={}, '
+                    'processor={}, inputs={}, agent_id={}.'.format(
+                        task_id, account.id, scheduler_id, task_processor, inputs, agent.id))
 
-            # 构建任务执行必备参数
-            inputs = {
-                'task_id': task_id,
-                'account_id': account.id,
-                'agent_id': agent.id,
-                'account': account.account,
-                'password': account.password,
-                'agent_queue_name': agent.queue_name,
-                'task_configure': task_configure
-            }
+        aps_job = schedule_job(scheduler_id=scheduler_id, processor=task_processor, inputs=inputs)
 
-            logger.info('Start scheduling job, task id={}, account id={}, scheduler id={}, '
-                        'processor={}, inputs={}, agent_id={}.'.format(
-                            task_id, account.id, scheduler_id, task_processor, inputs, agent.id))
-
-            aps_job = schedule_job(scheduler_id=scheduler_id, processor=task_processor, inputs=inputs)
-
-            # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复
-            TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id,)  # next_run_time=aps_job.trigger.run_date
-            logger.info('Scheduling job succeed, task id={}, account id={}, aps_job_id={}.'
-                        .format(task_id, account.id, aps_job.id))
+        # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复
+        TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id,)  # next_run_time=aps_job.trigger.run_date
+        logger.info('Scheduling job succeed, task id={}, account id={}, aps_job_id={}.'
+                    .format(task_id, account.id, aps_job.id))
 
     return True
 
@@ -136,7 +132,12 @@ def run():
 if __name__ == '__main__':
     logger.info('Start run..')
     tasks = TaskOpt.get_all_need_restart_task()
-    insert_tasks(tasks)
+    if not isinstance(tasks, list):
+        raise TypeError('tasks must be a list.')
+    for t in tasks:
+        logger.info('process_task be called.')
+        process_task(t)
+
     run()
 
     # dispatch_test()

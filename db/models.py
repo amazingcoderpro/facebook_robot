@@ -12,6 +12,7 @@ from db.basic import Base, engine
 
 class User(Base):
     __tablename__ = 'user'
+    __table_args__ = {"useexisting": True}
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     # account = Column(String(255), unique=True)
@@ -101,10 +102,19 @@ class Task(Base):
     # 第一次真正启动的时间
     start_time = Column(DateTime(3), default=None)
 
-    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time等
+    # 实际结束时间
+    end_time = Column(DateTime(3), default=None)
+
+    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
     configure = Column(String(2048), default='', server_default='')
 
     result = Column(String(2048), default='', server_default='')
+
+    # 该任务最大执行次数（即成功的job次数），比如刷分，可以指定最大刷多少次
+    limit_counts = Column(Integer, default=1, server_default='1')
+
+    # 该任务最晚结束时间， 主要针对阶段性任务
+    limit_end_time = Column(DateTime(3), default=None)
 
     def accounts_list(self):
         return [acc.account for acc in self.accounts]
@@ -143,12 +153,29 @@ class Job(Base):
         return "id:{}, task:{}, account:{}, start_time:{}, status:{}, result:{}. ".format(
             self.id, self.task, self.account, self.start_time, self.status, self.result)
 
+#
+# class Action(Base):
+#     __tablename__ = 'action'
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     name = Column(String(255), default='', server_default='')
+#     depend_on = Column(Integer, ForeignKey('action.id'), default=None)
+#
+#
+# class JobActions(Base):
+#     __tablename__ = 'job_actions'
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     job_id = Column(Integer, ForeignKey('job.id'))
+#     action_id = Column(Integer, ForeignKey('action.id'))
+#     result = Column(String(255), default='', server_default='')
+#
+
 
 class Account(Base):
     __tablename__ = 'account'
     id = Column(Integer, primary_key=True, autoincrement=True)
     # 该账号所属类别，该账号所属类别，1--facebook账号，2--twitter账号， 3--Ins账号
     category = Column(Integer, ForeignKey('account_category.category'))
+
     # 每个账号都应该隶属于某个人员，以方便权限管理
     owner = Column(Integer, ForeignKey('user.id'))
     account = Column(String(255))
@@ -156,7 +183,9 @@ class Account(Base):
     # -----------------以上是必填项----------------
 
     email = Column(String(255), default='', server_default='')
-    email_pwd = Column(String(255))
+    email_pwd = Column(String(255), default='', server_default='')
+    phone_number = Column(String(100), default='', server_default='')
+
     # 0-女，1-男
     gender = Column(Integer, default=0, server_default='0')
     # 生日格式"1990-3-21"
@@ -166,8 +195,11 @@ class Account(Base):
     name = Column(String(100), default='', server_default='')
     profile_id = Column(String(100), default='', server_default='')
 
-    # 0-valid，1-invalid, 2-verify，3-other
+    # 0-valid, 1-invalid, 2-verify, 3-other
     status = Column(String(20), default='valid', server_default='valid')
+
+    # 是否正在被某任务使用 0-未使用， 大于1代表正在被使用，数字代表并发使用数
+    using = Column(Integer, default=0, server_default='0')
 
     # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id)， 以分号分割"1;2;3", 默认为空，代表可以创建所有类型的任务
     enable_tasks = Column(String(255), default='', server_default='')
@@ -182,11 +214,16 @@ class Account(Base):
     last_comment = Column(DateTime(3))
     last_edit = Column(DateTime(3))
 
-    active_ip = Column(String(255), default='', server_default='')
+    # active_ip = Column(String(255), default='', server_default='')
+    # 活跃地域
     active_area = Column(String(255), default='', server_default='')
+    # 常用浏览器指纹
     active_browser = Column(String(2048), default='', server_default='')
     # 一个账号有可能同是被多个任务占用，逻辑上是可以的， 但实际操作上应该尽量避免此种情况，以规避多IP同时登录带来的封号风险
     tasks = relationship("Task", secondary=task_account_group_table)  # ,back_populates='children')
+
+    # 账号的其他非常规配置信息
+    configure = Column(String(2048), default='', server_default='')
 
     def __repr__(self):
         return "id:{}, account:{}, password:{}, email={}, email_pwd:{}, gender:{}, birthday:{}, national_id:{}, " \
@@ -211,13 +248,26 @@ class AccountCategory(Base):
 class Agent(Base):
     __tablename__ = 'agent'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    # 该agent绑定的任务队列， job将根据与其最亲近的agent的queue名来被分发
+
+    # 该agent绑定的任务队列， job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
     queue_name = Column(String(255))
+
     # 0-idle, 1-normal, 2-busy, 3-disable
-    status = Column(Integer, default=1, server_default='1')
-    ip = Column(String(255))
+    # -1--disable, 大于零代表其忙碌值（即当前待处理的任务量）
+    status = Column(String(20), default=0, server_default='0')
+
+    # 该agent所属区域
     area = Column(String(255), default='', server_default='')
-    config = Column(String(2048), default='', server_default='')
+
+    # 该agent的配置信息
+    configure = Column(String(2048), default='', server_default='')
+
+
+class Area(Base):
+    __tablename__ = 'area'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255))
+    description = Column(String(2048), default='', server_default='')
 
 
 if __name__ == '__main__':

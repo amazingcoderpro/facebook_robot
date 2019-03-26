@@ -33,7 +33,7 @@ app.conf.update(
     CELERY_TASK_SERIALIZER='json',
     CELERY_RESULT_SERIALIZER='json',
     CELERY_QUEUES=(
-        Queue('agent1_queue', exchange=Exchange('agent1_queue', type='direct'),
+        Queue('agent2_queue', exchange=Exchange('agent1_queue', type='direct'),
               routing_key='rk_agent1_queue'),
         Queue('agent2_queue', exchange=Exchange('agent2_queue', type='direct'),
               routing_key='rk_agent2_queue'),
@@ -47,4 +47,4 @@ app.conf.update(
 #         'options': {'queue': 'feed_account_queue', 'routing_key': 'for_feed_account'}
 #     }
 # }
-#celery -A tasks.workers -Q agent2_queue worker -l info -c 1 -Ofair -f log/celery.log
+#celery -A tasks.workers -Q agent2_queue worker -l info -c 1 -Ofair -f logs/celery.log

@@ -5,7 +5,8 @@
 
 
 from .workers import app
-from db.dao import TaskOpt, JobOpt
+from db import TaskOpt, JobOpt
+from config import logger
 
 # TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed')
 # TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming')
@@ -39,13 +40,20 @@ def on_task_message(msg):
                                traceback='' if not traceback else str(traceback)[0:2048])
 
 
-def dispatch_processor(processor_name, inputs):
+def dispatch_processor(processor_name: str, inputs: dict)->bool:
+    """
+
+    :param processor_name:
+    :param inputs:
+    :return:
+    """
     agent_queue_name = inputs.get('agent_queue_name', '')
     task_id = inputs.get('task_id', '')
     account_id = inputs.get('account_id', '')
     agent_id = inputs.get('agent_id', '')
     if not all([task_id, account_id, agent_id]):
-        pass
+        logger.error('params error in dispatch_processor.')
+        return False
 
     if agent_queue_name:
         celery_task_name = PROCESSOR_MAP.get(processor_name)
@@ -65,7 +73,8 @@ def dispatch_processor(processor_name, inputs):
         # 任务被分解并分发到任务队列了
         TaskOpt.set_task_status(task_id, status='running')
     else:
-        pass
+        logger.error('can not dispatch processor by agent_queue_name')
+        return False
 
     return True
 

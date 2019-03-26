@@ -35,13 +35,13 @@ class SchedulerOpt:
         return False
 
     @classmethod
-    def get_scheduler(cls, id):
-        return db_session.query(Scheduler).filter(Scheduler.id == id).first()
+    def get_scheduler(cls, scheduler_id):
+        return db_session.query(Scheduler).filter(Scheduler.id == scheduler_id).first()
 
 
 class UserOpt:
     @classmethod
-    def save_user(cls, account, password, category=0, enable_tasks='', token=''):
+    def save_user(cls, category=0, enable_tasks='', token=''):
         user = User()
         user.category = category
         user.enable_tasks = enable_tasks
@@ -116,8 +116,8 @@ class AccountOpt:
         return False
 
     @classmethod
-    def get_account(cls, id):
-        return db_session.query(Account).filter(Account.id == id).first()
+    def get_account(cls, account_id):
+        return db_session.query(Account).filter(Account.id == account_id).first()
 
 
 class TaskOpt:
@@ -344,6 +344,23 @@ class JobOpt:
         return False
 
 
+# class JobActinsOpt:
+#     @classmethod
+#     def save_job_actions(cls, job_id, action_id, result=''):
+#         jac = JobActions()
+#         jac.job_id = job_id
+#         jac.action_id = action_id
+#         jac.result = result
+#
+#
+# class ActionOpt:
+#     @classmethod
+#     def save_action(cls, name, depend_on=None):
+#         action = Action()
+#         action.name = name
+#         action.depend_on = depend_on
+
+
 class TaskCategoryOpt:
     @classmethod
     def save_task_category(cls, category, name, processor, description=''):
@@ -372,10 +389,9 @@ class TaskCategoryOpt:
 
 class AgentOpt:
     @classmethod
-    def save_agent(cls, queue_name, ip, status=1, area='', config=''):
+    def save_agent(cls, queue_name, area, status=0, config=''):
         agent = Agent()
         agent.queue_name = queue_name
-        agent.ip = ip
         agent.status = status
         agent.area = area
         agent.config = config
@@ -392,18 +408,11 @@ class AgentOpt:
             return None
 
     @classmethod
-    def get_agents(cls, status=-1):
-        if status >= 0:
-            return db_session.query(Agent).filter().all(Agent.status == status)
-        else:
-            return db_session.query(Agent).filter().all()
-
-    @classmethod
     def get_enable_agents(cls, status_order=True):
         if status_order:
-            return db_session.query(Agent).filter(Agent.status != 3).order_by(Agent.status).all()
+            return db_session.query(Agent).filter(Agent.status != -1).order_by(Agent.status).all()
         else:
-            return db_session.query(Agent).filter(Agent.status != 3).order_by().all()
+            return db_session.query(Agent).filter(Agent.status != -1).all()
 
 
 def init_db_data():
@@ -456,38 +465,40 @@ def init_db_data():
     AccountOpt.save_account(account='eddykkqf56@outlook.com',
                             password='nYGcEXNjGY', owner=1, category=1,
                             email='eddykkqf56@outlook.com', email_pwd='M4c5gs3SEx',
-                            gender=1, birthday='1974-6-8', profile_id='wheeler.degale.9')
+                            gender=1, birthday='1974-6-8', profile_id='wheeler.degale.9', status='invalid')
     AccountOpt.save_account(account='deckor31g90@outlook.com',
                             password='mYIiw539Ke', owner=2, category=1,
                             email='deckor31g90@outlook.com', email_pwd='GsMNVhEqHu',
-                            gender=1, birthday='1995-8-6', profile_id='harold.suddaby.1')
+                            gender=1, birthday='1995-8-6', profile_id='harold.suddaby.1', active_area='North American')
 
     AccountOpt.save_account(account='estevanlkz5rw0@outlook.com',
                             password='QyjMNAhCGq', owner=2, category=1,
                             email='estevanlkz5rw0@outlook.com', email_pwd='dD2EV7ptSk',
-                            gender=1, birthday='1996-11-27', profile_id='jervis.prockter.7')
+                            gender=1, birthday='1996-11-27', profile_id='jervis.prockter.7', active_area='Japan')
 
     AccountOpt.save_account(account='yorkeru997a@outlook.com',
                             password='j9akBXwslF', owner=2, category=1,
                             email='yorkeru997a@outlook.com', email_pwd='wSmEHMsg7C',
                             gender=1, birthday='1966-6-23', profile_id='franklyn.dyneley.5',
-                            enable_tasks='1;2;4;6')
+                            enable_tasks='1;2;4;6', active_area='China')
 
     AccountOpt.save_account(account='yorkeru997a@outlook.com',
                             password='Ogec1eOAFA', owner=3, category=1,
                             email='yorkeru997a@outlook.com', email_pwd='u3KLKTXye',
                             gender=0, birthday='1986-5-21', profile_id='alana.williamson.1401',
-                            name='Alana Williamson', register_time='2017-9-2')
+                            name='Alana Williamson', register_time='2017-9-2', active_area='Spanish',
+                            active_browser=str({'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36',
+                                                'upgrade-insecure-requests': 1, 'accept-language:':'zh-CN,zh;q=0.9'}))
 
     # 创建任务
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2], name=u'养个号')
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}))
-    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], name=u'登录浏览就行了', configure=str({'keep_time': 900}))
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2], name=u'养个号11')
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2], name=u'养个号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2], name=u'养个号11', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
-    AgentOpt.save_agent('agent1_queue', '1.1.1.1', status=1)
-    AgentOpt.save_agent('agent2_queue', '2.2.2.2', status=0)
-    AgentOpt.save_agent('agent3_queue', '3.3.3.3', status=2)
+    AgentOpt.save_agent('agent1_queue', 'Spanish', status=-1)
+    AgentOpt.save_agent('agent2_queue', 'China', status=0)
+    AgentOpt.save_agent('agent3_queue', 'Japan', status=2)
 
 
 def show_test_data():
@@ -497,7 +508,7 @@ def show_test_data():
         for acc in task.accounts:
             print(acc.account)
 
-    acc = AccountOpt.get_account(id=0)
+    acc = AccountOpt.get_account(account_id=0)
     print(acc)
 
     TaskOpt.set_task_status(1, 1)
@@ -517,7 +528,7 @@ def show_test_data():
 
 
 if __name__ == '__main__':
-    init_db_data()
+    # init_db_data()
     show_test_data()
 
  # pipenv run python web_service/initialization/users/new_user.py
