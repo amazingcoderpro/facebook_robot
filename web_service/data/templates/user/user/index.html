@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block globalVariable %}
+window.modules = ['dashboard'];
+{% endblock %}
+
+{% block css %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xs-6">
+        <div class="box box-primary">
+            <div class="box-header">
+              <h3 class="box-title">用户管理</h3>
+            </div>
+            <div class="box-buttons" id="dataTableButtons">
+                <button type="button" class="btn btn-primary new" data-toggle="modal" data-target="#modal-new">新增</button>
+                <button type="button" class="btn single-row reset-password">重置密码</button>
+                <button type="button" class="btn single-row delete">删除</button>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body">
+              <table id="dataTable" class="table table-bordered table-striped">
+                <thead><tr></tr></thead>
+                <tbody></tbody>
+                <tfoot></tfoot>
+              </table>
+            </div>
+            <!-- /.box-body -->
+        </div>
+    </div>
+    <!-- /.col -->
+     <div class="col-xs-6 none" id="detail">
+        <div class="box box-primary" id="info">
+            <div class="box-header with-border">
+                <h3 class="box-title">基本信息</h3>
+            </div>
+            <div class="box-buttons">
+                <button type="button" class="btn btn-primary save">保存</button>
+            </div>
+            <form role="form">
+                <div class="box-body">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <p class="username"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="tel" class="form-control" name="fullname" placeholder="请输入姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="text" class="form-control" name="email" placeholder="请输入邮件地址" />
+                    </div>
+                    <div class="form-group">
+                        <label>初始密码</label>
+                        <input type="text" class="form-control" name="password" placeholder="请输入初始密码" />
+                    </div>
+                    <div class="form-group">
+                        <label>可执行任务</label>
+                        <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal modal-info fade" id="modal-new">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">添加用户</h4>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>用户类型</label>
+          <select class="form-control" name="category"></select>
+        </div>
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="tel" class="form-control" name="username" placeholder="请输入用户名" />
+        </div>
+        <div class="form-group">
+            <label>姓名</label>
+            <input type="text" class="form-control" name="fullname" placeholder="请输入姓名" />
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="text" class="form-control" name="email" placeholder="请输入邮件地址" />
+        </div>
+        <div class="form-group">
+            <label>初始密码</label>
+            <input type="text" class="form-control" name="password" placeholder="请输入初始密码" />
+        </div>
+        <div class="form-group">
+            <label>可执行任务</label>
+            <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline pull-left" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-outline ok">确定</button>
+      </div>
+    </div>
+    <!-- /.modal-content -->
+  </div>
+  <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+<div class="modal modal-info fade" id="modal-reset">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">重置密码</h4>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+            <label></label>
+            <input type="text" class="form-control" name="pwd" placeholder="请输入新密码">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline pull-left" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-outline ok">确定</button>
+      </div>
+    </div>
+    <!-- /.modal-content -->
+  </div>
+  <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+{% endblock %}
+
+{% block js %}
+{% endblock %}
+
+{% block depsJS %}
+'user/user/index'
+{% endblock %}
+
