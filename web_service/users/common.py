@@ -36,3 +36,19 @@ def create_user(category, username, password, fullname, enable_tasks):
             u = User(category_id=category, auth_id=auth_user.id, enable_tasks=enable_tasks)
             u.save()
             return u
+
+
+# 根据 token 返回用户
+def user_by_token(request):
+    token = request.query_params.get('access-token', '')
+    if token != '':
+        try:
+            return User.objects.get(token=token)
+        except ObjectDoesNotExist:
+            pass
+    return None
+
+
+# 判断用户是否为管理员
+def is_admin(user):
+    return user.category.name == '管理员'
