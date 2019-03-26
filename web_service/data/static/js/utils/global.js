@@ -1,4 +1,8 @@
 define(['vue'], function(Vue) {
+
+    // 兼容 Vue 初始化清理工作
+    $('#tip').removeClass('hide');
+
         // 用户信息
     var user = JSON.parse(localStorage.getItem('authUser')),
         contentHeader = new Vue({
@@ -18,7 +22,28 @@ define(['vue'], function(Vue) {
                 if(li.hasClass('treeview'))li.addClass('menu-open');
                 parent=li;
             })
-        };
+        },
+        // 显示提示信息
+        tip= new Vue({
+             el: '#tip',
+             data: {
+                hide: true,
+                title: '提示！',
+                word: ''
+             },
+             methods: {
+                showTip (word, title) {
+                  clearTimeout(this.$options.timer);
+                  if(title)this.title=title;
+                  this.word = word,
+                  this.hide = false,
+                  setTimeout(this.hideTip, 3000)
+                },
+                hideTip(){
+                  this.hide = true
+                }
+             }
+         });
     new Vue({
       el: '.user',
       data: user
@@ -30,6 +55,7 @@ define(['vue'], function(Vue) {
 
     return {
         user: user,
-        initModule: initModule
+        initModule: initModule,
+        showTip: tip.showTip
     }
 });
