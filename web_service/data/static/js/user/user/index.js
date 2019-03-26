@@ -112,7 +112,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         detailHtml=$('#detail').html(),
         $('#detail').html(''),
         $.ajax({
-            url: general.getAPI('/api/userCategories/'),
+            url: global.getAPI('/api/userCategories/'),
             contentType: "application/json",
             method: 'get',
             success: function(data){
