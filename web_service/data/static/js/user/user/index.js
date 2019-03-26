@@ -119,7 +119,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 categories = data.data;
                 var el=$('#modal-new select[name="category"]');
                 $.each(categories, function(i, item){
-                    el.append('<option value="'+item.category+'">'+item.name+'</option>')
+                    el.append('<option value="'+item.id+'">'+item.name+'</option>')
                 })
             }
         })

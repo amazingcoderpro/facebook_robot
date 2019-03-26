@@ -50,9 +50,12 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     
     # 更新用户
     def update(self, instance, validated_data):
+        print('validated_data:')
+        print(validated_data)
         # 处理目录
-        category_data = validated_data.pop('category')
-        validated_data['category'] = CategorySerializer().create(category_data)
+        if 'category' in validated_data:
+            category_data = validated_data.pop('category')
+            validated_data['category'] = CategorySerializer().create(category_data)
         # auth
         for related_obj_name in self.Meta.related_fields:
             data = validated_data.pop(related_obj_name)
@@ -67,7 +70,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = User
-        fields = ('url', 'category', 'username', 'fullname', 'email', 'enable_tasks', 'password')
+        fields = ('url', 'id', 'category', 'username', 'fullname', 'email', 'enable_tasks', 'password')
         related_fields = ['auth']
         extra_kwargs = {'password': {'write_only': True}}
         # depth = 2

@@ -9,4 +9,5 @@ from users.api import auth_views
 urlpatterns = [
     # path('admin/', admin.site.urls),
     url(r'^auth$', auth_views.auth),
+    url(r'^logout$', auth_views.logout),
 ]

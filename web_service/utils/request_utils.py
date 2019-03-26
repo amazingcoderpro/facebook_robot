@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import json, logging
-from datetime import datetime, date, timedelta
+import json
+import logging
+from collections import OrderedDict
+from datetime import datetime, date
+
 from django.contrib.auth.decorators import login_required
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import JsonResponse, HttpResponseRedirect
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
+from rest_framework import permissions
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+
 from web_service.settings import DEBUG
 
 # Created by: guangda.lee
@@ -72,3 +78,36 @@ def response_as_json_without_auth(f):
         return JsonResponse(result, status=status, encoder=CustomDjangoJSONEncoder)
 
     return as_json
+
+
+# 根据 datatables.net 要求定义列表 API 参数
+class CustomDataSetPagination(LimitOffsetPagination):
+    limit_query_param = 'length'
+    offset_query_param = 'start'
+
+    default_limit = 10
+    max_limit = 100
+
+    def get_paginated_response(self, data):
+        return Response(OrderedDict([
+            ('draw', self.request.query_params.get('draw', 0)),
+            ('count', self.count),
+            ('recordsFiltered', self.count),
+            ('recordsTotal', self.count),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link()),
+            ('data', data)
+        ]))
+
+
+# 管理员权限
+class AdminPermission(permissions.BasePermission):
+    """
+    Admin permission check for common data.
+    """
+
+    def has_permission(self, request, view):
+        from users.common import user_by_token, is_admin
+        user = user_by_token(request)
+        return user and is_admin(user)
+

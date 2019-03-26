@@ -34,3 +34,15 @@ def auth(request, data):
         }, 200
     return {}, 401
 
+
+# 退出登录状态
+@response_as_json_without_auth
+def logout(request):
+    from users.common import user_by_token
+    user = user_by_token(request)
+    if user:
+        user.token = ''
+        user.save()
+        return {}, 200
+    return {'detail': 'You do not have permission to perform this action.'}, 403
+

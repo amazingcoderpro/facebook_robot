@@ -43,7 +43,37 @@ define(['vue'], function(Vue) {
                   this.hide = true
                 }
              }
-         });
+         }),
+         // 拼接 API，增加 token
+        getAPI = function(url){
+            return url +(url.indexOf('?')==-1?'?':'&') + 'access-token='+ user.token
+         },
+        _warningDialog=function(title, word, func){
+            if($('#warning-dialog').length==0){
+                var html=[];
+                html.push('<div class="modal modal-warning fade" id="warning-dialog">'),
+                html.push('<div class="modal-dialog"><div class="modal-content"><div class="modal-header">'),
+                html.push('<button type="button" class="close" data-dismiss="modal" aria-label="Close">'),
+                html.push('<span aria-hidden="true">&times;</span></button>'),
+                html.push('<h4 class="modal-title">'),
+                html.push(title),
+                html.push('</h4></div><div class="modal-body"><p></p></div>'),
+                html.push('<div class="modal-footer">'),
+                html.push('<button type="button" class="btn btn-outline pull-left confirm" data-dismiss="modal">确认</button>'),
+                html.push('<button type="button" class="btn btn-outline" data-dismiss="modal">取消</button>'),
+                html.push('</div></div></div></div>'),
+                $('body').append(html.join(''));
+            }
+            var dialog=$('#warning-dialog');
+            dialog.find('.modal-body p').text(word);
+            dialog.find('.confirm').off('click').on('click', func);
+            dialog.modal();
+
+        },
+        dialog={
+            warning: _warningDialog,
+            deleteWarning: function(word, func){_warningDialog('删除确认', word, func)}
+        };
     new Vue({
       el: '.user',
       data: user
@@ -56,6 +86,8 @@ define(['vue'], function(Vue) {
     return {
         user: user,
         initModule: initModule,
-        showTip: tip.showTip
+        showTip: tip.showTip,
+        dialog: dialog,
+        getAPI: getAPI
     }
 });
