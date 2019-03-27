@@ -9,9 +9,10 @@ from web_service.settings import DEBUG
 # Function:
 
 
+# 页面上下文全局量
 GLOBAL_CONTEXT = {
     'static': {
-        'main': 30,
+        'main': 37,
         'require': 1,
         'debug': DEBUG
     }

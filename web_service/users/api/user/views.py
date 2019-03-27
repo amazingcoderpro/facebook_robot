@@ -29,6 +29,12 @@ class UserViewSet(viewsets.ModelViewSet):
         fullname = self.request.query_params.get('fullname', None)
         if fullname is not None:
             queryset = queryset.filter(auth__last_name__icontains=fullname)
+        if 'query' in self.request.query_params:
+            from json import loads
+            keyword = loads(self.request.query_params['query'])['search']['value'].strip()
+            if keyword != '':
+                from django.db.models import Q
+                queryset = queryset.filter(Q(auth__username=keyword)|Q(auth__email=keyword)|Q(auth__last_name__icontains=keyword))
         return queryset
 
     # 移除用户

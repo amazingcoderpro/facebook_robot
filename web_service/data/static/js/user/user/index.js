@@ -6,20 +6,20 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     });
     var categories=[], url='/api/users/', detailHtml='',
     newUser=function(){
-        var req={};
+        var req={category: {name: $('#modal-new select[name="category"]').val()}};
         $.each($('#modal-new input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
-        if(req.username=='')general.showTip('请输入用户名');
-        else if(req.fullname=='')general.showTip('请输入用户姓名');
-        else if(req.email=='')general.showTip('请输入邮件地址');
-        else if(req.pwd=='')general.showTip('请输入初始密码');
+        if(req.username=='')global.showTip('请输入用户名');
+        else if(req.fullname=='')global.showTip('请输入用户姓名');
+        else if(req.email=='')global.showTip('请输入邮件地址');
+        else if(req.pwd=='')global.showTip('请输入初始密码');
         else $.ajax({
             url: global.getAPI(url),
             contentType: "application/json",
             method: 'post',
             data: JSON.stringify(req),
             success: function(data){
-                general.showTip('用户添加成功');
-                table.ajax.reload();
+                global.showTip({word: '用户添加成功', danger: false});
+                dataTable.ajax.reload();
                 $('#modal-new input').val(''),
                 $('#modal-new').modal('hide')
             }
@@ -28,21 +28,24 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     modifyUser=function(item){
         $('#detail').removeClass('none').html(detailHtml),
         $('#info .box-title').text(item.fullname+'的基本信息'),
-        $.each(item, function(i, propName){$('#info input[name="'+propName+'"]').val(item[propName])});
+        $.each(item, function(propName, value){$('#info input[name="'+propName+'"]').val(value)});
         $('#info p.username').text(item.username);
         $('#info .save').on('click',function(){
             var req={};
-        $.each($('#info input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
-            $.ajax({
+            Object.assign(req, item);
+            $.each($('#detail input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
+            if(req.fullname=='')global.showTip('请输入用户姓名');
+            else if(req.email=='')global.showTip('请输入邮件地址');
+            else $.ajax({
                 url: global.getAPI(url+item.id+'/'),
                 contentType: "application/json",
-                method: 'patch',
+                method: 'put',
                 data: JSON.stringify(req),
                 success: function(data){
-                    general.showTip('用户信息更新成功'),
-                    table.ajax.reload()
+                    global.showTip({word: '用户信息更新成功', danger: false}),
+                    dataTable.ajax.reload()
                 },
-                error: function(){general.showTip('用户信息更新失败，请稍后再试')}
+                error: function(){global.showTip('用户信息更新失败，请稍后再试')}
             });
         })
     },
@@ -50,15 +53,17 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         var dialog='#modal-reset'
         $(dialog+' input').val(''),
         $(dialog+' .ok').off('click').on('click', function(){
-            var req={password: $(dialog+' input').val().trim()};
-            if(req.password=='')general.showTip('请输入初始密码');
+            var req={};
+            Object.assign(req, item);
+            req.password = $(dialog+' input').val().trim();
+            if(req.password=='')global.showTip('请输入初始密码');
             else $.ajax({
                 url: global.getAPI(url+item.id+'/'),
                 contentType: "application/json",
                 method: 'patch',
                 data: JSON.stringify(req),
                 success: function(data){
-                    general.showTip('用户密码重置成功，请及时通知对方');
+                    global.showTip({word: '用户密码重置成功，请及时通知对方', danger: false});
                     $(dialog+' input').val(''),
                     $(dialog).modal('hide')
                 }
@@ -94,13 +99,13 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 if(button.hasClass('modify'))modifyGroup(item);
                 else if(button.hasClass('reset-password'))resetPwd(item);
                 else if(button.hasClass('delete'))
-                    general.dialog.deleteWarning('是否删除用户？', function(){
+                    global.dialog.deleteWarning('是否删除用户？', function(){
                         $.ajax({
                             url: general.getAPI(url+id+'/'),
                             contentType: "application/json",
                             method: 'delete',
                             success: function(data){
-                                general.showTip('用户删除成功');
+                                global.showTip({word: '用户删除成功', danger: false});
                                 dataTable.ajax.reload(),
                                 $('#detail').html('')
                             }
@@ -119,7 +124,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 categories = data.data;
                 var el=$('#modal-new select[name="category"]');
                 $.each(categories, function(i, item){
-                    el.append('<option value="'+item.id+'">'+item.name+'</option>')
+                    el.append('<option value="'+item.name+'">'+item.name+'</option>')
                 })
             }
         })
