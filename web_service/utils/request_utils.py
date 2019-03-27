@@ -89,8 +89,12 @@ class CustomDataSetPagination(LimitOffsetPagination):
     max_limit = 100
 
     def get_paginated_response(self, data):
+        draw = -1
+        if 'query' in self.request.query_params:
+            from json import loads
+            draw = loads(self.request.query_params['query'])['draw']
         return Response(OrderedDict([
-            ('draw', self.request.query_params.get('draw', 0)),
+            ('draw', draw),
             ('count', self.count),
             ('recordsFiltered', self.count),
             ('recordsTotal', self.count),

@@ -15,10 +15,11 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     # category = serializers.PrimaryKeyRelatedField(queryset=UserCategory.objects.all())
     category = CategorySerializer()
 
-    email = serializers.EmailField(source='auth.email')
+    email = serializers.EmailField(source='auth.email', allow_blank=True)
     username = serializers.CharField(source='auth.username')
     fullname = serializers.CharField(source='auth.last_name')
     password = serializers.CharField(source='auth.password', write_only=True, allow_null=True, allow_blank=True)
+    enable_tasks = serializers.CharField(allow_blank=True)
 
     # 重置用户密码
     @staticmethod
