@@ -195,7 +195,9 @@ class TaskOpt:
                 if status == 'running':
                     task.start_time = datetime.datetime.now()
                 task.status = status
+                lock.acquire()
                 db_session.commit()
+                lock.release()
             return True
 
         return False
@@ -262,7 +264,8 @@ class TaskAccountGroupOpt:
 
         return False
 
-
+import threading
+lock = threading.Lock()
 class JobOpt:
     @classmethod
     def save_job(cls, task_id, account_id, agent_id, track_id='', status='pending'):
@@ -273,8 +276,13 @@ class JobOpt:
         job.agent = agent_id
         job.status = status
         job.track_id = track_id
+        if status == 'running':
+            job.start_time = datetime.datetime.now()
+
         db_session.add(job)
+        lock.acquire()
         db_session.commit()
+        lock.release()
         return job
 
     @classmethod
@@ -322,7 +330,7 @@ class JobOpt:
                 # 第一次变成running的时间即启动时间
                 if status == 'running':
                     job.start_time = datetime.datetime.now()
-                if status in ['success', 'failure']:
+                if status in ['succeed', 'failed']:
                     job.end_time = datetime.datetime.now()
 
             job.result = result
@@ -389,11 +397,11 @@ class TaskCategoryOpt:
 
 class AgentOpt:
     @classmethod
-    def save_agent(cls, queue_name, area, status=0, config=''):
+    def save_agent(cls, area, queue_name='', status=0, config=''):
         agent = Agent()
-        agent.queue_name = queue_name
         agent.status = status
         agent.area = area
+        agent.queue_name = queue_name
         agent.config = config
         db_session.add(agent)
         db_session.commit()
@@ -491,14 +499,16 @@ def init_db_data():
                                                 'upgrade-insecure-requests': 1, 'accept-language:':'zh-CN,zh;q=0.9'}))
 
     # 创建任务
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2], name=u'养个号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2], name=u'养个号11', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3], name=u'养个号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=4, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'thumb', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
-    AgentOpt.save_agent('agent1_queue', 'Spanish', status=-1)
-    AgentOpt.save_agent('agent2_queue', 'China', status=0)
-    AgentOpt.save_agent('agent3_queue', 'Japan', status=2)
+    AgentOpt.save_agent('Spanish', status=-1)
+    AgentOpt.save_agent('China', status=0)
+    AgentOpt.save_agent('Japan', status=2)
+    AgentOpt.save_agent('North American', status=2)
 
 
 def show_test_data():
@@ -530,6 +540,11 @@ def show_test_data():
 if __name__ == '__main__':
     # init_db_data()
     show_test_data()
+    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3], name=u'养个号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    # TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    # TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    # TaskOpt.save_task(category_id=4, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'thumb', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
  # pipenv run python web_service/initialization/users/new_user.py
 

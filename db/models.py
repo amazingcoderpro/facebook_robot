@@ -105,16 +105,23 @@ class Task(Base):
     # 实际结束时间
     end_time = Column(DateTime(3), default=None)
 
-    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
-    configure = Column(String(2048), default='', server_default='')
-
-    result = Column(String(2048), default='', server_default='')
+    # 该task成功、失败的次数（针对周期性任务）
+    failed_counts = Column(Integer, default=0, server_default='0')
+    succeed_counts = Column(Integer, default=0, server_default='0')
 
     # 该任务最大执行次数（即成功的job次数），比如刷分，可以指定最大刷多少次
     limit_counts = Column(Integer, default=1, server_default='1')
 
     # 该任务最晚结束时间， 主要针对阶段性任务
     limit_end_time = Column(DateTime(3), default=None)
+
+    result = Column(String(2048), default='', server_default='')
+
+    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
+    configure = Column(String(2048), default='', server_default='')
+
+
+
 
     def accounts_list(self):
         return [acc.account for acc in self.accounts]
@@ -135,8 +142,6 @@ class Job(Base):
     # 一个任务加一个唯一的account构成一个job
     task = Column(Integer, ForeignKey('task.id'))
     account = Column(Integer, ForeignKey('account.id'))
-    # 这个job执行时被分配的id,用以在结果队列中跟踪job执行情况
-    track_id = Column(String(255), default='', server_default='', unique=True)
 
     # 这个任务被分配到了哪个agent上，用上计算agent的负载
     agent = Column(Integer, ForeignKey('agent.id'))
@@ -144,8 +149,14 @@ class Job(Base):
     # -1-pending, 0-failed, 1-succeed, 2-running
     # status = Column(Integer, default=-1, server_default='-1')
     status = Column(String(20), default='pending', server_default='pending')
+
+    # 这个job执行时被分配的id,用以在结果队列中跟踪job执行情况
+    track_id = Column(String(255), default='', server_default='', unique=True)
+
     start_time = Column(DateTime(3))
     end_time = Column(DateTime(3))
+
+    # job执行函数的返回值
     result = Column(String(2048), default='', server_default='')
     traceback = Column(String(2048), default='', server_default='')
 
@@ -250,7 +261,7 @@ class Agent(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # 该agent绑定的任务队列， job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
-    queue_name = Column(String(255))
+    queue_name = Column(String(255), default='', server_default='')
 
     # 0-idle, 1-normal, 2-busy, 3-disable
     # -1--disable, 大于零代表其忙碌值（即当前待处理的任务量）
