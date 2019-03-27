@@ -18,12 +18,12 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     email = serializers.EmailField(source='auth.email')
     username = serializers.CharField(source='auth.username')
     fullname = serializers.CharField(source='auth.last_name')
-    password = serializers.CharField(source='auth.password', write_only=True, allow_null=True)
+    password = serializers.CharField(source='auth.password', write_only=True, allow_null=True, allow_blank=True)
 
     # 重置用户密码
     @staticmethod
     def reset_password(instance, password):
-        if isinstance(instance, AuthUser) and password:
+        if isinstance(instance, AuthUser) and password and password != '':
             instance.set_password(password)
 
     # 创建用户
@@ -50,8 +50,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     
     # 更新用户
     def update(self, instance, validated_data):
-        print('validated_data:')
-        print(validated_data)
         # 处理目录
         if 'category' in validated_data:
             category_data = validated_data.pop('category')

@@ -28,15 +28,18 @@ define(['vue'], function(Vue) {
              el: '#tip',
              data: {
                 hide: true,
+                calloutDanger: true,
                 title: '提示！',
                 word: ''
              },
              methods: {
-                showTip (word, title) {
+                showTip (msg) {
                   clearTimeout(this.$options.timer);
-                  if(title)this.title=title;
-                  this.word = word,
+                  if(typeof msg == 'string')msg = {word: msg};
+                  if(msg.title)this.title=msg.title;
+                  this.word = msg.word,
                   this.hide = false,
+                  this.calloutDanger = typeof msg.danger == 'undefined' || msg.danger,
                   setTimeout(this.hideTip, 3000)
                 },
                 hideTip(){

@@ -299,7 +299,7 @@ table.dataTable tbody tr.selected {
                   <a href="#" class="btn btn-default btn-flat">Profile</a>
                 </div>
                 <div class="pull-right">
-                  <a href="/user/login" class="btn btn-default btn-flat">Sign out</a>
+                  <a href="/user/login" class="btn btn-default btn-flat">退出</a>
                 </div>
               </li>
             </ul>
@@ -347,19 +347,40 @@ table.dataTable tbody tr.selected {
             <i class="fa fa-pie-chart"></i> <span>控制台</span>
           </a>
         </li>
-        <li class="treeview" data-module="user">
-          <a href="#">
-            <i class="fa fa-book"></i>
-            <span>用户</span>
-            <span class="pull-right-container">
-              <i class="fa fa-angle-left pull-right"></i>
-            </span>
+        <li data-module="user">
+          <a href="/user/user/index">
+            <i class="fa fa-circle-o text-red"></i> <span>用户管理</span>
           </a>
-          <ul class="treeview-menu">
-            <li data-module="user"><a href="/user/user/"><i class="fa fa-circle-o"></i> 普通用户管理</a></li>
-            <li data-module="admin"><a href="/user/admin/"><i class="fa fa-circle-o"></i> 管理员管理</a></li>
-          </ul>
         </li>
+        <li data-module="vps">
+          <a href="/vps/index">
+            <i class="fa fa-laptop"></i> <span>VPS 管理</span>
+          </a>
+        </li>
+        <li data-module="account">
+          <a href="/account/index">
+            <i class="fa fa-th"></i> <span>社交账号管理</span>
+          </a>
+        </li>
+        <li data-module="task">
+          <a href="/task/index">
+            <i class="fa fa-files-o"></i> <span>任务管理</span>
+          </a>
+        </li>
+
+        <!--<li class="treeview" data-module="user">-->
+          <!--<a href="#">-->
+            <!--<i class="fa fa-book"></i>-->
+            <!--<span>用户</span>-->
+            <!--<span class="pull-right-container">-->
+              <!--<i class="fa fa-angle-left pull-right"></i>-->
+            <!--</span>-->
+          <!--</a>-->
+          <!--<ul class="treeview-menu">-->
+            <!--<li data-module="user"><a href="/user/user/"><i class="fa fa-circle-o"></i> 普通用户管理</a></li>-->
+            <!--<li data-module="admin"><a href="/user/admin/"><i class="fa fa-circle-o"></i> 管理员管理</a></li>-->
+          <!--</ul>-->
+        <!--</li>-->
       </ul>
     </section>
     <!-- /.sidebar -->
@@ -378,7 +399,7 @@ table.dataTable tbody tr.selected {
 
     <!-- Main content -->
     <section class="content">
-      <div id="tip" class="callout callout-danger hide" :class="{hide: hide}">
+      <div id="tip" class="callout hide" :class="{hide: hide, 'callout-info': !calloutDanger, 'callout-danger': calloutDanger}">
           <h4>{% templatetag openvariable%}title{% templatetag closevariable%}</h4>
           <p>{% templatetag openvariable%}word{% templatetag closevariable%}</p>
       </div>
