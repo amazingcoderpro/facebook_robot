@@ -352,35 +352,37 @@ table.dataTable tbody tr.selected {
             <i class="fa fa-circle-o text-red"></i> <span>用户管理</span>
           </a>
         </li>
-        <li data-module="vps">
-          <a href="/vps/index">
-            <i class="fa fa-laptop"></i> <span>VPS 管理</span>
+        <li class="treeview" data-module="vps">
+          <a href="#">
+            <i class="fa fa-laptop"></i>
+            <span>VPS 管理</span>
+            <span class="pull-right-container">
+              <i class="fa fa-angle-left pull-right"></i>
+            </span>
           </a>
+          <ul class="treeview-menu">
+            <li data-module="area"><a href="/vps/area"><i class="fa fa-circle-o"></i> VPS 所在地管理</a></li>
+            <li data-module="agent"><a href="/vps/index"><i class="fa fa-circle-o"></i> Agent 管理</a></li>
+          </ul>
         </li>
         <li data-module="account">
           <a href="/account/index">
             <i class="fa fa-th"></i> <span>社交账号管理</span>
           </a>
         </li>
-        <li data-module="task">
-          <a href="/task/index">
-            <i class="fa fa-files-o"></i> <span>任务管理</span>
+        <li class="treeview" data-module="task">
+          <a href="#">
+            <i class="fa fa-files-o"></i>
+            <span>任务管理</span>
+            <span class="pull-right-container">
+              <i class="fa fa-angle-left pull-right"></i>
+            </span>
           </a>
+          <ul class="treeview-menu">
+            <li data-module="category"><a href="/task/category"><i class="fa fa-circle-o"></i> 任务类型管理</a></li>
+            <li data-module="task"><a href="/task/index"><i class="fa fa-circle-o"></i> 任务管理</a></li>
+          </ul>
         </li>
-
-        <!--<li class="treeview" data-module="user">-->
-          <!--<a href="#">-->
-            <!--<i class="fa fa-book"></i>-->
-            <!--<span>用户</span>-->
-            <!--<span class="pull-right-container">-->
-              <!--<i class="fa fa-angle-left pull-right"></i>-->
-            <!--</span>-->
-          <!--</a>-->
-          <!--<ul class="treeview-menu">-->
-            <!--<li data-module="user"><a href="/user/user/"><i class="fa fa-circle-o"></i> 普通用户管理</a></li>-->
-            <!--<li data-module="admin"><a href="/user/admin/"><i class="fa fa-circle-o"></i> 管理员管理</a></li>-->
-          <!--</ul>-->
-        <!--</li>-->
       </ul>
     </section>
     <!-- /.sidebar -->
@@ -537,7 +539,7 @@ table.dataTable tbody tr.selected {
 </body>
 <script>
 	window.urlArgs = '{{static.main}}',
-	window.STATIC_PATH = '/static/',
+	window.STATIC_PATH = '/static/';
 	{% block globalVariable %}{% endblock %}
 	;
 	var payParams = "";

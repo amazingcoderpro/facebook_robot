@@ -104,6 +104,28 @@ class CustomDataSetPagination(LimitOffsetPagination):
         ]))
 
 
+# 搜索数据
+def search(request, queryset, filter):
+    if 'query' in request.query_params:
+        keyword = json.loads(request.query_params['query'])['search']['value'].strip()
+        if keyword != '':
+            return filter(queryset, keyword)
+    return queryset
+
+
+
+
+# 是否已经登陆权限
+class AuthPermission(permissions.BasePermission):
+    """
+    Auth permission check for common data.
+    """
+
+    def has_permission(self, request, view):
+        from users.common import user_by_token
+        return user_by_token(request)
+
+
 # 管理员权限
 class AdminPermission(permissions.BasePermission):
     """

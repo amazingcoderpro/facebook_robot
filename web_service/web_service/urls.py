@@ -1,21 +1,34 @@
 # -*- coding: utf-8 -*-
 
-from django.urls import path
 from django.conf.urls import url, include
-
 from rest_framework import routers
 
+from account.api.account.views import AccountViewSet
+from account.api.category.views import AccountCategoryViewSet
+from task.api.category.views import TaskCategoryViewSet
+from task.api.scheduler.views import SchedulerViewSet
+from task.api.task.views import TaskViewSet
 from users.api.category.views import UserCategoryViewSet
 from users.api.user.views import UserViewSet
-
-
+from vps.api.area.views import AreaViewSet
+from vps.api.views import AgentViewSet
 from web_service.views import render_page
-
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
+# vps
+router.register(r'area', AreaViewSet)
+router.register(r'agent', AgentViewSet)
+# 用户
 router.register(r'userCategories', UserCategoryViewSet)
 router.register(r'users', UserViewSet)
+# 社交账户
+router.register(r'accountCategories', AccountCategoryViewSet)
+router.register(r'account', AccountViewSet)
+# 任务
+router.register(r'taskCategories', TaskCategoryViewSet)
+router.register(r'taskSchedulers', SchedulerViewSet)
+router.register(r'task', TaskViewSet)
 
 urlpatterns = [
     # path('admin/', admin.site.urls),

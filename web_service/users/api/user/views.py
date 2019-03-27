@@ -4,12 +4,12 @@ from rest_framework import viewsets
 
 from users.api.user.serializers import UserSerializer
 from users.models import User
-from utils.request_utils import AdminPermission
+from utils.request_utils import AdminPermission, search
 
 
 # Created by: guangda.lee
 # Created on: 2019/3/25
-# Function: 用户目录视图
+# Function: 用户视图
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -29,12 +29,9 @@ class UserViewSet(viewsets.ModelViewSet):
         fullname = self.request.query_params.get('fullname', None)
         if fullname is not None:
             queryset = queryset.filter(auth__last_name__icontains=fullname)
-        if 'query' in self.request.query_params:
-            from json import loads
-            keyword = loads(self.request.query_params['query'])['search']['value'].strip()
-            if keyword != '':
-                from django.db.models import Q
-                queryset = queryset.filter(Q(auth__username=keyword)|Q(auth__email=keyword)|Q(auth__last_name__icontains=keyword))
+        from django.db.models import Q
+        queryset = search(self.request, queryset,
+                          lambda qs, keyword: qs.filter(Q(auth__username=keyword)|Q(auth__email__icontains=keyword)|Q(auth__last_name__icontains=keyword)))
         return queryset
 
     # 移除用户
