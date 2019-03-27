@@ -26,12 +26,15 @@ def schedule_job(scheduler_id, processor, inputs):
     if task_sch.mode == 0:
         aps_job = scheduler.add_job(dispatch_processor, args=(processor, inputs))
     elif task_sch.mode == 1:
-        aps_job = scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs))
+        aps_job = scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
+                                    misfire_grace_time=120, coalesce=False, max_instances=5)
     elif task_sch.mode == 2:
         dispatch_processor(processor, inputs)
-        aps_job = scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs))
+        aps_job = scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
+                                    misfire_grace_time=120, coalesce=False, max_instances=5)
     elif task_sch.mode == 3:
-        aps_job = scheduler.add_job(dispatch_processor, 'date', run_date=task_sch.date, args=(processor, inputs))
+        aps_job = scheduler.add_job(dispatch_processor, 'date', run_date=task_sch.date, args=(processor, inputs),
+                                    misfire_grace_time=120, coalesce=False, max_instances=5)
 
     return aps_job
 
@@ -42,16 +45,12 @@ def find_optimal_agent(account, agents=None):
         if not agents:
             return None
 
-    if account.active_ip:
-        for agent in agents:
-            if account.ip == agent.ip:
-                return agent
-    elif account.active_area:
+    if account.active_area:
         for agent in agents:
             if account.active_area == agent.area:
                 return agent
-    else:
-        return agents[0]
+
+    return None
 
 
 def process_task(task: Task) -> bool:
@@ -76,24 +75,27 @@ def process_task(task: Task) -> bool:
     # 一个任务会有多个账号， 按照账号对任务进行第一次拆分，针对每一个账号，启动一个定时任务，这样任务管理粒度更细，也更符合实际情况
     for account in task.accounts:
         agent = find_optimal_agent(account=account, agents=agents)
-        if not agent:
-            logger.warning('There have no optimal agent for task, task id={}, account id={}'.format(task_id, account.id))
-            continue
+        if agent:
+            agent_id = agent.id
+            agent_queue_name = agent.queue_name if agent.queue_name else agent.area.replace(' ', '_')
+        else:
+            logger.warning('There have no optimal agent for task, task id={}, account id={}, account_area={}'.format(task_id, account.id, account.active_area))
+            agent_id = None
+            agent_queue_name = 'default'
 
         # 构建任务执行必备参数
         inputs = {
             'task_id': task_id,
             'account_id': account.id,
-            'agent_id': agent.id,
+            'agent_id': agent_id,
             'account': account.account,
             'password': account.password,
-            'agent_queue_name': agent.queue_name,
+            'agent_queue_name': agent_queue_name,
             'task_configure': task_configure
         }
 
-        logger.info('Start scheduling job, task id={}, account id={}, scheduler id={}, '
-                    'processor={}, inputs={}, agent_id={}.'.format(
-                        task_id, account.id, scheduler_id, task_processor, inputs, agent.id))
+        logger.info('Start scheduling job, task id={}, account id={}, scheduler id={}, processor={}, agent_id={}.'.format(
+                        task_id, account.id, scheduler_id, task_processor, agent_id))
 
         aps_job = schedule_job(scheduler_id=scheduler_id, processor=task_processor, inputs=inputs)
 
@@ -101,6 +103,9 @@ def process_task(task: Task) -> bool:
         TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id,)  # next_run_time=aps_job.trigger.run_date
         logger.info('Scheduling job succeed, task id={}, account id={}, aps_job_id={}.'
                     .format(task_id, account.id, aps_job.id))
+    else:
+        logger.warning('Task has no accounts assigned. task id={}'.format(task_id))
+        return False
 
     return True
 
@@ -135,7 +140,6 @@ if __name__ == '__main__':
     if not isinstance(tasks, list):
         raise TypeError('tasks must be a list.')
     for t in tasks:
-        logger.info('process_task be called.')
         process_task(t)
 
     run()

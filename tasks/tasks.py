@@ -4,36 +4,52 @@
 # Function: 养号任务入口
 
 import time
+import random
 from .workers import app
 import scripts
 from celery import Task
 from config import logger
-from db.dao import JobOpt
+
 
 class BaseTask(Task):
-    # @classmethod
-    # def on_bound(cls, app):
-    #     logger.info('task is bound')
-    #     pass
-
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        logger.error('celery task on_failed, task_id={}, exception={}, exception info={}. '.format(task_id, exc, einfo))
-        JobOpt.set_job_by_track_id(task_id, status='failed', result=str(exec), traceback=str(einfo))
+        logger.error('celery task on_failed, task_id={}, args={}, kwargs={}, exception={}, exception info={}. '
+                     .format(task_id, args, kwargs, exc, einfo))
+
+        # self.update_state(task_id=task_id, state='failed', meta={'exc': exc, 'einfo': einfo, 'args': args, 'kwargs': kwargs, 'tt':123})
+        # JobOpt.set_job_by_track_id(task_id, status='failed', result=str(exec), traceback=str(einfo))
 
     def on_success(self, retval, task_id, args, kwargs):
         logger.info('celery task on_success, task_id={}, retval={}. '.format(task_id, retval))
-        JobOpt.set_job_by_track_id(task_id, status='succeed', result=str(retval))
+        # self.update_state(task_id=task_id, state='succeed', meta={'retval': retval, 'args': args, 'kwargs':kwargs, 'tt':456})
+        # JobOpt.set_job_by_track_id(task_id, status='succeed', result=str(retval))
 
-import random
+
+# 处理beat的定时任务, 暂不用
+# @app.task(ignore_result=True)
+# def execute_fb_auto_feed():
+#     inputs = {}
+#     app.send_task('tasks.tasks.fb_auto_feed', args=(inputs,),
+#                   queue='feed_account', routing_key='for_feed_account')
+
+
 @app.task(base=BaseTask, bind=True, max_retries=2, time_limit=30)
 def fb_auto_feed(self, inputs):
+    logger.info('fb_auto_feed task running')
 
-    time.sleep(1)
+    # time.sleep(3)
     # 更新任务状态为running
-    self.update_state(state="running")
-    time.sleep(4)
-    self.update_state(state="succeed")
-    return 1, 'success'
+    # self.update_state(state="running")
+
+    # do something here
+    time.sleep(15)
+
+    a = random.randint(1, 100)
+    if a % 2 == 0:
+        logger.exception('fb_auto_feed')
+        raise 1
+
+    return 1
 
     try:
         # 执行任务
@@ -42,36 +58,29 @@ def fb_auto_feed(self, inputs):
         logger.exception('fb_auto_feed catch exception.')
         self.retry(countdown=10 ** self.request.retries)
 
-    # self.update_state(state="succeed", meta={'result': res})
-    return res
-
-@app.task
-def fb_login(inputs):
-    pass
-
-
-# 处理beat的定时任务, 暂不用
-@app.task(ignore_result=True)
-def execute_fb_auto_feed():
-    inputs = {}
-    app.send_task('tasks.tasks.fb_auto_feed', args=(inputs,),
-                  queue='feed_account', routing_key='for_feed_account')
-
-
-@app.task(base=BaseTask)
-def fb_click_farming(inputs):
-    # 执行任务
-    time.sleep(2)
     return 1
 
-from celery import chain, signature
-r = chain(fb_auto_feed.s({}), fb_click_farming.s({}))
-r.apply_async()
 
-@app.task(bind=True)
-def fb_login(self, inputs):
-    self.update_state(state="running")
+@app.task(base=BaseTask, bind=True, max_retries=2, time_limit=30)
+def fb_click_farming(self, inputs):
+    logger.info('fb_click_farming task running')
 
-    # 执行任务
-    time.sleep(2)
-    self.update_state(state="succeed", meta={'progress': 100})
+    # time.sleep(3)
+    # 更新任务状态为running
+    # self.update_state(state="running")
+
+    # do something here
+    time.sleep(15)
+
+    a = random.randint(1, 100)
+    if a % 2 == 0:
+        logger.exception('fb_auto_feed')
+        raise 1
+
+    return 1
+
+
+# from celery import chain, signature
+# r = chain(fb_auto_feed.s({}), fb_click_farming.s({}))
+# r.apply_async()
+
