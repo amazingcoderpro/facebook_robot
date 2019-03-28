@@ -161,7 +161,7 @@ class TaskOpt:
         task.category = category_id
         task.creator = creator_id
         task.scheduler = scheduler_id
-
+        task.accounts_num = len(account_ids)
         for k, v in kwargs.items():
             if hasattr(task, k):
                 setattr(task, k, v)
@@ -170,6 +170,7 @@ class TaskOpt:
         db_session.commit()
 
         # task.accounts = account_ids   # account_ids只是id列表,不能赋值
+
         for acc_id in account_ids:
             tag = TaskAccountGroup()
             tag.task_id = task.id

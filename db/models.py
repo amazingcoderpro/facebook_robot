@@ -127,6 +127,9 @@ class Task(Base):
     # 该任务最大执行次数（即成功的job次数）,比如刷分,可以指定最大刷多少次
     limit_counts = Column(Integer, default=1, server_default='1')
 
+    # 该任务需要的账号数量
+    accounts_num = Column(Integer, default=0, server_default='0')
+
     result = Column(String(2048), default='', server_default='')
 
     # 这里保存任务的额外信息,以json字符形式保存,如post内容, 点赞规则, ads_code, keep time, 目标站点等
