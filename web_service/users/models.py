@@ -29,6 +29,7 @@ class User(models.Model):
 
     class Meta:
         db_table = 'user'
+        ordering = ('-id',)
 
     def __unicode__(self):
         return self.auth.username

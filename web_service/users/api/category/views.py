@@ -9,7 +9,7 @@ from utils.request_utils import AdminPermission
 
 # Created by: guangda.lee
 # Created on: 2019/3/25
-# Function: 用户目录视图
+# Function: 用户类型视图
 
 
 # ViewSets define the view behavior.
