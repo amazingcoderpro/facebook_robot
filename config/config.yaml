@@ -4,6 +4,7 @@ redis:
     password: 'charles'
     broker: 5                    # broker for celery
     backend: 6                   # backed for celery
+    cache: 1
 
 db:
     host: 10.252.252.67 #127.0.0.1 #

@@ -3,11 +3,10 @@
 # Created by Charles on 19-3-16
 # Function: 
 
-
+import threading
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-
 from config import get_db_args
 
 
@@ -26,6 +25,6 @@ Base = declarative_base()
 Session = sessionmaker(bind=engine)
 db_session = Session()
 metadata = MetaData(get_engine())
+db_lock = threading.RLock()
 
-
-__all__ = ['engine', 'Base', 'db_session', 'metadata']
+__all__ = ['engine', 'Base', 'db_session', 'metadata', 'db_lock']

@@ -5,10 +5,12 @@
 
 
 import time
+import json
 from apscheduler.schedulers.background import BackgroundScheduler
-from db import Task, TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt
+from db import Task, TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt, JobOpt
 from tasks.processor import dispatch_processor
 from config import logger
+from util import RedisOpt
 
 
 scheduler = BackgroundScheduler()
@@ -123,8 +125,56 @@ def dispatch_test():
         time.sleep(600)
 
 
+def save_jobs():
+    jobs = RedisOpt.pop_all(key='job_list', is_delete=True)
+    job_num = len(jobs)
+    last_job_num = RedisOpt.read_object('total_job')
+    total_jobs_num = job_num+int(last_job_num) if last_job_num != -1 else job_num
+    RedisOpt.write_object(key='total_job', value=total_jobs_num)
+    logger.info('save_jobs total number={}'.format(total_jobs_num))
+
+    if jobs:
+        jobs = [json.loads(job) for job in jobs]
+        JobOpt.save_jobs(jobs)
+
+
+def update_results():
+    results = RedisOpt.pop_all_backend(pattern='celery-task-meta*', is_delete=True)
+    results_num = len(results)
+    last_results_num = RedisOpt.read_object('total_num')
+    total_result_num = results_num+int(last_results_num) if last_results_num != -1 else results_num
+    RedisOpt.write_object(key='total_num', value=total_result_num)
+    logger.info('update_results total number={}'.format(total_result_num))
+
+    status_map = {'SUCCESS': 'succeed', 'FAILURE': 'failed', 'PENDING': 'pending', 'RUNNING': 'running'}
+    track_ids = []
+    values = {}
+    for res in results:
+        dict_res = json.loads(res)
+        status = dict_res.get('status')
+        track_id = dict_res.get('task_id', '')
+        job_res = dict_res.get('result', '')
+        job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
+
+        track_ids.append(track_id)
+        values[track_id] = {
+            'track_id': track_id,
+            'status': status_map.get(status, status),
+            'result': job_res,
+            'traceback': str(dict_res.get('traceback', ''))
+        }
+
+    return JobOpt.set_job_by_track_ids(track_ids=track_ids, values=values)
+
+
 def run():
     try:
+        RedisOpt.clean_cache_db()
+        RedisOpt.clean_backend_db()
+        # RedisOpt.clean_broker_db()
+
+        save_job = scheduler.add_job(save_jobs, 'interval', seconds=60, misfire_grace_time=10, max_instances=5)
+        update_job = scheduler.add_job(update_results, 'interval', seconds=60, misfire_grace_time=20, max_instances=5)
         scheduler.start()
         logger.info('Start scheduling.')
         while True:

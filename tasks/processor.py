@@ -3,10 +3,11 @@
 # Created by Charles on 19-3-20
 # Function: 任务的处理器，任务经由各处理器再发往任务队列, 处理器会被定时程序调用
 
-
+import json
 from .workers import app
 from db import TaskOpt, JobOpt
 from config import logger
+from util import RedisOpt
 
 # TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed')
 # TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming')
@@ -68,8 +69,11 @@ def dispatch_processor(processor_name: str, inputs: dict)->bool:
         import time
         # time.sleep(1)
 
+        import datetime
+        # JobOpt.save_job(task_id, account_id, agent_id=agent_id, track_id=track.id, status='running')
+        job_dict = {'task': task_id, 'account': account_id, 'agent': agent_id, 'status': 'running', 'track_id': track.id}
 
-        JobOpt.save_job(task_id, account_id, agent_id=agent_id, track_id=track.id, status='running')
+        RedisOpt.push_object('job_list', json.dumps(job_dict))
         # try:
         #     track.get(on_message=on_task_message, propagate=False, interval=1, timeout=1)
         # except Exception:
@@ -78,6 +82,7 @@ def dispatch_processor(processor_name: str, inputs: dict)->bool:
         # 任务被分解并分发到任务队列了
         # TaskOpt.set_task_status(task_id, status='running')
     else:
+        logger.error('can not dispatch processor by agent_queue_name')
         logger.error('can not dispatch processor by agent_queue_name')
         return False
 
