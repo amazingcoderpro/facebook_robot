@@ -10,7 +10,7 @@
 def random_string(length=32):
     from string import ascii_letters
     from random import randint
-    chars = ascii_letters + '~!@#$%^*()'
+    chars = ascii_letters + '~!@#$^*()'
     result = [chars[randint(0, len(chars) - 1)] for i in range(length)]
     return ''.join(result)
 

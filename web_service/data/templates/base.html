@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="/static/AdminLTE-2.4.10/bower_components/bootstrap/dist/css/bootstrap.min.css">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="/static/AdminLTE-2.4.10/bower_components/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/static/AdminLTE-2.4.10/bower_components/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
+  <link rel="stylesheet" href="/static/AdminLTE-2.4.10/plugins/timepicker/bootstrap-timepicker.min.css">
   <!-- Ionicons -->
   <link rel="stylesheet" href="/static/AdminLTE-2.4.10/bower_components/Ionicons/css/ionicons.min.css">
   <!-- jvectormap -->
@@ -40,6 +42,14 @@
 }
 table.dataTable tbody tr.selected {
     background-color: #B0BED9;
+}
+.form-control.w50{
+  display: inline-block;
+  width: 50%
+}
+.form-control.w30{
+  display: inline-block;
+  width: 30%
 }
   </style>
 </head>
@@ -299,7 +309,7 @@ table.dataTable tbody tr.selected {
                   <a href="#" class="btn btn-default btn-flat">Profile</a>
                 </div>
                 <div class="pull-right">
-                  <a href="/user/login" class="btn btn-default btn-flat">退出</a>
+                  <a href="#" class="btn btn-default btn-flat logout">退出</a>
                 </div>
               </li>
             </ul>
@@ -347,12 +357,12 @@ table.dataTable tbody tr.selected {
             <i class="fa fa-pie-chart"></i> <span>控制台</span>
           </a>
         </li>
-        <li data-module="user">
+        <li class="admin" data-module="user">
           <a href="/user/user/index">
             <i class="fa fa-circle-o text-red"></i> <span>用户管理</span>
           </a>
         </li>
-        <li class="treeview" data-module="vps">
+        <li class="admin" class="treeview" data-module="vps">
           <a href="#">
             <i class="fa fa-laptop"></i>
             <span>VPS 管理</span>
@@ -379,7 +389,7 @@ table.dataTable tbody tr.selected {
             </span>
           </a>
           <ul class="treeview-menu">
-            <li data-module="category"><a href="/task/category"><i class="fa fa-circle-o"></i> 任务类型管理</a></li>
+            <li class="admin" data-module="category"><a href="/task/category"><i class="fa fa-circle-o"></i> 任务类型管理</a></li>
             <li data-module="task"><a href="/task/index"><i class="fa fa-circle-o"></i> 任务管理</a></li>
           </ul>
         </li>
@@ -529,6 +539,8 @@ table.dataTable tbody tr.selected {
 <script src="/static/AdminLTE-2.4.10/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="/static/AdminLTE-2.4.10/bower_components/datatables.net/js/jquery.dataTables.min.js"></script>
 <script src="/static/AdminLTE-2.4.10/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+<script src="/static/AdminLTE-2.4.10/bower_components/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+<script src="/static/AdminLTE-2.4.10/plugins/timepicker/bootstrap-timepicker.min.js"></script>
 {% block js %}{% endblock %}
 <!-- FastClick -->
 <script src="/static/AdminLTE-2.4.10/bower_components/fastclick/lib/fastclick.js"></script>

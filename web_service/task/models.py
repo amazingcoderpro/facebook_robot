@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
+
 from django.db import models
 
-from users.models import User
 from account.models import Account
+from users.models import User
+
 
 # Created by guangda.lee on 19-03-19
 # Function:
@@ -15,7 +17,12 @@ class Scheduler(models.Model):
     # 执行模式： 0-立即执行（只执行一次）， 1-间隔执行并不立即开始（间隔一定时间后开始执行，并按设定的间隔周期执行下去） 2-间隔执行，但立即开始， 3-定时执行，指定时间执行
     mode = models.IntegerField(default=0)
     interval = models.IntegerField(default=600)       # 间隔时长， 单位秒
-    date = models.DateTimeField(default=datetime.min)       # 定时执行时需要指定，如2019-03-31 13:30:30
+    # 作用有二：
+    # 1作为定时间任务的执行时间, 仅mode=3时有效
+    # 2作为周期任务的首次启动时间, 仅mode=1时有效
+    start_date = models.DateTimeField(null=True)  # default=datetime.min)
+    # 该任务的终止时间
+    end_date = models.DateTimeField(null=True)  # default=datetime.min)       # 定时执行时需要指定，如2019-03-31 13:30:30
 
     def __unicode__(self):
         return (u'立即执行（只执行一次）',
@@ -60,20 +67,24 @@ class Task(models.Model):
     status = models.CharField(max_length=20, default='new')
     # 任务调度规则
     scheduler = models.ForeignKey(Scheduler, db_column='scheduler', on_delete=models.CASCADE)
+    # 调度线程id, 用以暂停、恢复、取消任务
+    aps_id = models.CharField(max_length=255, default='')
     # 一个任务同时占用多个账号
-    # accounts = models.ManyToManyField('Account')  # ,
-    # back_populates='parents')
+    accounts = models.ManyToManyField(Account, through='TaskAccountRelationship')
     # 第一次真正启动的时间
-    start_time = models.DateTimeField(default=datetime.min)
+    start_time = models.DateTimeField(null=True)
     # 实际结束时间
-    end_time = models.DateTimeField(default=datetime.min)
-    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
-    configure = models.CharField(max_length=2048, default='')
-    result = models.CharField(max_length=2048, default='')
+    end_time = models.DateTimeField(null=True)
+    # 该task成功、失败的次数（针对周期性任务）
+    failed_counts = models.IntegerField(default=0)
+    succeed_counts = models.IntegerField(default=0)
     # 该任务最大执行次数（即成功的job次数），比如刷分，可以指定最大刷多少次
     limit_counts = models.IntegerField(default=1)
-    # 该任务最晚结束时间， 主要针对阶段性任务
-    limit_end_time = models.DateTimeField(default=datetime.min)
+    # 该任务需要的账号数量
+    accounts_num = models.IntegerField(default=0)
+    result = models.CharField(max_length=2048, default='')
+    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
+    configure = models.CharField(max_length=2048, default='')
 
     # def accounts_list(self):
     #     return [acc.account for acc in self.taskaccountrelationship_set.all()]
