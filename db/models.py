@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-16
-# Function: 任务调度模块相关表结构定义， 可通过执得本脚本在数据库中直接创建或删除表
+# Function: 任务调度模块相关表结构定义, 可通过执得本脚本在数据库中直接创建或删除表
 
 
 from sqlalchemy import (
@@ -20,29 +20,41 @@ class User(Base):
     # name = Column(String(255), default='', server_default='')
     category = Column(Integer, ForeignKey('user_category.category'))
     token = Column(String(255), default='', server_default='')
-    # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id)， 以分号分割"1;2;3", 默认为空，代表可以创建所有类型的任务
+    # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id), 以分号分割"1;2;3", 默认为空,代表可以创建所有类型的任务
     enable_tasks = Column(String(255), default='', server_default='')
 
 
 class UserCategory(Base):
     __tablename__ = 'user_category'
-    # 用户身份，1-普通用户，2-管理员
+    # 用户身份,1-普通用户,2-管理员
     category = Column(Integer, primary_key=True)
-    name = Column(String(255))  # 类别名称，如普通用户，管理员...
+    name = Column(String(255))  # 类别名称,如普通用户,管理员...
     description = Column(String(255), default='', server_default='')
 
 
 class Scheduler(Base):
     __tablename__ = 'scheduler'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    # 执行模式： 0-立即执行（只执行一次）， 1-间隔执行并不立即开始（间隔一定时间后开始执行，并按设定的间隔周期执行下去） 2-间隔执行，但立即开始， 3-定时执行，指定时间执行
+    
+    # 执行模式： 
+    # 0-立即执行（只执行一次）, 
+    # 1-间隔执行并不立即开始（间隔一定时间后开始执行,并按设定的间隔周期执行下去）, 如果设置了start_date, 则从start_date指定的时间点开始执行 
+    # 2-间隔执行,但立即开始（执行多次）
+    # 3-定时执行,指定时间执行（执行一次）
     mode = Column(Integer, default=0, server_default='0')
-    interval = Column(Integer, default=600, server_default='0')       # 间隔时长， 单位秒
-    date = Column(DateTime(3))       # 定时执行时需要指定，如2019-03-31 13:30:30
+    interval = Column(Integer, default=600, server_default='0')       # 间隔时长, 单位秒
+
+    # 作用有二：
+    # 1作为定时间任务的执行时间, 仅mode=3时有效
+    # 2作为周期任务的首次启动时间, 仅mode=1时有效
+    start_date = Column(DateTime(3))
+
+    # 该任务的终止时间
+    end_date = Column(DateTime(3))
 
     def __repr__(self):
-        return "id:{}, mode:{}, interval:{}, date:{}. ".format(
-            self.id, self.mode, self.interval, self.date)
+        return "id:{}, mode:{}, interval:{}, start_date:{}, end_date:{}. ".format(
+            self.id, self.mode, self.interval, self.start_date, self.end_date)
 
 
 task_account_group_table = Table(
@@ -65,7 +77,7 @@ class TaskCategory(Base):
     任务类型表
     """
     __tablename__ = 'task_category'
-    # 1--fb自动养账号， 2-fb刷广告好评， 3- fb仅登录浏览， 4- fb点赞, 5- fb发表评论， 6- fb post状态, 7- fb 聊天， 8- fb 编辑个人信息， 未完待续...
+    # 1--fb自动养账号, 2-fb刷广告好评, 3- fb仅登录浏览, 4- fb点赞, 5- fb发表评论, 6- fb post状态, 7- fb 聊天, 8- fb 编辑个人信息, 未完待续...
     category = Column(Integer, primary_key=True)
     name = Column(String(255))
     processor = Column(String(255))  # 任务的处理函数名, 不能为空, 代码逻辑中将依赖这个函数名进行任务分发
@@ -74,18 +86,18 @@ class TaskCategory(Base):
 
 class Task(Base):
     """
-    任务表， 对用户层承现
+    任务表, 对用户层承现
     """
     __tablename__ = 'task'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), default='', server_default='')
 
-    # 任务类型， 0-养账号，1-刷好评,其他待续
+    # 任务类型, 0-养账号,1-刷好评,其他待续
     category = Column(Integer, ForeignKey('task_category.category'))
 
-    # 任务状态， -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing, new-新新，还没处理
+    # 任务状态, -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing, new-新建,还没处理, cancelled--取消了
     # status = Column(Integer, default=-1, server_default='-1')
-    # 任务状态改用字符串是为了直观， 避免前后端转换的麻烦
+    # 任务状态改用字符串是为了直观, 避免前后端转换的麻烦
     status = Column(String(20), default='new', server_default='new')
 
     # 任务的创建者
@@ -93,6 +105,9 @@ class Task(Base):
 
     # 任务调度规则
     scheduler = Column(Integer, ForeignKey('scheduler.id'))
+
+    # 调度线程id, 用以暂停、恢复、取消任务
+    aps_id = Column(String(255), default='', server_default='')
 
     # 一个任务同时占用多个账号
     accounts = relationship('Account',
@@ -109,19 +124,16 @@ class Task(Base):
     failed_counts = Column(Integer, default=0, server_default='0')
     succeed_counts = Column(Integer, default=0, server_default='0')
 
-    # 该任务最大执行次数（即成功的job次数），比如刷分，可以指定最大刷多少次
+    # 该任务最大执行次数（即成功的job次数）,比如刷分,可以指定最大刷多少次
     limit_counts = Column(Integer, default=1, server_default='1')
 
-    # 该任务最晚结束时间， 主要针对阶段性任务
-    limit_end_time = Column(DateTime(3), default=None)
+    # 该任务需要的账号数量
+    accounts_num = Column(Integer, default=0, server_default='0')
 
     result = Column(String(2048), default='', server_default='')
 
-    # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
+    # 这里保存任务的额外信息,以json字符形式保存,如post内容, 点赞规则, ads_code, keep time, 目标站点等
     configure = Column(String(2048), default='', server_default='')
-
-
-
 
     def accounts_list(self):
         return [acc.account for acc in self.accounts]
@@ -143,8 +155,8 @@ class Job(Base):
     task = Column(Integer, ForeignKey('task.id'))
     account = Column(Integer, ForeignKey('account.id'))
 
-    # 这个任务被分配到了哪个agent上，用上计算agent的负载
-    agent = Column(Integer, ForeignKey('agent.id'))
+    # 这个任务被分配到了哪个agent上,用以计算agent的负载
+    agent = Column(Integer, ForeignKey('agent.id'), default=None)
 
     # -1-pending, 0-failed, 1-succeed, 2-running
     # status = Column(Integer, default=-1, server_default='-1')
@@ -159,6 +171,12 @@ class Job(Base):
     # job执行函数的返回值
     result = Column(String(2048), default='', server_default='')
     traceback = Column(String(2048), default='', server_default='')
+
+    def dict2Job(self, job_dict):
+        for k, v in job_dict.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+        return self
 
     def __repr__(self):
         return "id:{}, task:{}, account:{}, start_time:{}, status:{}, result:{}. ".format(
@@ -184,10 +202,10 @@ class Job(Base):
 class Account(Base):
     __tablename__ = 'account'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    # 该账号所属类别，该账号所属类别，1--facebook账号，2--twitter账号， 3--Ins账号
+    # 该账号所属类别,该账号所属类别,1--facebook账号,2--twitter账号, 3--Ins账号
     category = Column(Integer, ForeignKey('account_category.category'))
 
-    # 每个账号都应该隶属于某个人员，以方便权限管理
+    # 每个账号都应该隶属于某个人员,以方便权限管理
     owner = Column(Integer, ForeignKey('user.id'))
     account = Column(String(255))
     password = Column(String(255))
@@ -197,7 +215,7 @@ class Account(Base):
     email_pwd = Column(String(255), default='', server_default='')
     phone_number = Column(String(100), default='', server_default='')
 
-    # 0-女，1-男
+    # 0-女,1-男
     gender = Column(Integer, default=0, server_default='0')
     # 生日格式"1990-3-21"
     birthday = Column(String(100), default='', server_default='')
@@ -209,10 +227,10 @@ class Account(Base):
     # 0-valid, 1-invalid, 2-verify, 3-other
     status = Column(String(20), default='valid', server_default='valid')
 
-    # 是否正在被某任务使用 0-未使用， 大于1代表正在被使用，数字代表并发使用数
+    # 是否正在被某任务使用 0-未使用, 大于1代表正在被使用,数字代表并发使用数
     using = Column(Integer, default=0, server_default='0')
 
-    # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id)， 以分号分割"1;2;3", 默认为空，代表可以创建所有类型的任务
+    # 记录该用户可以创建的[任务类型id]列表(TaskCategory.id), 以分号分割"1;2;3", 默认为空,代表可以创建所有类型的任务
     enable_tasks = Column(String(255), default='', server_default='')
 
     # 存放用户profile文件
@@ -230,7 +248,7 @@ class Account(Base):
     active_area = Column(String(255), default='', server_default='')
     # 常用浏览器指纹
     active_browser = Column(String(2048), default='', server_default='')
-    # 一个账号有可能同是被多个任务占用，逻辑上是可以的， 但实际操作上应该尽量避免此种情况，以规避多IP同时登录带来的封号风险
+    # 一个账号有可能同是被多个任务占用,逻辑上是可以的, 但实际操作上应该尽量避免此种情况,以规避多IP同时登录带来的封号风险
     tasks = relationship("Task", secondary=task_account_group_table)  # ,back_populates='children')
 
     # 账号的其他非常规配置信息
@@ -251,7 +269,7 @@ class AccountCategory(Base):
     账号类型表
     """
     __tablename__ = 'account_category'
-    # 该账号所属类别，1--facebook账号，2--twitter账号， 3--Ins账号
+    # 该账号所属类别,1--facebook账号,2--twitter账号, 3--Ins账号
     category = Column(Integer, primary_key=True)
     name = Column(String(255), default='', server_default='')
 
@@ -260,7 +278,7 @@ class Agent(Base):
     __tablename__ = 'agent'
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # 该agent绑定的任务队列， job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
+    # 该agent绑定的任务队列, job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
     queue_name = Column(String(255), default='', server_default='')
 
     # 0-idle, 1-normal, 2-busy, 3-disable

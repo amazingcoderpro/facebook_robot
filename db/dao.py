@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-16
-# Function: 对所有数据库表常用操作进行封装， 降低其他模块与数据操作之间的耦合
+# Function: 对所有数据库表常用操作进行封装, 降低其他模块与数据操作之间的耦合
 
 
 import datetime
 from sqlalchemy import or_, and_
-from db.basic import db_session
+from db.basic import db_session, db_lock
 from db.models import (Scheduler, Account, User, Task, TaskAccountGroup,
                        Job, TaskCategory, UserCategory, AccountCategory, Agent)
 
@@ -16,11 +16,12 @@ class SchedulerOpt:
     Scheduler表处理类
     """
     @classmethod
-    def save_scheduler(cls, mode=0, interval=0, date=datetime.datetime.now()):
+    def save_scheduler(cls, mode=0, interval=0, start_date=datetime.datetime.now(), end_date=None):
         sch = Scheduler()
         sch.mode = mode
         sch.interval = interval
-        sch.date = date
+        sch.start_date = start_date
+        sch.end_date = end_date
         db_session.add(sch)
         db_session.commit()
         return sch
@@ -140,7 +141,7 @@ class TaskOpt:
     @classmethod
     def get_all_need_restart_task(cls):
         """
-        主要用于服务器宕机后重新启动时获取所有需要启动的任务，包括pending状态和running状态的
+        主要用于服务器宕机后重新启动时获取所有需要启动的任务,包括pending状态和running状态的
         :return:
         """
         return db_session.query(Task).filter(or_(Task.status == 'new', Task.status == 'pending', Task.status == 'running')).all()
@@ -160,7 +161,7 @@ class TaskOpt:
         task.category = category_id
         task.creator = creator_id
         task.scheduler = scheduler_id
-
+        task.accounts_num = len(account_ids)
         for k, v in kwargs.items():
             if hasattr(task, k):
                 setattr(task, k, v)
@@ -168,7 +169,8 @@ class TaskOpt:
         db_session.add(task)
         db_session.commit()
 
-        # task.accounts = account_ids   # account_ids只是id列表，不能赋值
+        # task.accounts = account_ids   # account_ids只是id列表,不能赋值
+
         for acc_id in account_ids:
             tag = TaskAccountGroup()
             tag.task_id = task.id
@@ -195,9 +197,9 @@ class TaskOpt:
                 if status == 'running':
                     task.start_time = datetime.datetime.now()
                 task.status = status
-                lock.acquire()
+                db_lock.acquire()
                 db_session.commit()
-                lock.release()
+                db_lock.release()
             return True
 
         return False
@@ -264,8 +266,7 @@ class TaskAccountGroupOpt:
 
         return False
 
-import threading
-lock = threading.Lock()
+
 class JobOpt:
     @classmethod
     def save_job(cls, task_id, account_id, agent_id, track_id='', status='pending'):
@@ -280,10 +281,26 @@ class JobOpt:
             job.start_time = datetime.datetime.now()
 
         db_session.add(job)
-        lock.acquire()
+        db_lock.acquire()
         db_session.commit()
-        lock.release()
+        db_lock.release()
         return job
+
+    @classmethod
+    def save_jobs(cls, jobs):
+        for job in jobs:
+            if isinstance(job, dict):
+                job = Job().dict2Job(job)
+
+            if job.status == 'running':
+                job.start_time = datetime.datetime.now()
+
+            db_session.add()
+
+        db_lock.acquire()
+        db_session.commit()
+        db_lock.release()
+        return True
 
     @classmethod
     def add_job(cls, job):
@@ -340,6 +357,31 @@ class JobOpt:
             return True
 
         return False
+
+    @classmethod
+    def set_job_by_track_ids(cls, track_ids, values):
+        db_lock.acquire()
+        jobs = db_session.query(Job).filter(Job.track_id.in_(track_ids)).all()
+        db_lock.release()
+        for job in jobs:
+            value = values.get(job.track_id, {})
+            new_status = value.get('status')
+            new_result = value.get('result', '')
+            new_traceback = value.get('traceback', '')
+            if job.status != new_status:
+                # 第一次变成running的时间即启动时间
+                if new_status == 'running':
+                    job.start_time = datetime.datetime.now()
+                if new_status in ['succeed', 'failed']:
+                    job.end_time = datetime.datetime.now()
+
+            job.result = new_result
+            job.traceback = new_traceback
+            job.status = new_status
+        db_lock.acquire()
+        db_session.commit()
+        db_lock.release()
+        return True
 
     @classmethod
     def set_job_result(cls, job_id, result):
@@ -425,12 +467,12 @@ class AgentOpt:
 
 def init_db_data():
     """
-    初始化各表基础配置数据，用于环境测试等
+    初始化各表基础配置数据,用于环境测试等
     :return:
     """
     # 初始化用户类别表
-    # UserCategoryOpt.save_user_category(category=1, name='普通用户', description='可以创建部分或所有类型任务，但无权修改服务器资源')
-    # UserCategoryOpt.save_user_category(category=2, name='管理员', description='可创建所有类型任务， 且可以管理服务器资源、修改服务器配置等')
+    # UserCategoryOpt.save_user_category(category=1, name='普通用户', description='可以创建部分或所有类型任务,但无权修改服务器资源')
+    # UserCategoryOpt.save_user_category(category=2, name='管理员', description='可创建所有类型任务, 且可以管理服务器资源、修改服务器配置等')
 
     # 增加测试用户
     # UserOpt.save_user(account='user1', password='user1', category=1, enable_tasks='1;2;3', name='张三')
@@ -439,7 +481,7 @@ def init_db_data():
 
 
     # 初始化任务类别表
-    # 1--fb自动养账号， 2-fb刷广告好评， 3- fb仅登录浏览， 4- fb点赞, 5- fb发表评论， 6- fb post状态, 7- fb 聊天， 8- fb 编辑个人信息， 未完待续...
+    # 1--fb自动养账号, 2-fb刷广告好评, 3- fb仅登录浏览, 4- fb点赞, 5- fb发表评论, 6- fb post状态, 7- fb 聊天, 8- fb 编辑个人信息, 未完待续...
     TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed')
     TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming')
     TaskCategoryOpt.save_task_category(category=3, name=u'facebook登录浏览', processor='fb_login')
@@ -450,18 +492,18 @@ def init_db_data():
     TaskCategoryOpt.save_task_category(category=8, name=u'facebook编辑个人信息', processor='fb_edit')
 
     # 初始化账号类别表
-    # 该账号所属类别，1--facebook账号，2--twitter账号， 3--Ins账号
+    # 该账号所属类别,1--facebook账号,2--twitter账号, 3--Ins账号
     AccountCategoryOpt.save_account_category(category=1, name=u'Facebook账号')
     AccountCategoryOpt.save_account_category(category=2, name=u'Twitter账号')
     AccountCategoryOpt.save_account_category(category=3, name=u'Instagram账号')
 
 
     # 增加任务计划
-    # category: 0-立即执行（只执行一次）， 1-间隔执行并不立即开始（间隔一定时间后开始执行，并按设定的间隔周期执行下去） 2-间隔执行，但立即开始， 3-定时执行，指定时间执行
+    # category: 0-立即执行（只执行一次）, 1-间隔执行并不立即开始（间隔一定时间后开始执行,并按设定的间隔周期执行下去） 2-间隔执行,但立即开始, 3-定时执行,指定时间执行
     SchedulerOpt.save_scheduler(mode=0)
     SchedulerOpt.save_scheduler(mode=1, interval=600)
     SchedulerOpt.save_scheduler(mode=2, interval=900)
-    SchedulerOpt.save_scheduler(mode=3, date=datetime.datetime.now()+datetime.timedelta(hours=5))
+    SchedulerOpt.save_scheduler(mode=3, start_date=datetime.datetime.now()+datetime.timedelta(hours=5))
 
 
 
@@ -538,13 +580,20 @@ def show_test_data():
 
 
 if __name__ == '__main__':
-    # init_db_data()
+    init_db_data()
     show_test_data()
-    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3], name=u'养个号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    # TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    # TaskOpt.save_task(category_id=3, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    # TaskOpt.save_task(category_id=4, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'thumb', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+
+    # for a in range(10000):
+    #     AccountOpt.save_account(account='yorkeru997a@outlook.com'+str(a),
+    #                         password='Ogec1eOAFA', owner=3, category=1,
+    #                         email='yorkeru997a@outlook.com', email_pwd='u3KLKTXye',
+    #                         gender=0, birthday='1986-5-21', profile_id='alana.williamson.1401',
+    #                         name='Alana Williamson', register_time='2017-9-2', active_area='Spanish',
+    #                         active_browser=str({'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36',
+    #                                             'upgrade-insecure-requests': 1, 'accept-language:':'zh-CN,zh;q=0.9'}))
+
+
+    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
  # pipenv run python web_service/initialization/users/new_user.py
 
