@@ -5,7 +5,7 @@
 
 import json
 from .workers import app
-from db import TaskOpt, JobOpt
+from db import JobOpt
 from config import logger
 from util import RedisOpt
 
@@ -50,7 +50,7 @@ def dispatch_processor(processor_name: str, inputs: dict)->bool:
     :return:
     """
     logger.info('dispatch_processor, processor_name={}'.format(dispatch_processor))
-    agent_queue_name = inputs.get('agent_queue_name', '')
+    agent_queue_name = inputs.get('agent_queue_name', 'default')
     task_id = inputs.get('task_id', '')
     account_id = inputs.get('account_id', '')
     agent_id = inputs.get('agent_id', '')
@@ -60,17 +60,15 @@ def dispatch_processor(processor_name: str, inputs: dict)->bool:
 
     if agent_queue_name:
         celery_task_name = PROCESSOR_MAP.get(processor_name)
+        logger.info('dispatch_processor, send task name={}, queue={}, task id={}, account id={}'.format(celery_task_name, agent_queue_name, task_id, account_id))
         track = app.send_task(
             celery_task_name,
             args=(inputs, ),
             queue=agent_queue_name,
             routing_key=agent_queue_name
         )
-        import time
-        # time.sleep(1)
 
-        import datetime
-        # JobOpt.save_job(task_id, account_id, agent_id=agent_id, track_id=track.id, status='running')
+        JobOpt.save_job(task_id, account_id, agent_id=agent_id, track_id=track.id, status='running')
         job_dict = {'task': task_id, 'account': account_id, 'agent': agent_id, 'status': 'running', 'track_id': track.id}
 
         RedisOpt.push_object('job_list', json.dumps(job_dict))

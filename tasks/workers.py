@@ -32,6 +32,8 @@ app.conf.update(
     CELERY_ACCEPT_CONTENT=['json'],
     CELERY_TASK_SERIALIZER='json',
     CELERY_RESULT_SERIALIZER='json',
+    # CELERYD_MAX_TASKS_PER_CHILD=2,
+    # CELERYD_TASK_SOFT_TIME_LIMIT=99999,
     CELERY_QUEUES=(
         Queue('default', exchange=Exchange('default', type='direct'),
               routing_key='default'),

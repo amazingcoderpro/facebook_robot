@@ -5,15 +5,17 @@
 
 
 import time
+import datetime
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.base import JobLookupError
 from db import Task, TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt, JobOpt
 from tasks.processor import dispatch_processor
 from config import logger
 from util import RedisOpt
 
 
-scheduler = BackgroundScheduler()
+g_bk_scheduler = BackgroundScheduler()
 
 
 def schedule_job(scheduler_id, processor, inputs):
@@ -22,21 +24,28 @@ def schedule_job(scheduler_id, processor, inputs):
 
     # 根据任务计划模式的不同启动不同的定时任务
     # 执行模式：
-    # 0 - 立即执行（只执行一次）， 1 - 间隔执行并不立即开始（间隔一定时间后开始执行，并按设定的间隔周期执行下去）
-    # 2 - 间隔执行，但立即开始， 3 - 定时执行，指定时间执行
-    dispatch_processor(processor, inputs)
+    # 0 - 立即执行（只执行一次）, 此时会忽略start_date,end_date参数
+    # 1 - 间隔执行并不立即开始（默认是间隔interval秒时间后开始执行，并按设定的间隔周期执行下去, 若指定start_date,则 在指定的start_date时间开始周期执行
+    # 2 - 间隔执行且立即开始, 此时会忽略start_date, 直接开始周期任务, 直到达到task指定的次数，或者到达end_date时间结束
+    # 3 - 定时执行,指定时间执行, 此时必须要指定start_date, 将在start_date时间执行一次
+    # dispatch_processor(processor, inputs)
     if task_sch.mode == 0:
-        aps_job = scheduler.add_job(dispatch_processor, args=(processor, inputs))
+        aps_job = g_bk_scheduler.add_job(dispatch_processor, args=(processor, inputs))
     elif task_sch.mode == 1:
-        aps_job = scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
-                                    misfire_grace_time=120, coalesce=False, max_instances=5)
+        if task_sch.start_date and task_sch.start_date > datetime.datetime.now():
+            aps_job = g_bk_scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval,
+                                             start_date=task_sch.start_date, args=(processor, inputs),
+                                             misfire_grace_time=120, coalesce=False, max_instances=5)
+        else:
+            aps_job = g_bk_scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
+                                             misfire_grace_time=120, coalesce=False, max_instances=5)
     elif task_sch.mode == 2:
         dispatch_processor(processor, inputs)
-        aps_job = scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
-                                    misfire_grace_time=120, coalesce=False, max_instances=5)
+        aps_job = g_bk_scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
+                                         misfire_grace_time=120, coalesce=False, max_instances=5)
     elif task_sch.mode == 3:
-        aps_job = scheduler.add_job(dispatch_processor, 'date', run_date=task_sch.date, args=(processor, inputs),
-                                    misfire_grace_time=120, coalesce=False, max_instances=5)
+        aps_job = g_bk_scheduler.add_job(dispatch_processor, 'date', run_date=task_sch.start_date, args=(processor, inputs),
+                                         misfire_grace_time=120, coalesce=False, max_instances=5)
 
     return aps_job
 
@@ -71,8 +80,9 @@ def process_task(task: Task) -> bool:
         return False
 
     logger.info(u'Start processing task, task id={}, task configure={}'.format(task_id, task.configure))
+
     # 一旦任务被加入到定时程序中，即等待分发执行
-    TaskOpt.set_task_status(task_id, 'pending')
+    TaskOpt.set_task_status(task_id, 'running')
 
     # 一个任务会有多个账号， 按照账号对任务进行第一次拆分，针对每一个账号，启动一个定时任务，这样任务管理粒度更细，也更符合实际情况
     for account in task.accounts:
@@ -102,7 +112,7 @@ def process_task(task: Task) -> bool:
         aps_job = schedule_job(scheduler_id=scheduler_id, processor=task_processor, inputs=inputs)
 
         # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复
-        TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id,)  # next_run_time=aps_job.trigger.run_date
+        TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id, status='running')  # next_run_time=aps_job.trigger.run_date
         logger.info('Scheduling job succeed, task id={}, account id={}, aps_job_id={}.'
                     .format(task_id, account.id, aps_job.id))
     else:
@@ -138,7 +148,55 @@ def save_jobs():
         JobOpt.save_jobs(jobs)
 
 
+def update_task_status():
+    running_tasks = TaskOpt.get_all_running_task()
+    for task in running_tasks:
+        failed_counts = task.failed_counts
+        succeed_counts = task.succeed_counts
+        jobs = JobOpt.get_jobs_by_task_id(task.id)
+        for j in jobs:
+            if j[0] == 'succeed':
+                succeed_counts += 1
+            else:
+                failed_counts += 1
+        task.succeed_counts = succeed_counts
+        task.failed_counts = failed_counts
+
+        sch = SchedulerOpt.get_scheduler(task.scheduler)
+        # 如果是一次性任务,只要所有job结果都返回了, task即结束
+        if sch.mode in [0, 3]:
+            if (task.failed_counts + task.succeed_counts) >= task.accounts_num:
+                if task.succeed_counts >= task.limit_counts:
+                    task.status = 'succeed'
+                else:
+                    task.status = 'failed'
+        # 对于周期性任务, 如果成功次数达到需求最大值, 或者时间达到终止时间, 则任务置为结束, 并从scheduler中移除所有的aps job
+        else:
+            if task.succeed_counts >= task.limit_counts:
+                task.status = 'succeed'
+                task.end_time = datetime.datetime.now()
+            elif sch.end_date and datetime.datetime.now() >= sch.end_date:
+                task.status = 'failed'
+            else:
+                pass
+
+        if task.status in ['succeed', 'failed']:
+            aps_ids = TaskAccountGroupOpt.get_aps_ids_by_task(task.id)
+            for aps_id in aps_ids:
+                try:
+                    g_bk_scheduler.remove_job(aps_id)
+                except JobLookupError:
+                    logger.warning('job have been removed. aps_id={}'.format(aps_id))
+
+            TaskAccountGroupOpt.set_aps_status_by_task(task_id=task.id, status='stopped')
+            task.end_time = datetime.datetime.now()
+
+
 def update_results():
+    """
+    根据backend中的值更新数据库中job的状态, 同时逆向更新task状态
+    :return:
+    """
     results = RedisOpt.pop_all_backend(pattern='celery-task-meta*', is_delete=True)
     results_num = len(results)
     last_results_num = RedisOpt.read_object('total_num')
@@ -149,22 +207,32 @@ def update_results():
     status_map = {'SUCCESS': 'succeed', 'FAILURE': 'failed', 'PENDING': 'pending', 'RUNNING': 'running'}
     track_ids = []
     values = {}
-    for res in results:
-        dict_res = json.loads(res)
-        status = dict_res.get('status')
-        track_id = dict_res.get('task_id', '')
-        job_res = dict_res.get('result', '')
-        job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
+    if results:
+        for res in results:
+            dict_res = json.loads(res)
+            status = status_map.get(dict_res.get('status'), dict_res.get('status'))
+            track_id = dict_res.get('task_id', '')
+            job_res = dict_res.get('result', '')
+            if isinstance(job_res, dict) and job_res.get('result', '') == 'failed':
+                status = 'failed'
 
-        track_ids.append(track_id)
-        values[track_id] = {
-            'track_id': track_id,
-            'status': status_map.get(status, status),
-            'result': job_res,
-            'traceback': str(dict_res.get('traceback', ''))
-        }
+            job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
+            track_ids.append(track_id)
+            values[track_id] = {
+                'track_id': track_id,
+                'status': status,
+                'result': job_res,
+                'traceback': str(dict_res.get('traceback', ''))
+            }
 
-    return JobOpt.set_job_by_track_ids(track_ids=track_ids, values=values)
+        res = JobOpt.set_job_by_track_ids(track_ids=track_ids, values=values)
+        logger.info('update_results update num={}, finished num={}. '.format(len(track_ids), len(res)))
+        if res:
+            for track_id in res:
+                RedisOpt.delete_backend('*{}'.format(track_id))
+
+        # 更新任务状态
+        update_task_status()
 
 
 def run():
@@ -173,15 +241,15 @@ def run():
         RedisOpt.clean_backend_db()
         # RedisOpt.clean_broker_db()
 
-        save_job = scheduler.add_job(save_jobs, 'interval', seconds=60, misfire_grace_time=10, max_instances=5)
-        update_job = scheduler.add_job(update_results, 'interval', seconds=60, misfire_grace_time=20, max_instances=5)
-        scheduler.start()
+        # save_job = scheduler.add_job(save_jobs, 'interval', seconds=20, misfire_grace_time=10, max_instances=5)
+        update_job = g_bk_scheduler.add_job(update_results, 'interval', seconds=15, misfire_grace_time=20, max_instances=5)
+        g_bk_scheduler.start()
         logger.info('Start scheduling.')
         while True:
             time.sleep(2)
     except (KeyboardInterrupt, SystemExit):
         logger.warning('Scheduler have been stopped.')
-        scheduler.shutdown()
+        g_bk_scheduler.shutdown()
 
 
 if __name__ == '__main__':
@@ -195,3 +263,10 @@ if __name__ == '__main__':
     run()
 
     # dispatch_test()
+"""
+update facebook.task set status='new' where id>0;
+update facebook.task set failed_counts=0 where id>0;
+update facebook.task set succeed_counts=0 where id>0;
+update facebook.task set start_time=null where id>0;
+update facebook.task set end_time=null where id>0;
+"""

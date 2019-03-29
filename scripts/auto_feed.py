@@ -72,7 +72,6 @@ def auto_feed(inputs):
         # driver.get(profile_url)
 
         time.sleep(5)
-        print("111")
 
 
         # 搜索

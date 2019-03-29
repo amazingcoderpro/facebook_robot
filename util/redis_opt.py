@@ -21,8 +21,6 @@ class RedisOpt:
 
     @classmethod
     def read_broker(cls, key):
-        print(cls.broker_db.llen(key))
-        print(cls.broker_db.keys())
         return cls.broker_db.lrange(key, 0, -1)
 
     @classmethod
@@ -30,7 +28,7 @@ class RedisOpt:
         return cls.backend_db.get(key)
 
     @classmethod
-    def pop_all_backend(cls, pattern='*', is_delete=True):
+    def pop_all_backend(cls, pattern='*', is_delete=False):
         results = []
         keys = cls.backend_db.keys(pattern)
         for key in keys:
@@ -38,6 +36,13 @@ class RedisOpt:
             if is_delete:
                 cls.backend_db.delete(key)
         return results
+
+    @classmethod
+    def delete_backend(cls, pattern='*'):
+        keys = cls.backend_db.keys(pattern)
+        for key in keys:
+            cls.backend_db.delete(key)
+
 
     @classmethod
     def push_object(cls, key, value):
@@ -69,8 +74,8 @@ class RedisOpt:
     @classmethod
     def clean_cache_db(cls):
         keys = cls.cache_db.keys()
-        if keys:
-            return cls.cache_db.delete(*keys)
+        for key in keys:
+            cls.cache_db.delete(key)
 
     @classmethod
     def clean_backend_db(cls):
