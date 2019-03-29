@@ -151,8 +151,8 @@ def save_jobs():
 def update_task_status():
     running_tasks = TaskOpt.get_all_running_task()
     for task in running_tasks:
-        failed_counts = task.failed_counts
-        succeed_counts = task.succeed_counts
+        failed_counts = 0
+        succeed_counts = 0
         jobs = JobOpt.get_jobs_by_task_id(task.id)
         for j in jobs:
             if j[0] == 'succeed':
