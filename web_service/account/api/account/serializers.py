@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from django.db import transaction
 from rest_framework import serializers
-from django.contrib.auth.models import User as AuthUser
-from account.models import AccountCategory, Account
+
 from account.api.category.serializers import CategorySerializer
+from account.models import Account
+
 
 # Created by: guangda.lee
 # Created on: 2019/3/27
@@ -17,14 +17,21 @@ class AccountSerializer(serializers.HyperlinkedModelSerializer):
 
     # 创建账户
     def create(self, validated_data):
+        from django.db import transaction
+        from django.core.exceptions import ObjectDoesNotExist
         with transaction.atomic():
             # 处理目录
-            category_data = validated_data.pop('category')
-            validated_data['category'] = CategorySerializer().create(category_data)
+            category = CategorySerializer().create(validated_data.pop('category'))
+            validated_data['category'] = category
             from users.common import user_by_token
-            validated_data['owner'] = user_by_token(self.context.get("request"))
-            return super(AccountSerializer, self).create(validated_data)
-    
+            owner = user_by_token(self.context.get("request"))
+            validated_data['owner'] = owner
+            try:
+                return Account.objects.get(category_id=category.category, owner=owner.id,
+                                           account=validated_data['account'])
+            except ObjectDoesNotExist:
+                return super(AccountSerializer, self).create(validated_data)
+
     # 更新账户
     def update(self, instance, validated_data):
         # 处理目录
@@ -50,3 +57,10 @@ class AccountSerializer(serializers.HyperlinkedModelSerializer):
                         'last_comment': {'read_only': True},
                         'last_edit': {'read_only': True}}
 
+
+# 导出账号序列化类
+class ExportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        titles = (u'账号', u'姓名', '邮件地址', u'手机号', 'Profile ID', u'状态',)
+        fields = ('account', 'name', 'email', 'phone_number', 'profile_id', 'status',)

@@ -15,6 +15,7 @@
             <div class="box-buttons" id="dataTableButtons">
                 <button type="button" class="btn btn-primary new" data-toggle="modal" data-target="#modal-new">新增</button>
                 <button type="button" class="btn btn-primary import" data-toggle="modal" data-target="#modal-import">导入</button>
+                <button type="button" class="btn btn-primary export">导出</button>
                 <button type="button" class="btn single-row delete">删除</button>
             </div>
             <!-- /.box-header -->
@@ -224,11 +225,11 @@
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">导入</h4>
+        <h4 class="modal-title">批量导入</h4>
       </div>
       <div class="modal-body">
         <div class="form-group">
-            <label></label>
+            <label>参考格式请点击“<a href="/static/raw/account_format.csv" target="_blank" style="color: white">下载</a>”</label>
             <input type="file" class="form-control" name="file" placeholder="请选择账号 csv 文件" accept=".csv">
         </div>
       </div>

@@ -8,6 +8,7 @@ from account.api.category.views import AccountCategoryViewSet
 from task.api.category.views import TaskCategoryViewSet
 from task.api.scheduler.views import SchedulerViewSet
 from task.api.task.views import TaskViewSet
+from task.api.task.account.views import TaskAccountViewSet
 from users.api.category.views import UserCategoryViewSet
 from users.api.user.views import UserViewSet
 from vps.api.area.views import AreaViewSet
@@ -29,6 +30,7 @@ router.register(r'account', AccountViewSet)
 router.register(r'taskCategories', TaskCategoryViewSet)
 router.register(r'taskSchedulers', SchedulerViewSet)
 router.register(r'task', TaskViewSet)
+router.register(r'task/(\d*?)/account', TaskAccountViewSet)
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
