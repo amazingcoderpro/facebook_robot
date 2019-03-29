@@ -258,6 +258,7 @@ def start(start_new=True, update_interval=30):
 
 
 if __name__ == '__main__':
+    clean_environment()
     start(start_new=False)
 
     # dispatch_test()

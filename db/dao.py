@@ -5,8 +5,7 @@
 
 
 import datetime
-from sqlalchemy import or_, and_
-from db.basic import db_session, db_lock, engine
+from db.basic import db_session, db_lock
 from db.models import (Scheduler, Account, User, Task, TaskAccountGroup,
                        Job, TaskCategory, UserCategory, AccountCategory, Agent)
 
