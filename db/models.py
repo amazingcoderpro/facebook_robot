@@ -61,10 +61,7 @@ task_account_group_table = Table(
     'task_account_group', Base.metadata,
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('task_id', Integer, ForeignKey("task.id")),
-    Column('account_id', Integer, ForeignKey("account.id")),
-    # 这个是在APScheduler中调度时的任务id, 用以暂停、重启、终止等 操作,一个任务+一个账号构成一个唯一的task
-    Column('aps_id', String(100)),
-    Column('status', String(20))
+    Column('account_id', Integer, ForeignKey("account.id"))
 )
 
 
@@ -107,9 +104,6 @@ class Task(Base):
     # 任务调度规则
     scheduler = Column(Integer, ForeignKey('scheduler.id'))
 
-    # 调度线程id, 用以暂停、恢复、取消任务
-    aps_id = Column(String(255), default='', server_default='')
-
     # 一个任务同时占用多个账号
     accounts = relationship('Account',
                             secondary=task_account_group_table)  # ,
@@ -132,6 +126,9 @@ class Task(Base):
     accounts_num = Column(Integer, default=0, server_default='0')
 
     result = Column(String(2048), default='', server_default='')
+
+    # 这个是在APScheduler中调度时的任务id 用以暂停、恢复、取消任务# 这个是在APScheduler中调度时的任务id
+    aps_id = Column(String(255), default='', server_default='')
 
     # 这里保存任务的额外信息,以json字符形式保存,如post内容, 点赞规则, ads_code, keep time, 目标站点等
     configure = Column(String(2048), default='', server_default='')
@@ -257,12 +254,12 @@ class Account(Base):
 
     def __repr__(self):
         return "id:{}, account:{}, password:{}, email={}, email_pwd:{}, gender:{}, birthday:{}, national_id:{}, " \
-               "register_time:{}, name:{}, profile_id:{}, status:{}, owner:{}, usage:{}, last_login:{}, last_post:{}, " \
-               "las_chat:{}, last_comment:{}, last_farming:{}, last_edit:{}, tasks:{}, profile_path:{}. ".format(
+               "register_time:{}, name:{}, profile_id:{}, status:{}, owner:{}, last_login:{}, last_post:{}, " \
+               "las_chat:{}, last_comment:{}, last_farming:{}, last_edit:{}, profile_path:{}. ".format(
                    self.id, self.account, self.password, self.email, self.email_pwd, self.gender, self.birthday,
                    self.national_id, self.register_time, self.name, self.profile_id, self.status, self.owner,
-                   self.usage, self.last_login, self.last_post, self.last_chat, self.last_comment, self.last_farming,
-                   self.last_edit, self.tasks, self.profile_path)
+                   self.last_login, self.last_post, self.last_chat, self.last_comment, self.last_farming,
+                   self.last_edit, self.profile_path)
 
 
 class AccountCategory(Base):

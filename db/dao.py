@@ -6,12 +6,22 @@
 
 import datetime
 from sqlalchemy import or_, and_
-from db.basic import db_session, db_lock
+from db.basic import db_session, db_lock, engine
 from db.models import (Scheduler, Account, User, Task, TaskAccountGroup,
                        Job, TaskCategory, UserCategory, AccountCategory, Agent)
 
 
-class SchedulerOpt:
+class BaseOpt:
+    db_session = None
+
+    def __init__(self, session=None):
+        if session:
+            BaseOpt.db_session = session
+        else:
+            BaseOpt.db_session = db_session
+
+
+class SchedulerOpt(BaseOpt):
     """
     Scheduler表处理类
     """
@@ -120,6 +130,12 @@ class AccountOpt:
     def get_account(cls, account_id):
         return db_session.query(Account).filter(Account.id == account_id).first()
 
+    @classmethod
+    def add_account_using_counts(cls, account_id):
+        acc = db_session.query(Account).filter(Account.id == account_id).first()
+        if acc:
+            acc.using += 1
+
 
 class TaskOpt:
     @classmethod
@@ -131,8 +147,8 @@ class TaskOpt:
         return db_session.query(Task).filter(Task.status == 'pending').all()
 
     @classmethod
-    def get_all_running_task(cls):
-        return db_session.query(Task).filter(Task.status == 'running').all()
+    def get_all_running_task(cls, session):
+        return session.query(Task).filter(Task.status == 'running').all()
 
     @classmethod
     def get_all_pausing_task(cls):
@@ -144,7 +160,7 @@ class TaskOpt:
         主要用于服务器宕机后重新启动时获取所有需要启动的任务,包括pending状态和running状态的
         :return:
         """
-        return db_session.query(Task).filter(or_(Task.status == 'new', Task.status == 'pending', Task.status == 'running')).all()
+        return db_session.query(Task).filter(Task.status.notin_(('succeed', 'failed', 'cancelled'))).all()
 
     @classmethod
     def get_all_succeed_task(cls):
@@ -170,12 +186,12 @@ class TaskOpt:
         db_session.commit()
 
         # task.accounts = account_ids   # account_ids只是id列表,不能赋值
-
         for acc_id in account_ids:
             tag = TaskAccountGroup()
             tag.task_id = task.id
             tag.account_id = acc_id
             db_session.add(tag)
+
         db_session.commit()
         return task
 
@@ -189,19 +205,23 @@ class TaskOpt:
         return False
 
     @classmethod
-    def set_task_status(cls, task_id, status):
-        task = db_session.query(Task).filter(Task.id == task_id).first()
+    def set_task_status(cls, session, task_id, status, aps_id=''):
+        if not session:
+            session = db_session
+        task = session.query(Task).filter(Task.id == task_id).first()
         if task:
             if task.status != status:
+                # 第一次变成pending, 即已经加入定时处理中, 可设置aps_id
+                if status == 'pending':
+                    task.aps_id = aps_id
                 # 第一次变成running的时间即启动时间
-                if status == 'running':
+                elif status == 'running':
                     task.start_time = datetime.datetime.now()
-                if status in ['succeed', 'failed']:
+                elif status in ['succeed', 'failed']:
                     task.end_time = datetime.datetime.now()
+
                 task.status = status
-                db_lock.acquire()
-                db_session.commit()
-                db_lock.release()
+                session.commit()
             return True
 
         return False
@@ -217,8 +237,18 @@ class TaskOpt:
         return False
 
     @classmethod
-    def get_task(cls, task_id):
-        return db_session.query(Task.scheduler).filter(Task.id == task_id).first()
+    def get_task_by_task_id(cls, session, task_id):
+        if session:
+            return session.query(Task).filter(Task.id == task_id).first()
+        else:
+            return db_session.query(Task).filter(Task.id == task_id).first()
+
+    @classmethod
+    def get_aps_ids_by_task_id(cls, task_id):
+        aps_id = db_session.query(Task.aps_id).filter(Task.id == task_id).first()
+        if aps_id:
+            return aps_id[0]
+        return ''
 
 
 class TaskAccountGroupOpt:
@@ -235,37 +265,6 @@ class TaskAccountGroupOpt:
             task_ids.append(t.task_id)
 
         return task_ids
-
-    @classmethod
-    def get_aps_ids_by_task(cls, task_id):
-        tags = db_session.query(TaskAccountGroup).filter(TaskAccountGroup.task_id == task_id).all()
-        ids = []
-        for t in tags:
-            ids.append(t.aps_id)
-
-        return ids
-
-    @classmethod
-    def get_aps_id(cls, task_id, account_id):
-        tag = db_session.query(TaskAccountGroup).filter(and_(TaskAccountGroup.task_id == task_id,
-                                                             TaskAccountGroup.account_id == account_id)).first()
-        if tag:
-            return tag.aps_id
-        else:
-            return None
-
-    @classmethod
-    def set_aps_info(cls, task_id, account_id, aps_id, status='running'):
-        # 更新apscheduler任务调度产生的id,用以暂停、重启一个子任务
-        tag = db_session.query(TaskAccountGroup).filter(and_(TaskAccountGroup.task_id == task_id,
-                                                             TaskAccountGroup.account_id == account_id)).first()
-        if tag:
-            tag.aps_id = aps_id
-            tag.status = status
-            db_session.commit()
-            return True
-
-        return False
 
     @classmethod
     def set_aps_status_by_task(cls, task_id, status):
@@ -286,7 +285,7 @@ class TaskAccountGroupOpt:
 
 class JobOpt:
     @classmethod
-    def save_job(cls, task_id, account_id, agent_id, track_id='', status='pending'):
+    def save_job(cls, session, task_id, account_id, agent_id, track_id='', status='pending'):
         # status-- -1-pending, 0-failed, 1-succeed, 2-running
         job = Job()
         job.task = task_id
@@ -297,10 +296,8 @@ class JobOpt:
         if status == 'running':
             job.start_time = datetime.datetime.now()
 
-        db_session.add(job)
-        db_lock.acquire()
-        db_session.commit()
-        db_lock.release()
+        session.add(job)
+        session.commit()
         return job
 
     @classmethod
@@ -329,9 +326,8 @@ class JobOpt:
         return False
 
     @classmethod
-    def get_jobs_by_task_id(cls, task_id):
-        return db_session.query(Job.status).filter(Job.task == task_id).all()
-
+    def get_jobs_by_task_id(cls, session, task_id):
+        return session.query(Job.status).filter(Job.task == task_id).all()
 
     @classmethod
     def get_jobs_by_agent_id(cls, agent_id, status='running'):
@@ -377,10 +373,8 @@ class JobOpt:
         return False
 
     @classmethod
-    def set_job_by_track_ids(cls, track_ids, values):
-        db_lock.acquire()
-        jobs = db_session.query(Job).filter(Job.track_id.in_(track_ids)).all()
-        db_lock.release()
+    def set_job_by_track_ids(cls, session, track_ids, values):
+        jobs = session.query(Job).filter(Job.track_id.in_(track_ids)).all()
 
         updated_track_ids = []
         for job in jobs:
@@ -399,9 +393,7 @@ class JobOpt:
                 job.result = new_result
                 job.traceback = new_traceback
                 job.status = new_status
-        db_lock.acquire()
-        db_session.commit()
-        db_lock.release()
+        session.commit()
         return updated_track_ids
 
     @classmethod
@@ -450,8 +442,8 @@ class TaskCategoryOpt:
         return [r[0] for r in res]
 
     @classmethod
-    def get_processor(cls, category):
-        tcg = db_session.query(TaskCategory.processor).filter(TaskCategory.category == category).first()
+    def get_processor(cls, session, category):
+        tcg = session.query(TaskCategory.processor).filter(TaskCategory.category == category).first()
         if tcg:
             return tcg[0]
         else:
@@ -479,11 +471,11 @@ class AgentOpt:
             return None
 
     @classmethod
-    def get_enable_agents(cls, status_order=True):
+    def get_enable_agents(cls, session, status_order=True):
         if status_order:
-            return db_session.query(Agent).filter(Agent.status != -1).order_by(Agent.status).all()
+            return session.query(Agent).filter(Agent.status != -1).order_by(Agent.status).all()
         else:
-            return db_session.query(Agent).filter(Agent.status != -1).all()
+            return session.query(Agent).filter(Agent.status != -1).all()
 
 
 def init_db_data():

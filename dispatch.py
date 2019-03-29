@@ -9,18 +9,27 @@ import datetime
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import JobLookupError
-from db import Task, TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt, JobOpt
-from tasks.processor import dispatch_processor
+from db import TaskOpt, TaskAccountGroupOpt, SchedulerOpt, JobOpt
+from tasks.processor import send_task_2_worker
 from config import logger
 from util import RedisOpt
+from db.basic import ScopedSession
 
 
 g_bk_scheduler = BackgroundScheduler()
 
 
-def schedule_job(scheduler_id, processor, inputs):
-
+def scheduler_task(scheduler_id, *args):
+    """
+    启动任务的定时处理程序
+    :param scheduler_id: 调度实例id
+    :param args: 透传参数
+    :return: 成功返回 APScheduler 任务id, 失败返回 None
+    """
     task_sch = SchedulerOpt.get_scheduler(scheduler_id)
+    if task_sch.end_date and task_sch.end_date <= datetime.datetime.now():
+        logger.warning('Task has expired, scheduler id={}, args={}'.format(scheduler_id, args))
+        return None
 
     # 根据任务计划模式的不同启动不同的定时任务
     # 执行模式：
@@ -30,93 +39,51 @@ def schedule_job(scheduler_id, processor, inputs):
     # 3 - 定时执行,指定时间执行, 此时必须要指定start_date, 将在start_date时间执行一次
     # dispatch_processor(processor, inputs)
     if task_sch.mode == 0:
-        aps_job = g_bk_scheduler.add_job(dispatch_processor, args=(processor, inputs))
+        aps_job = g_bk_scheduler.add_job(send_task_2_worker, args=args)
     elif task_sch.mode == 1:
         if task_sch.start_date and task_sch.start_date > datetime.datetime.now():
-            aps_job = g_bk_scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval,
-                                             start_date=task_sch.start_date, args=(processor, inputs),
+            aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval,
+                                             start_date=task_sch.start_date, args=args,
                                              misfire_grace_time=120, coalesce=False, max_instances=5)
         else:
-            aps_job = g_bk_scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
+            aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval, args=args,
                                              misfire_grace_time=120, coalesce=False, max_instances=5)
     elif task_sch.mode == 2:
-        dispatch_processor(processor, inputs)
-        aps_job = g_bk_scheduler.add_job(dispatch_processor, 'interval', seconds=task_sch.interval, args=(processor, inputs),
+        send_task_2_worker(args)
+        aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval, args=args,
                                          misfire_grace_time=120, coalesce=False, max_instances=5)
     elif task_sch.mode == 3:
-        aps_job = g_bk_scheduler.add_job(dispatch_processor, 'date', run_date=task_sch.start_date, args=(processor, inputs),
+        aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'date', run_date=task_sch.start_date, args=args,
                                          misfire_grace_time=120, coalesce=False, max_instances=5)
+    else:
+        logger.error('can not processing scheduler mode={}.'.format(task_sch.mode))
+        return None
 
     return aps_job
 
 
-def find_optimal_agent(account, agents=None):
-    if not agents:
-        agents = AgentOpt.get_enable_agents()
-        if not agents:
-            return None
-
-    if account.active_area:
-        for agent in agents:
-            if account.active_area == agent.area:
-                return agent
-
-    return None
-
-
-def process_task(task: Task) -> bool:
-    agents = AgentOpt.get_enable_agents(status_order=True)
-    if not agents:
-        logger.error('There have no available agent.')
+def start_task(task_id) -> bool:
+    """
+    启动任务
+    :param task_id: 任务id
+    :return: 成功返回True, 失败返回False
+    """
+    task = TaskOpt.get_task_by_task_id(None, task_id)
+    if not task:
+        logger.error('start_task can not find the task, id={}. '.format(task_id))
         return False
 
-    task_id = task.id
-    task_configure = task.configure
-    task_processor = TaskCategoryOpt.get_processor(task.category)
-    scheduler_id = task.scheduler
-    # 每一个类型的任务都对应一个处理器
-    if not task_processor:
-        logger.warning('Task(id={}) have no processor, ignore processing.'.format(task_id))
+    if task.status in ['succeed', 'failed']:
+        logger.error('start_task task have been finished, id={}. '.format(task_id))
         return False
 
-    logger.info(u'Start processing task, task id={}, task configure={}'.format(task_id, task.configure))
+    aps_job = scheduler_task(task.scheduler, task_id)
 
-    # 一旦任务被加入到定时程序中，即等待分发执行
-    TaskOpt.set_task_status(task_id, 'running')
-
-    # 一个任务会有多个账号， 按照账号对任务进行第一次拆分，针对每一个账号，启动一个定时任务，这样任务管理粒度更细，也更符合实际情况
-    for account in task.accounts:
-        agent = find_optimal_agent(account=account, agents=agents)
-        if agent:
-            agent_id = agent.id
-            agent_queue_name = agent.queue_name if agent.queue_name else agent.area.replace(' ', '_')
-        else:
-            logger.warning('There have no optimal agent for task, task id={}, account id={}, account_area={}'.format(task_id, account.id, account.active_area))
-            agent_id = None
-            agent_queue_name = 'default'
-
-        # 构建任务执行必备参数
-        inputs = {
-            'task_id': task_id,
-            'account_id': account.id,
-            'agent_id': agent_id,
-            'account': account.account,
-            'password': account.password,
-            'agent_queue_name': agent_queue_name,
-            'task_configure': task_configure
-        }
-
-        logger.info('Start scheduling job, task id={}, account id={}, scheduler id={}, processor={}, agent_id={}.'.format(
-                        task_id, account.id, scheduler_id, task_processor, agent_id))
-
-        aps_job = schedule_job(scheduler_id=scheduler_id, processor=task_processor, inputs=inputs)
-
-        # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复
-        TaskAccountGroupOpt.set_aps_info(task_id, account.id, aps_job.id, status='running')  # next_run_time=aps_job.trigger.run_date
-        logger.info('Scheduling job succeed, task id={}, account id={}, aps_job_id={}.'
-                    .format(task_id, account.id, aps_job.id))
+    # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
+    if aps_job:
+        TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
     else:
-        logger.warning('Task has no accounts assigned. task id={}'.format(task_id))
+        logger.error('start_task can not scheduler task, task id={}'.format(task_id))
         return False
 
     return True
@@ -136,6 +103,10 @@ def dispatch_test():
 
 
 def save_jobs():
+    """
+    从redis中取出job转存到db
+    :return:
+    """
     jobs = RedisOpt.pop_all(key='job_list', is_delete=True)
     job_num = len(jobs)
     last_job_num = RedisOpt.read_object('total_job')
@@ -149,11 +120,17 @@ def save_jobs():
 
 
 def update_task_status():
-    running_tasks = TaskOpt.get_all_running_task()
+    """
+    更新任务状态
+    :return:
+    """
+    db_session = ScopedSession()
+    running_tasks = TaskOpt.get_all_running_task(db_session)
     for task in running_tasks:
+
         failed_counts = 0
         succeed_counts = 0
-        jobs = JobOpt.get_jobs_by_task_id(task.id)
+        jobs = JobOpt.get_jobs_by_task_id(db_session, task.id)
         for j in jobs:
             if j[0] == 'succeed':
                 succeed_counts += 1
@@ -161,6 +138,8 @@ def update_task_status():
                 failed_counts += 1
         task.succeed_counts = succeed_counts
         task.failed_counts = failed_counts
+        logger.info('update_task_status task {} status={}, succeed={}, failed={}'.
+                    format(task.id, task.status, task.succeed_counts, task.failed_counts))
 
         sch = SchedulerOpt.get_scheduler(task.scheduler)
         # 如果是一次性任务,只要所有job结果都返回了, task即结束
@@ -181,15 +160,16 @@ def update_task_status():
                 pass
 
         if task.status in ['succeed', 'failed']:
-            aps_ids = TaskAccountGroupOpt.get_aps_ids_by_task(task.id)
-            for aps_id in aps_ids:
-                try:
-                    g_bk_scheduler.remove_job(aps_id)
-                except JobLookupError:
-                    logger.warning('job have been removed. aps_id={}'.format(aps_id))
-
-            TaskAccountGroupOpt.set_aps_status_by_task(task_id=task.id, status='stopped')
             task.end_time = datetime.datetime.now()
+            aps_id = TaskOpt.get_aps_ids_by_task_id(task.id)
+            try:
+                g_bk_scheduler.remove_job(aps_id)
+            except JobLookupError:
+                logger.warning('job have been removed. aps_id={}'.format(aps_id))
+            logger.info('update_task_status task {} status={}, succeed={}, failed={}'.format(task.id, task.status, task.succeed_counts,
+                                                                                          task.failed_counts))
+    db_session.commit()
+    ScopedSession.remove()
 
 
 def update_results():
@@ -198,6 +178,10 @@ def update_results():
     :return:
     """
     results = RedisOpt.pop_all_backend(pattern='celery-task-meta*', is_delete=True)
+    if not results:
+        logger.warning('have no results to update.')
+        return
+
     results_num = len(results)
     last_results_num = RedisOpt.read_object('total_num')
     total_result_num = results_num+int(last_results_num) if last_results_num != -1 else results_num
@@ -207,60 +191,80 @@ def update_results():
     status_map = {'SUCCESS': 'succeed', 'FAILURE': 'failed', 'PENDING': 'pending', 'RUNNING': 'running'}
     track_ids = []
     values = {}
-    if results:
-        for res in results:
-            dict_res = json.loads(res)
-            status = status_map.get(dict_res.get('status'), dict_res.get('status'))
-            track_id = dict_res.get('task_id', '')
-            job_res = dict_res.get('result', '')
-            if isinstance(job_res, dict) and job_res.get('result', '') == 'failed':
-                status = 'failed'
 
-            job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
-            track_ids.append(track_id)
-            values[track_id] = {
-                'track_id': track_id,
-                'status': status,
-                'result': job_res,
-                'traceback': str(dict_res.get('traceback', ''))
-            }
+    for res in results:
+        dict_res = json.loads(res)
+        status = status_map.get(dict_res.get('status'), dict_res.get('status'))
+        track_id = dict_res.get('task_id', '')
+        job_res = dict_res.get('result', '')
 
-        res = JobOpt.set_job_by_track_ids(track_ids=track_ids, values=values)
-        logger.info('update_results update num={}, finished num={}. '.format(len(track_ids), len(res)))
-        if res:
-            for track_id in res:
-                RedisOpt.delete_backend('*{}'.format(track_id))
+        # 除了任务本身的成败外，还需要关注实际返回的结果
+        if isinstance(job_res, dict) and job_res.get('status', '') == 'failed':
+            status = 'failed'
 
-        # 更新任务状态
-        update_task_status()
+        job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
+        track_ids.append(track_id)
+        values[track_id] = {
+            'track_id': track_id,
+            'status': status,
+            'result': job_res,
+            'traceback': str(dict_res.get('traceback', ''))
+        }
+
+    db_session = ScopedSession()
+    res = JobOpt.set_job_by_track_ids(db_session, track_ids=track_ids, values=values)
+    ScopedSession.remove()
+    logger.info('update_results update num={}, finished num={}. '.format(len(track_ids), len(res)))
+    if res:
+        # 将落盘成功的数据从缓存区清掉
+        for track_id in res:
+            RedisOpt.delete_backend('*{}'.format(track_id))
+
+    # 根据更新后的job状态，逆向更新任务状态
+    update_task_status()
 
 
-def run():
+def clean_environment():
+    RedisOpt.clean_cache_db()
+    RedisOpt.clean_backend_db()
+    RedisOpt.clean_broker_db()
+
+
+def start(start_new=True, update_interval=30):
+    """
+    启动任务调度系统
+    :param start_new: 是否全新开始，若是则清空缓存，从头开始； 若否，则继续上一次结束点开始，之前未处理完的任务将继续被执行
+    :param update_interval: 结果更新周期，默认30秒
+    :return:
+    """
     try:
-        RedisOpt.clean_cache_db()
-        RedisOpt.clean_backend_db()
-        # RedisOpt.clean_broker_db()
+        logger.info('----Start Task Scheduler System.----')
+        if start_new:
+            logger.info('clean environment. ')
+            clean_environment()
+        else:
+            need_restart_tasks = TaskOpt.get_all_need_restart_task()
+            for task in need_restart_tasks:
+                logger.info('need restart task id={}, status={}.'.format(task.id, task.status))
+                start_task(task.id)
 
-        # save_job = scheduler.add_job(save_jobs, 'interval', seconds=20, misfire_grace_time=10, max_instances=5)
-        update_job = g_bk_scheduler.add_job(update_results, 'interval', seconds=15, misfire_grace_time=20, max_instances=5)
+        # 启动定时结果更新
+        g_bk_scheduler.add_job(update_results, 'interval', seconds=update_interval, misfire_grace_time=20, max_instances=5)
         g_bk_scheduler.start()
-        logger.info('Start scheduling.')
+
         while True:
             time.sleep(2)
     except (KeyboardInterrupt, SystemExit):
-        logger.warning('Scheduler have been stopped.')
         g_bk_scheduler.shutdown()
+        logger.warning('Scheduler have been stopped.')
+    finally:
+        if g_bk_scheduler.running:
+            g_bk_scheduler.shutdown()
+    logger.info('----Stop Task Scheduler System.----')
 
 
 if __name__ == '__main__':
-    logger.info('Start run..')
-    tasks = TaskOpt.get_all_need_restart_task()
-    if not isinstance(tasks, list):
-        raise TypeError('tasks must be a list.')
-    for t in tasks:
-        process_task(t)
-
-    run()
+    start(start_new=False)
 
     # dispatch_test()
 """
