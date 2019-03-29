@@ -147,8 +147,8 @@ class TaskOpt:
         return db_session.query(Task).filter(Task.status == 'pending').all()
 
     @classmethod
-    def get_all_running_task(cls, session):
-        return session.query(Task).filter(Task.status == 'running').all()
+    def get_all_running_task(cls):
+        return db_session.query(Task).filter(Task.status == 'running').all()
 
     @classmethod
     def get_all_pausing_task(cls):
@@ -326,8 +326,8 @@ class JobOpt:
         return False
 
     @classmethod
-    def get_jobs_by_task_id(cls, session, task_id):
-        return session.query(Job.status).filter(Job.task == task_id).all()
+    def get_jobs_by_task_id(cls, task_id):
+        return db_session.query(Job.status).filter(Job.task == task_id).all()
 
     @classmethod
     def get_jobs_by_agent_id(cls, agent_id, status='running'):
@@ -373,8 +373,8 @@ class JobOpt:
         return False
 
     @classmethod
-    def set_job_by_track_ids(cls, session, track_ids, values):
-        jobs = session.query(Job).filter(Job.track_id.in_(track_ids)).all()
+    def set_job_by_track_ids(cls, track_ids, values):
+        jobs = db_session.query(Job).filter(Job.track_id.in_(track_ids)).all()
 
         updated_track_ids = []
         for job in jobs:
@@ -393,7 +393,7 @@ class JobOpt:
                 job.result = new_result
                 job.traceback = new_traceback
                 job.status = new_status
-        session.commit()
+        db_session.commit()
         return updated_track_ids
 
     @classmethod
@@ -514,9 +514,14 @@ def init_db_data():
     # 增加任务计划
     # category: 0-立即执行（只执行一次）, 1-间隔执行并不立即开始（间隔一定时间后开始执行,并按设定的间隔周期执行下去） 2-间隔执行,但立即开始, 3-定时执行,指定时间执行
     SchedulerOpt.save_scheduler(mode=0)
-    SchedulerOpt.save_scheduler(mode=1, interval=60)
-    SchedulerOpt.save_scheduler(mode=2, interval=90)
+    SchedulerOpt.save_scheduler(mode=1, interval=300, start_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
+    SchedulerOpt.save_scheduler(mode=1, interval=300,
+                                end_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
+    SchedulerOpt.save_scheduler(mode=2, interval=400)
+    SchedulerOpt.save_scheduler(mode=2, interval=400, end_date=datetime.datetime.now()+datetime.timedelta(hours=1))
     SchedulerOpt.save_scheduler(mode=3, start_date=datetime.datetime.now()+datetime.timedelta(hours=5))
+    SchedulerOpt.save_scheduler(mode=2, start_date=datetime.datetime.now() + datetime.timedelta(hours=1),
+                                end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
 
 
 
@@ -554,11 +559,19 @@ def init_db_data():
                                                 'upgrade-insecure-requests': 1, 'accept-language:':'zh-CN,zh;q=0.9'}))
 
     # 创建任务
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3], name=u'养个号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'thumb', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3, 5], name=u'养个号', limit_counts=10)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=20)
+    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=100)
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10)
+    TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[1], name=u'thumb', limit_counts=102)
+
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[1, 2, 3], name=u'养个号', limit_counts=100)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 1], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=30)
+    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[4, 5, 1, 3], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10)
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=40)
+    TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4], name=u'thumb', limit_counts=5)
+
+
 
     AgentOpt.save_agent('Spanish', status=-1)
     AgentOpt.save_agent('China', status=0)
@@ -576,7 +589,7 @@ def show_test_data():
     acc = AccountOpt.get_account(account_id=0)
     print(acc)
 
-    TaskOpt.set_task_status(1, 1)
+    TaskOpt.set_task_status(None, 1, 1)
     res = TaskOpt.get_all_need_restart_task()
     for t in res:
         print(t)

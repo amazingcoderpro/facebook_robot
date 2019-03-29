@@ -9,11 +9,10 @@ import datetime
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import JobLookupError
-from db import TaskOpt, TaskAccountGroupOpt, SchedulerOpt, JobOpt
+from db import TaskOpt, SchedulerOpt, JobOpt
 from tasks.processor import send_task_2_worker
 from config import logger
 from util import RedisOpt
-from db.basic import ScopedSession
 
 
 g_bk_scheduler = BackgroundScheduler()
@@ -124,13 +123,12 @@ def update_task_status():
     更新任务状态
     :return:
     """
-    db_session = ScopedSession()
-    running_tasks = TaskOpt.get_all_running_task(db_session)
+    running_tasks = TaskOpt.get_all_running_task()
     for task in running_tasks:
 
         failed_counts = 0
         succeed_counts = 0
-        jobs = JobOpt.get_jobs_by_task_id(db_session, task.id)
+        jobs = JobOpt.get_jobs_by_task_id(task.id)
         for j in jobs:
             if j[0] == 'succeed':
                 succeed_counts += 1
@@ -168,8 +166,6 @@ def update_task_status():
                 logger.warning('job have been removed. aps_id={}'.format(aps_id))
             logger.info('update_task_status task {} status={}, succeed={}, failed={}'.format(task.id, task.status, task.succeed_counts,
                                                                                           task.failed_counts))
-    db_session.commit()
-    ScopedSession.remove()
 
 
 def update_results():
@@ -211,9 +207,7 @@ def update_results():
             'traceback': str(dict_res.get('traceback', ''))
         }
 
-    db_session = ScopedSession()
-    res = JobOpt.set_job_by_track_ids(db_session, track_ids=track_ids, values=values)
-    ScopedSession.remove()
+    res = JobOpt.set_job_by_track_ids(track_ids=track_ids, values=values)
     logger.info('update_results update num={}, finished num={}. '.format(len(track_ids), len(res)))
     if res:
         # 将落盘成功的数据从缓存区清掉
