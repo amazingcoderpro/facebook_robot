@@ -2,7 +2,6 @@ define(['vue'], function(Vue) {
 
     // 兼容 Vue 初始化清理工作
     $('#tip').removeClass('hide');
-
         // 用户信息
     var user = JSON.parse(localStorage.getItem('authUser')),
         contentHeader = new Vue({
@@ -76,6 +75,22 @@ define(['vue'], function(Vue) {
         dialog={
             warning: _warningDialog,
             deleteWarning: function(word, func){_warningDialog('删除确认', word, func)}
+        },
+        // 显示详情
+        showDetail=function(cfg){
+             $(cfg.div).removeClass('none').html(cfg.html),
+             $.each(cfg.data, function(propName, value){$(cfg.div+' input[name="'+propName+'"]').val(value)});
+             $.each(cfg.data, function(propName, value){$(cfg.div+' select[name="'+propName+'"]').val(value)});
+             var showP=function(dict, parent){
+                $.each(dict, function(propName, value){
+                    if(typeof value == 'object')showP(value, parent+propName+'__')
+                    else {
+                        var p=$('#info p.'+parent+propName), fn=p.data('display');
+                        p.text(typeof fn!='undefined' && typeof cfg[fn] != 'undefined'?cfg[fn](value):value)
+                    }
+                });
+             };
+             showP(cfg.data, '')
         };
     new Vue({
       el: '.user',
@@ -85,12 +100,14 @@ define(['vue'], function(Vue) {
       el: '.user-panel',
       data: user
     });
+    if(!user.category.isAdmin)$('ul.sidebar-menu li.admin').remove();
 
     return {
         user: user,
         initModule: initModule,
         showTip: tip.showTip,
         dialog: dialog,
-        getAPI: getAPI
+        getAPI: getAPI,
+        showDetail: showDetail
     }
 });

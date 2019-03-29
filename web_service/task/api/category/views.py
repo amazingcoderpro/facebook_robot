@@ -27,7 +27,10 @@ class TaskCategoryViewSet(viewsets.ModelViewSet):
         return super(TaskCategoryViewSet, self).get_permissions()
 
     def get_queryset(self):
-        queryset = self.queryset
+        from users.common import user_by_token, is_admin
+        user = user_by_token(self.request)
+        queryset = self.queryset if user.enable_tasks == '' or is_admin(user) else TaskCategory.objects.filter(
+            pk__in=user.enable_tasks.split(';'))
         from django.db.models import Q
         queryset = search(self.request, queryset,
                           lambda qs, keyword: qs.filter(

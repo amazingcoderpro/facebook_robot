@@ -39,24 +39,72 @@
             <form role="form">
                 <div class="box-body">
                     <div class="form-group">
+                        <label>创建者</label>
+                        <p class="creator__fullname"></p>
+                    </div>
+                    <div class="form-group">
                         <label>任务类型</label>
-                        <p class="category"></p>
+                        <p class="category__name"></p>
                     </div>
                     <div class="form-group">
-                        <label>姓名</label>
-                        <input type="text" class="form-control" name="name" placeholder="请输入姓名">
+                        <label>调度类型</label>
+                        <p class="scheduler__mode" data-display="displayScheduler"></p>
                     </div>
                     <div class="form-group">
-                        <label>Email</label>
-                        <input type="text" class="form-control" name="email" placeholder="请输入邮件地址" />
+                        <label>状态</label>
+                        <p class="status"></p>
                     </div>
                     <div class="form-group">
-                        <label>初始密码</label>
-                        <input type="text" class="form-control" name="password" placeholder="不重置密码，请留空" />
+                        <label>任务名称</label>
+                        <input type="text" class="form-control" name="name" placeholder="请输入任务名称">
                     </div>
                     <div class="form-group">
-                        <label>可执行任务</label>
-                        <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
+                        <label>执行间隔</label>
+                        <p class="scheduler__interval" data-display="displayInterval"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>执行时间</label>
+                        <p class="scheduler__start_date"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>终止时间</label>
+                        <p class="scheduler__end_date"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>第一次启动时间</label>
+                        <p class="start_time"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>第一次启动时间</label>
+                        <p class="start_time"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>实际结束时间</label>
+                        <p class="end_time"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>成功次数</label>
+                        <p class="succeed_counts"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>失败次数</label>
+                        <p class="failed_counts"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>任务需求数</label>
+                        <p class="limit_counts"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>账号数量</label>
+                        <p class="accounts_num"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>结果</label>
+                        <p class="result"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>配置</label>
+                        <p class="start_time"></p>
                     </div>
                 </div>
             </form>
@@ -76,49 +124,62 @@
           <label>任务类型</label>
           <select class="form-control" name="category"></select>
         </div>
-        <div class="form-group">
-            <label>任务名</label>
-            <input type="text" class="form-control" name="username" placeholder="请输入任务名" />
+         <div class="form-group">
+          <label>调度类型</label>
+          <select class="form-control" name="scheduler"></select>
         </div>
         <div class="form-group">
-            <label>姓名</label>
-            <input type="text" class="form-control" name="fullname" placeholder="请输入姓名" />
+            <label>任务名称</label>
+            <input type="text" class="form-control" name="name" placeholder="请输入任务名称">
         </div>
         <div class="form-group">
-            <label>Email</label>
-            <input type="text" class="form-control" name="email" placeholder="请输入邮件地址" />
+            <label>任务需求数</label>
+            <input type="tel" class="form-control" name="limit_counts" placeholder="请输入任务需求数" value="1" />
         </div>
         <div class="form-group">
-            <label>初始密码</label>
-            <input type="text" class="form-control" name="password" placeholder="请输入初始密码" />
+            <label>执行间隔</label>
+            <div>
+            <input type="tel" class="form-control w50" name="interval" placeholder="请输入执行间隔" value="" />
+            <select class="form-control w30" name="intervalUnit">
+                <option value="0">天</option>
+                <option value="1">小时</option>
+            </select>
+            </div>
         </div>
         <div class="form-group">
-            <label>可执行任务</label>
-            <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
+            <label>启动时间</label>
+            <div class="input-group date">
+              <div class="input-group-addon">
+                <i class="fa fa-calendar"></i>
+              </div>
+              <input type="text" class="form-control pull-right pick-date" name="schedulerBeginDate">
+            </div>
+            <!-- /.input group -->
+            <div class="input-group">
+              <input type="text" class="form-control timepicker" name="schedulerBeginTime">
+
+              <div class="input-group-addon">
+                <i class="fa fa-clock-o"></i>
+              </div>
+            </div>
+            <!-- /.input group -->
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline pull-left" data-dismiss="modal">取消</button>
-        <button type="button" class="btn btn-outline ok">确定</button>
-      </div>
-    </div>
-    <!-- /.modal-content -->
-  </div>
-  <!-- /.modal-dialog -->
-</div>
-<!-- /.modal -->
-<div class="modal modal-info fade" id="modal-import">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">导入</h4>
-      </div>
-      <div class="modal-body">
         <div class="form-group">
-            <label></label>
-            <input type="file" class="form-control" name="file" placeholder="请选择账号 csv 文件" accept=".csv">
+            <label>最晚结束时间</label>
+            <div class="input-group date">
+              <div class="input-group-addon">
+                <i class="fa fa-calendar"></i>
+              </div>
+              <input type="text" class="form-control pull-right pick-date" name="schedulerEndDate">
+            </div>
+            <!-- /.input group -->
+            <div class="input-group">
+              <input type="text" class="form-control timepicker" name="schedulerEndTime">
+
+              <div class="input-group-addon">
+                <i class="fa fa-clock-o"></i>
+              </div>
+            </div>
         </div>
       </div>
       <div class="modal-footer">

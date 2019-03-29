@@ -11,14 +11,13 @@ from task.models import Scheduler
 
 class SchedulerSerializer(serializers.HyperlinkedModelSerializer):
 
-    # 检查任务调度类型是否存在，存在则不创建
-    def create(self, validated_data):
-        try:
-            return Scheduler.objects.get(name=validated_data['name'])
-        except ObjectDoesNotExist:
-            return super(SchedulerSerializer, self).create(validated_data)
+    # # 检查任务调度类型是否存在，存在则不创建
+    # def create(self, validated_data):
+    #     return super(SchedulerSerializer, self).create(validated_data)
 
     class Meta:
         model = Scheduler
-        fields = ('url', 'id', 'mode', 'interval', 'date')
+        fields = ('url', 'id', 'mode', 'interval', 'start_date', 'end_date')
+        extra_kwargs = {'start_date': {'allow_null': True},
+                        'end_date': {'allow_null': True}}
 
