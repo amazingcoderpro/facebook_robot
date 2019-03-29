@@ -47,6 +47,30 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             'displayInterval': displayInterval
         }),
         $('#info .box-title').text(item.name+'的基本信息'),
+        table.initTable('#accountTable', {
+            ajax: {url: global.getAPI(url+item.id+'/account/')},
+            columns: [
+                {
+                    title: '类型',
+                    data: 'account.category.name'
+                },
+                {
+                    title: '姓名',
+                    data: 'account.name'
+                },
+                {
+                    title: '账号',
+                    data: 'account.account'
+                },
+                {
+                    title: '状态',
+                    data: 'account.status'
+                }
+            ]
+        }),
+        $('#accountTableButtons button.export').on('click', function(){
+            window.open(global.getAPI(url+item.id+'/account/?export=true'))
+        }),
         $('#info .save').on('click',function(){
             var req={};
 //            Object.assign(req, item);

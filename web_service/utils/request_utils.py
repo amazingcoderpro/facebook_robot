@@ -40,11 +40,11 @@ class CustomDjangoJSONEncoder(DjangoJSONEncoder):
 # 解析 request.body 为字典
 def pretreatment(f):
 
-    def parse_payload(request, *params):
+    def parse_payload(request, *params, **kwargs):
         if DEBUG:
-            return f(request, json.loads(request.body), *params)
+            return f(request, json.loads(request.body), *params, **kwargs)
         try:
-            return f(request, json.loads(request.body), *params)
+            return f(request, json.loads(request.body), *params, **kwargs)
         except ValueError:
             pass
         except KeyError:
@@ -63,8 +63,8 @@ def pretreatment(f):
 def response_as_json(f):
 
     @login_required(login_url='/err/auth')
-    def as_json(request, *params):
-        result, status = f(request, request.user.userinfo, *params)
+    def as_json(request, *params, **kwargs):
+        result, status = f(request, request.user.userinfo, *params, **kwargs)
         return JsonResponse(result, status=status, encoder=CustomDjangoJSONEncoder)
 
     return as_json
@@ -73,8 +73,8 @@ def response_as_json(f):
 # 返回 JSON
 def response_as_json_without_auth(f):
 
-    def as_json(request, *params):
-        result, status = f(request, *params)
+    def as_json(request, *params, **kwargs):
+        result, status = f(request, *params, **kwargs)
         return JsonResponse(result, status=status, encoder=CustomDjangoJSONEncoder)
 
     return as_json

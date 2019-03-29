@@ -109,5 +109,28 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                     el.append('<option value="'+item.name+'">'+item.name+'</option>')
                 })
             }
+        }),
+        // 导出
+        $('button.export').on('click', function(){
+            window.open(global.getAPI(url+'?export=true'))
+        }),
+        // 批量导入
+        $('#modal-import button.ok').on('click', function(){
+            var file_data = $('#modal-import input').prop('files')[0];
+            if(file_data == undefined)return;
+            var form_data = new FormData();
+            form_data.append('file', file_data);
+            $.ajax({
+                type: 'POST',
+                url: global.getAPI(url+'?import=true'),
+                contentType: false,
+                processData: false,
+                data: form_data,
+                success:function(response) {
+                    global.showTip({word: '社交账号批量成功', danger: false}),
+                    dataTable.ajax.reload()
+                }
+            });
         })
+
 })
