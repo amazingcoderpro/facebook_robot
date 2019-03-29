@@ -64,7 +64,7 @@ task_account_group_table = Table(
     Column('account_id', Integer, ForeignKey("account.id")),
     # 这个是在APScheduler中调度时的任务id, 用以暂停、重启、终止等 操作,一个任务+一个账号构成一个唯一的task
     Column('aps_id', String(100)),
-    Column('next_run_time', DateTime(3))
+    Column('status', String(20))
 )
 
 
@@ -80,6 +80,7 @@ class TaskCategory(Base):
     # 1--fb自动养账号, 2-fb刷广告好评, 3- fb仅登录浏览, 4- fb点赞, 5- fb发表评论, 6- fb post状态, 7- fb 聊天, 8- fb 编辑个人信息, 未完待续...
     category = Column(Integer, primary_key=True)
     name = Column(String(255))
+
     processor = Column(String(255))  # 任务的处理函数名, 不能为空, 代码逻辑中将依赖这个函数名进行任务分发
     description = Column(String(2048), default='', server_default='')
 
