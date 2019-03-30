@@ -22,9 +22,6 @@ class Task:
         self.status = value
 
 
-class Account:
-    _ACCOUNT_
-
 
 
 

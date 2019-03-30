@@ -5,18 +5,28 @@
 
 
 import datetime
-from sqlalchemy import or_, and_
+from config import logger
 from db.basic import db_session, db_lock
 from db.models import (Scheduler, Account, User, Task, TaskAccountGroup,
                        Job, TaskCategory, UserCategory, AccountCategory, Agent)
 
 
-class SchedulerOpt:
+class BaseOpt:
+    db_session = None
+
+    def __init__(self, session=None):
+        if session:
+            BaseOpt.db_session = session
+        else:
+            BaseOpt.db_session = db_session
+
+
+class SchedulerOpt(BaseOpt):
     """
     Scheduler表处理类
     """
     @classmethod
-    def save_scheduler(cls, mode=0, interval=0, start_date=datetime.datetime.now(), end_date=None):
+    def save_scheduler(cls, mode=0, interval=600, start_date=datetime.datetime.now(), end_date=None):
         sch = Scheduler()
         sch.mode = mode
         sch.interval = interval
@@ -120,6 +130,12 @@ class AccountOpt:
     def get_account(cls, account_id):
         return db_session.query(Account).filter(Account.id == account_id).first()
 
+    @classmethod
+    def add_account_using_counts(cls, account_id):
+        acc = db_session.query(Account).filter(Account.id == account_id).first()
+        if acc:
+            acc.using += 1
+
 
 class TaskOpt:
     @classmethod
@@ -144,7 +160,7 @@ class TaskOpt:
         主要用于服务器宕机后重新启动时获取所有需要启动的任务,包括pending状态和running状态的
         :return:
         """
-        return db_session.query(Task).filter(or_(Task.status == 'new', Task.status == 'pending', Task.status == 'running')).all()
+        return db_session.query(Task).filter(Task.status.notin_(('succeed', 'failed', 'cancelled'))).all()
 
     @classmethod
     def get_all_succeed_task(cls):
@@ -170,12 +186,12 @@ class TaskOpt:
         db_session.commit()
 
         # task.accounts = account_ids   # account_ids只是id列表,不能赋值
-
         for acc_id in account_ids:
             tag = TaskAccountGroup()
             tag.task_id = task.id
             tag.account_id = acc_id
             db_session.add(tag)
+
         db_session.commit()
         return task
 
@@ -189,19 +205,23 @@ class TaskOpt:
         return False
 
     @classmethod
-    def set_task_status(cls, task_id, status):
-        task = db_session.query(Task).filter(Task.id == task_id).first()
+    def set_task_status(cls, session, task_id, status, aps_id=''):
+        if not session:
+            session = db_session
+        task = session.query(Task).filter(Task.id == task_id).first()
         if task:
             if task.status != status:
+                # 第一次变成pending, 即已经加入定时处理中, 可设置aps_id
+                if status == 'pending':
+                    task.aps_id = aps_id
                 # 第一次变成running的时间即启动时间
-                if status == 'running':
+                elif status == 'running':
                     task.start_time = datetime.datetime.now()
-                if status in ['succeed', 'failed']:
+                elif status in ['succeed', 'failed']:
                     task.end_time = datetime.datetime.now()
+
                 task.status = status
-                db_lock.acquire()
-                db_session.commit()
-                db_lock.release()
+                session.commit()
             return True
 
         return False
@@ -217,8 +237,18 @@ class TaskOpt:
         return False
 
     @classmethod
-    def get_task(cls, task_id):
-        return db_session.query(Task.scheduler).filter(Task.id == task_id).first()
+    def get_task_by_task_id(cls, session, task_id):
+        if session:
+            return session.query(Task).filter(Task.id == task_id).first()
+        else:
+            return db_session.query(Task).filter(Task.id == task_id).first()
+
+    @classmethod
+    def get_aps_ids_by_task_id(cls, task_id):
+        aps_id = db_session.query(Task.aps_id).filter(Task.id == task_id).first()
+        if aps_id:
+            return aps_id[0]
+        return ''
 
 
 class TaskAccountGroupOpt:
@@ -235,37 +265,6 @@ class TaskAccountGroupOpt:
             task_ids.append(t.task_id)
 
         return task_ids
-
-    @classmethod
-    def get_aps_ids_by_task(cls, task_id):
-        tags = db_session.query(TaskAccountGroup).filter(TaskAccountGroup.task_id == task_id).all()
-        ids = []
-        for t in tags:
-            ids.append(t.aps_id)
-
-        return ids
-
-    @classmethod
-    def get_aps_id(cls, task_id, account_id):
-        tag = db_session.query(TaskAccountGroup).filter(and_(TaskAccountGroup.task_id == task_id,
-                                                             TaskAccountGroup.account_id == account_id)).first()
-        if tag:
-            return tag.aps_id
-        else:
-            return None
-
-    @classmethod
-    def set_aps_info(cls, task_id, account_id, aps_id, status='running'):
-        # 更新apscheduler任务调度产生的id,用以暂停、重启一个子任务
-        tag = db_session.query(TaskAccountGroup).filter(and_(TaskAccountGroup.task_id == task_id,
-                                                             TaskAccountGroup.account_id == account_id)).first()
-        if tag:
-            tag.aps_id = aps_id
-            tag.status = status
-            db_session.commit()
-            return True
-
-        return False
 
     @classmethod
     def set_aps_status_by_task(cls, task_id, status):
@@ -286,7 +285,7 @@ class TaskAccountGroupOpt:
 
 class JobOpt:
     @classmethod
-    def save_job(cls, task_id, account_id, agent_id, track_id='', status='pending'):
+    def save_job(cls, session, task_id, account_id, agent_id, track_id='', status='pending'):
         # status-- -1-pending, 0-failed, 1-succeed, 2-running
         job = Job()
         job.task = task_id
@@ -297,10 +296,8 @@ class JobOpt:
         if status == 'running':
             job.start_time = datetime.datetime.now()
 
-        db_session.add(job)
-        db_lock.acquire()
-        db_session.commit()
-        db_lock.release()
+        session.add(job)
+        session.commit()
         return job
 
     @classmethod
@@ -332,13 +329,12 @@ class JobOpt:
     def get_jobs_by_task_id(cls, task_id):
         return db_session.query(Job.status).filter(Job.task == task_id).all()
 
-
     @classmethod
-    def get_jobs_by_agent_id(cls, agent_id, status='running'):
+    def count_jobs_by_agent_id(cls, agent_id, status='running'):
         if status:
-            return db_session.query(Job).filter(Job.agent_id == agent_id, Job.status == status).all()
+            return db_session.query(Job).filter(Job.agent == agent_id, Job.status == status).count()
         else:
-            return db_session.query(Job).filter(Job.agent_id == agent_id).all()
+            return db_session.query(Job).filter(Job.agent == agent_id).count()
 
     @classmethod
     def set_job_status(cls, job_id, status):
@@ -378,31 +374,31 @@ class JobOpt:
 
     @classmethod
     def set_job_by_track_ids(cls, track_ids, values):
-        db_lock.acquire()
         jobs = db_session.query(Job).filter(Job.track_id.in_(track_ids)).all()
-        db_lock.release()
+        track_ids_copy = track_ids.copy()
+        try:
+            for job in jobs:
+                track_ids.remove(job.track_id)
+                value = values.get(job.track_id, {})
+                new_status = value.get('status')
+                new_result = value.get('result', '')
+                new_traceback = value.get('traceback', '')
+                if job.status != new_status:
+                    # 第一次变成running的时间即启动时间
+                    if new_status == 'running':
+                        job.start_time = datetime.datetime.now()
+                    if new_status in ['succeed', 'failed']:
+                        job.end_time = datetime.datetime.now()
 
-        updated_track_ids = []
-        for job in jobs:
-            updated_track_ids.append(job.track_id)
-            value = values.get(job.track_id, {})
-            new_status = value.get('status')
-            new_result = value.get('result', '')
-            new_traceback = value.get('traceback', '')
-            if job.status != new_status:
-                # 第一次变成running的时间即启动时间
-                if new_status == 'running':
-                    job.start_time = datetime.datetime.now()
-                if new_status in ['succeed', 'failed']:
-                    job.end_time = datetime.datetime.now()
-
-                job.result = new_result
-                job.traceback = new_traceback
-                job.status = new_status
-        db_lock.acquire()
-        db_session.commit()
-        db_lock.release()
-        return updated_track_ids
+                    job.result = new_result
+                    job.traceback = new_traceback
+                    job.status = new_status
+            db_session.commit()
+        except:
+            logger.exception('set_job_by_track_ids catch exception.')
+            db_session.rollback()
+            return track_ids_copy
+        return track_ids
 
     @classmethod
     def set_job_result(cls, job_id, result):
@@ -450,8 +446,8 @@ class TaskCategoryOpt:
         return [r[0] for r in res]
 
     @classmethod
-    def get_processor(cls, category):
-        tcg = db_session.query(TaskCategory.processor).filter(TaskCategory.category == category).first()
+    def get_processor(cls, session, category):
+        tcg = session.query(TaskCategory.processor).filter(TaskCategory.category == category).first()
         if tcg:
             return tcg[0]
         else:
@@ -479,11 +475,14 @@ class AgentOpt:
             return None
 
     @classmethod
-    def get_enable_agents(cls, status_order=True):
+    def get_enable_agents(cls, session, status_order=True):
+        if not session:
+            session = db_session
+
         if status_order:
-            return db_session.query(Agent).filter(Agent.status != -1).order_by(Agent.status).all()
+            return session.query(Agent).filter(Agent.status != -1).order_by(Agent.status).all()
         else:
-            return db_session.query(Agent).filter(Agent.status != -1).all()
+            return session.query(Agent).filter(Agent.status != -1).all()
 
 
 def init_db_data():
@@ -522,9 +521,14 @@ def init_db_data():
     # 增加任务计划
     # category: 0-立即执行（只执行一次）, 1-间隔执行并不立即开始（间隔一定时间后开始执行,并按设定的间隔周期执行下去） 2-间隔执行,但立即开始, 3-定时执行,指定时间执行
     SchedulerOpt.save_scheduler(mode=0)
-    SchedulerOpt.save_scheduler(mode=1, interval=60)
-    SchedulerOpt.save_scheduler(mode=2, interval=90)
+    SchedulerOpt.save_scheduler(mode=1, interval=300, start_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
+    SchedulerOpt.save_scheduler(mode=1, interval=65,
+                                end_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
+    SchedulerOpt.save_scheduler(mode=2, interval=60)
+    SchedulerOpt.save_scheduler(mode=2, interval=70, end_date=datetime.datetime.now()+datetime.timedelta(hours=1))
     SchedulerOpt.save_scheduler(mode=3, start_date=datetime.datetime.now()+datetime.timedelta(hours=5))
+    SchedulerOpt.save_scheduler(mode=2, start_date=datetime.datetime.now() + datetime.timedelta(hours=1),
+                                end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
 
 
 
@@ -532,7 +536,7 @@ def init_db_data():
     AccountOpt.save_account(account='codynr4nzxh@outlook.com',
                             password='qVhgldHmgp', owner=1, category=1,
                             email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
-                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='verify')
+                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='verifying')
     AccountOpt.save_account(account='eddykkqf56@outlook.com',
                             password='nYGcEXNjGY', owner=1, category=1,
                             email='eddykkqf56@outlook.com', email_pwd='M4c5gs3SEx',
@@ -562,11 +566,19 @@ def init_db_data():
                                                 'upgrade-insecure-requests': 1, 'accept-language:':'zh-CN,zh;q=0.9'}))
 
     # 创建任务
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3], name=u'养个号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
-    TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'thumb', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3, 5], name=u'养个号', limit_counts=10)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=20)
+    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=100)
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10)
+    TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[1], name=u'thumb', limit_counts=102)
+
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[1, 2, 3], name=u'养个号', limit_counts=100)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 1], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=30)
+    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[4, 5, 1, 3], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10)
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=40)
+    TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4], name=u'thumb', limit_counts=5)
+
+
 
     AgentOpt.save_agent('Spanish', status=-1)
     AgentOpt.save_agent('China', status=0)
@@ -584,7 +596,7 @@ def show_test_data():
     acc = AccountOpt.get_account(account_id=0)
     print(acc)
 
-    TaskOpt.set_task_status(1, 1)
+    TaskOpt.set_task_status(None, 1, 1)
     res = TaskOpt.get_all_need_restart_task()
     for t in res:
         print(t)
