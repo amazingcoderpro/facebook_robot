@@ -133,7 +133,7 @@ class AccountOpt:
 
     @classmethod
     def get_all_accounts(cls):
-        return db_session.query(Account.id).all()
+        return db_session.query(Account).all()
 
     @classmethod
     def add_account_using_counts(cls, account_id):

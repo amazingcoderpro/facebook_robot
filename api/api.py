@@ -257,8 +257,10 @@ def process_updated_tasks():
     :return:
     """
     global last_check_time
+    logger.info('process_updated_tasks, last check time={}'.format(last_check_time))
     tasks = TaskOpt.get_all_need_check_task(last_time=last_check_time)
     for task_id, status, last_update in tasks:
+        logger.info('process_updated_tasks task id={}, status={}, last_update={}'.format(task_id, status, last_update))
         if last_update >= last_check_time:
             if status == 'cancelled':
                 cancel_task(task_id)
