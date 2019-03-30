@@ -42,7 +42,7 @@ class Scheduler(Base):
     # 2-间隔执行,但立即开始（执行多次）
     # 3-定时执行,指定时间执行（执行一次）
     mode = Column(Integer, default=0, server_default='0')
-    interval = Column(Integer, default=600, server_default='0')       # 间隔时长, 单位秒
+    interval = Column(Integer, default=600, server_default='600')       # 间隔时长, 单位秒
 
     # 作用有二：
     # 1作为定时间任务的执行时间, 仅mode=3时有效

@@ -5,6 +5,7 @@
 
 
 import datetime
+from config import logger
 from db.basic import db_session, db_lock
 from db.models import (Scheduler, Account, User, Task, TaskAccountGroup,
                        Job, TaskCategory, UserCategory, AccountCategory, Agent)
@@ -25,7 +26,7 @@ class SchedulerOpt(BaseOpt):
     Scheduler表处理类
     """
     @classmethod
-    def save_scheduler(cls, mode=0, interval=0, start_date=datetime.datetime.now(), end_date=None):
+    def save_scheduler(cls, mode=0, interval=600, start_date=datetime.datetime.now(), end_date=None):
         sch = Scheduler()
         sch.mode = mode
         sch.interval = interval
@@ -329,11 +330,11 @@ class JobOpt:
         return db_session.query(Job.status).filter(Job.task == task_id).all()
 
     @classmethod
-    def get_jobs_by_agent_id(cls, agent_id, status='running'):
+    def count_jobs_by_agent_id(cls, agent_id, status='running'):
         if status:
-            return db_session.query(Job).filter(Job.agent_id == agent_id, Job.status == status).all()
+            return db_session.query(Job).filter(Job.agent == agent_id, Job.status == status).count()
         else:
-            return db_session.query(Job).filter(Job.agent_id == agent_id).all()
+            return db_session.query(Job).filter(Job.agent == agent_id).count()
 
     @classmethod
     def set_job_status(cls, job_id, status):
@@ -374,26 +375,30 @@ class JobOpt:
     @classmethod
     def set_job_by_track_ids(cls, track_ids, values):
         jobs = db_session.query(Job).filter(Job.track_id.in_(track_ids)).all()
+        track_ids_copy = track_ids.copy()
+        try:
+            for job in jobs:
+                track_ids.remove(job.track_id)
+                value = values.get(job.track_id, {})
+                new_status = value.get('status')
+                new_result = value.get('result', '')
+                new_traceback = value.get('traceback', '')
+                if job.status != new_status:
+                    # 第一次变成running的时间即启动时间
+                    if new_status == 'running':
+                        job.start_time = datetime.datetime.now()
+                    if new_status in ['succeed', 'failed']:
+                        job.end_time = datetime.datetime.now()
 
-        updated_track_ids = []
-        for job in jobs:
-            updated_track_ids.append(job.track_id)
-            value = values.get(job.track_id, {})
-            new_status = value.get('status')
-            new_result = value.get('result', '')
-            new_traceback = value.get('traceback', '')
-            if job.status != new_status:
-                # 第一次变成running的时间即启动时间
-                if new_status == 'running':
-                    job.start_time = datetime.datetime.now()
-                if new_status in ['succeed', 'failed']:
-                    job.end_time = datetime.datetime.now()
-
-                job.result = new_result
-                job.traceback = new_traceback
-                job.status = new_status
-        db_session.commit()
-        return updated_track_ids
+                    job.result = new_result
+                    job.traceback = new_traceback
+                    job.status = new_status
+            db_session.commit()
+        except:
+            logger.exception('set_job_by_track_ids catch exception.')
+            db_session.rollback()
+            return track_ids_copy
+        return track_ids
 
     @classmethod
     def set_job_result(cls, job_id, result):
@@ -471,6 +476,9 @@ class AgentOpt:
 
     @classmethod
     def get_enable_agents(cls, session, status_order=True):
+        if not session:
+            session = db_session
+
         if status_order:
             return session.query(Agent).filter(Agent.status != -1).order_by(Agent.status).all()
         else:
@@ -514,10 +522,10 @@ def init_db_data():
     # category: 0-立即执行（只执行一次）, 1-间隔执行并不立即开始（间隔一定时间后开始执行,并按设定的间隔周期执行下去） 2-间隔执行,但立即开始, 3-定时执行,指定时间执行
     SchedulerOpt.save_scheduler(mode=0)
     SchedulerOpt.save_scheduler(mode=1, interval=300, start_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
-    SchedulerOpt.save_scheduler(mode=1, interval=300,
+    SchedulerOpt.save_scheduler(mode=1, interval=65,
                                 end_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
-    SchedulerOpt.save_scheduler(mode=2, interval=400)
-    SchedulerOpt.save_scheduler(mode=2, interval=400, end_date=datetime.datetime.now()+datetime.timedelta(hours=1))
+    SchedulerOpt.save_scheduler(mode=2, interval=60)
+    SchedulerOpt.save_scheduler(mode=2, interval=70, end_date=datetime.datetime.now()+datetime.timedelta(hours=1))
     SchedulerOpt.save_scheduler(mode=3, start_date=datetime.datetime.now()+datetime.timedelta(hours=5))
     SchedulerOpt.save_scheduler(mode=2, start_date=datetime.datetime.now() + datetime.timedelta(hours=1),
                                 end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
@@ -528,7 +536,7 @@ def init_db_data():
     AccountOpt.save_account(account='codynr4nzxh@outlook.com',
                             password='qVhgldHmgp', owner=1, category=1,
                             email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
-                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='verify')
+                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='verifying')
     AccountOpt.save_account(account='eddykkqf56@outlook.com',
                             password='nYGcEXNjGY', owner=1, category=1,
                             email='eddykkqf56@outlook.com', email_pwd='M4c5gs3SEx',

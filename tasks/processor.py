@@ -46,14 +46,12 @@ def send_task_2_worker(task_id):
     """
     db_session = ScopedSession()
     task = TaskOpt.get_task_by_task_id(db_session, task_id)
-    # task = db_session.query(Task).filter(Task.id == task_id).first()
     if not task:
         logger.error('send_task_2_worker can not find the task, id={}. '.format(task_id))
         return False
 
     # 根据task的类别，找到task对应的处理函数
     task_processor = TaskCategoryOpt.get_processor(db_session, task.category)
-    # task_processor = db_session.query(TaskCategory.processor).filter(TaskCategory.category == task.category).first()
 
     # 每一个类型的任务都对应一个处理器
     if not task_processor:
@@ -63,10 +61,13 @@ def send_task_2_worker(task_id):
     logger.info('send_task_2_worker task id={}. '.format(task_id))
 
     agents = AgentOpt.get_enable_agents(db_session, status_order=True)
-    # agents = db_session.query(Agent).filter(Agent.status != -1).order_by(Agent.status).all()
 
     # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
     for account in task.accounts:
+        if account.status != 'valid':
+            logger.warning('account can not be used. task id={}, account id={}'.format(task_id, account.id))
+            continue
+
         agent = find_optimal_agent(account=account, agents=agents)
         if agent:
             agent_id = agent.id
@@ -87,8 +88,6 @@ def send_task_2_worker(task_id):
         }
 
         celery_task_name = "tasks.tasks.{}".format(task_processor)
-        logger.info('send task name={}, queue={}, task id={}, account id={}'.format(
-            celery_task_name, agent_queue_name, task_id, account.id))
 
         track = app.send_task(
             celery_task_name,
@@ -97,15 +96,8 @@ def send_task_2_worker(task_id):
             routing_key=agent_queue_name
         )
 
-        # 保存job
-        # job = Job()
-        # job.task = task_id
-        # job.account = account.id
-        # job.agent = agent_id
-        # job.status = 'running'
-        # job.track_id = track.id
-        # job.start_time = datetime.datetime.now()
-        # db_session.add(job)
+        logger.info('send task name={}, queue={}, task id={}, account id={}, track id={}'.format(
+            celery_task_name, agent_queue_name, task_id, account.id, track.id))
 
         JobOpt.save_job(db_session, task_id, account.id, agent_id=agent_id, track_id=track.id, status='running')
 

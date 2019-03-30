@@ -9,7 +9,7 @@ import datetime
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import JobLookupError
-from db import TaskOpt, SchedulerOpt, JobOpt
+from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt
 from tasks.processor import send_task_2_worker
 from config import logger
 from util import RedisOpt
@@ -26,15 +26,26 @@ def scheduler_task(scheduler_id, *args):
     :return: 成功返回 APScheduler 任务id, 失败返回 None
     """
     task_sch = SchedulerOpt.get_scheduler(scheduler_id)
+    # 判断任务是否已经过期
     if task_sch.end_date and task_sch.end_date <= datetime.datetime.now():
-        logger.warning('Task has expired, scheduler id={}, args={}'.format(scheduler_id, args))
+        logger.warning('Task has expired, end_date={}, scheduler id={}, args={}'.format(task_sch.end_date, scheduler_id, args))
         return None
 
+    # 对于周期性任务, 最小时间间隔应该大于60秒
+    if task_sch.mode in [1, 2] and task_sch.interval < 60:
+        logger.error('Task scheduler interval is too short. interval={}, scheduler_id={}, ars={}'.format(task_sch.interval, scheduler_id, args))
+        return None
+
+    # 对于指定启动时间的任务, 启动时间应该大于当前时间 
+    if task_sch.mode in [1, 3] and task_sch.start_date < datetime.datetime.now():
+        logger.error('Timed task start date earlier than now. start date={}, scheduler_id={}, args={}'.format(task_sch.start_date, scheduler_id, args))
+        return None
+    
     # 根据任务计划模式的不同启动不同的定时任务
     # 执行模式：
     # 0 - 立即执行（只执行一次）, 此时会忽略start_date,end_date参数
-    # 1 - 间隔执行并不立即开始（默认是间隔interval秒时间后开始执行，并按设定的间隔周期执行下去, 若指定start_date,则 在指定的start_date时间开始周期执行
-    # 2 - 间隔执行且立即开始, 此时会忽略start_date, 直接开始周期任务, 直到达到task指定的次数，或者到达end_date时间结束
+    # 1 - 间隔执行并不立即开始（默认是间隔interval秒时间后开始执行,并按设定的间隔周期执行下去, 若指定start_date,则 在指定的start_date时间开始周期执行
+    # 2 - 间隔执行且立即开始, 此时会忽略start_date, 直接开始周期任务, 直到达到task指定的次数,或者到达end_date时间结束
     # 3 - 定时执行,指定时间执行, 此时必须要指定start_date, 将在start_date时间执行一次
     # dispatch_processor(processor, inputs)
     if task_sch.mode == 0:
@@ -85,6 +96,7 @@ def start_task(task_id) -> bool:
         logger.error('start_task can not scheduler task, task id={}'.format(task_id))
         return False
 
+    logger.info('----start task succeed. task id={}-----'.format(task_id))
     return True
 
 
@@ -132,8 +144,9 @@ def update_task_status():
         for j in jobs:
             if j[0] == 'succeed':
                 succeed_counts += 1
-            else:
+            elif j[0] == 'failed':
                 failed_counts += 1
+
         task.succeed_counts = succeed_counts
         task.failed_counts = failed_counts
         logger.info('update_task_status task {} status={}, succeed={}, failed={}'.
@@ -168,12 +181,24 @@ def update_task_status():
                                                                                           task.failed_counts))
 
 
+def update_agent_status():
+    """
+    根据运行结果实时更新agent的忙碌程度
+    :return:
+    """
+    agents = AgentOpt.get_enable_agents(None)
+    for agent in agents:
+        running_jobs_num = JobOpt.count_jobs_by_agent_id(agent.id, status='running')
+        agent.status = running_jobs_num
+        logger.info('Agent id={},  status={}'.format(agent.id, agent.status))
+
+
 def update_results():
     """
     根据backend中的值更新数据库中job的状态, 同时逆向更新task状态
     :return:
     """
-    results = RedisOpt.pop_all_backend(pattern='celery-task-meta*', is_delete=True)
+    results = RedisOpt.pop_all_backend(pattern='celery-task-meta*', is_delete=False)
     if not results:
         logger.warning('have no results to update.')
         return
@@ -194,7 +219,7 @@ def update_results():
         track_id = dict_res.get('task_id', '')
         job_res = dict_res.get('result', '')
 
-        # 除了任务本身的成败外，还需要关注实际返回的结果
+        # 除了任务本身的成败外,还需要关注实际返回的结果
         if isinstance(job_res, dict) and job_res.get('status', '') == 'failed':
             status = 'failed'
 
@@ -207,15 +232,21 @@ def update_results():
             'traceback': str(dict_res.get('traceback', ''))
         }
 
-    res = JobOpt.set_job_by_track_ids(track_ids=track_ids, values=values)
-    logger.info('update_results update num={}, finished num={}. '.format(len(track_ids), len(res)))
-    if res:
-        # 将落盘成功的数据从缓存区清掉
-        for track_id in res:
+    logger.info('update_results track ids={}'.format(track_ids))
+    unfinished_track_ids = JobOpt.set_job_by_track_ids(track_ids=track_ids.copy(), values=values)
+    logger.info('update_results update num={}, unfinished num={}. unfinished track ids={}'
+                .format(len(track_ids), len(unfinished_track_ids), unfinished_track_ids))
+
+    # 将落盘成功的数据从缓存区清掉
+    for track_id in track_ids:
+        if track_id not in unfinished_track_ids:
             RedisOpt.delete_backend('*{}'.format(track_id))
 
-    # 根据更新后的job状态，逆向更新任务状态
+    # 根据更新后的job状态,逆向更新任务状态
     update_task_status()
+
+    # 根据运行结果实时更新agent的忙碌程度
+    update_agent_status()
 
 
 def clean_environment():
@@ -227,8 +258,8 @@ def clean_environment():
 def start(start_new=True, update_interval=30):
     """
     启动任务调度系统
-    :param start_new: 是否全新开始，若是则清空缓存，从头开始； 若否，则继续上一次结束点开始，之前未处理完的任务将继续被执行
-    :param update_interval: 结果更新周期，默认30秒
+    :param start_new: 是否全新开始,若是则清空缓存,从头开始； 若否,则继续上一次结束点开始,之前未处理完的任务将继续被执行
+    :param update_interval: 结果更新周期,默认30秒
     :return:
     """
     try:
@@ -260,6 +291,7 @@ def start(start_new=True, update_interval=30):
 if __name__ == '__main__':
     clean_environment()
     start(start_new=False)
+
 
     # dispatch_test()
 """
