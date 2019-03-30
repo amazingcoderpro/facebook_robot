@@ -21,6 +21,7 @@ from util import RedisOpt
 
 g_bk_scheduler = None
 Result = namedtuple('Result', ['res', 'msg'])
+last_check_time = datetime.datetime.now()
 
 
 def scheduler_task(scheduler_id, *args):
@@ -243,8 +244,29 @@ def update_results():
     # 根據運行結果實時更新account的使用狀態
     update_account_usage()
 
+    # 处理任务状态变更
+    process_updated_tasks()
+
     # 启动所有新建任务
     start_all_new_tasks()
+
+
+def process_updated_tasks():
+    """
+    处理任务状态变更
+    :return:
+    """
+    global last_check_time
+    tasks = TaskOpt.get_all_need_check_task(last_time=last_check_time)
+    for task_id, status, last_update in tasks:
+        if last_update >= last_check_time:
+            if status == 'cancelled':
+                cancel_task(task_id)
+            elif status == 'pausing':
+                pause_task(task_id)
+            elif status == 'running':
+                resume_task(task_id)
+    last_check_time = datetime.datetime.now()
 
 
 def start_all_new_tasks(scheduler=None):

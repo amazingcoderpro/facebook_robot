@@ -63,10 +63,10 @@ def send_task_2_worker(task_id):
     agents = AgentOpt.get_enable_agents(db_session, status_order=True)
 
     # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
-    task.real_accounts_num = task.accounts_num = len(task.accounts)
+    real_accounts_num = 0
     for account in task.accounts:
         if account.status != 'valid':
-            task.real_accounts_num -= 1
+
             logger.warning('account can not be used. task id={}, account id={}'.format(task_id, account.id))
             continue
 
@@ -91,6 +91,8 @@ def send_task_2_worker(task_id):
 
         celery_task_name = "tasks.tasks.{}".format(task_processor)
 
+        real_accounts_num += 1
+
         track = app.send_task(
             celery_task_name,
             args=(inputs, ),
@@ -105,6 +107,7 @@ def send_task_2_worker(task_id):
 
     # 更新任务状态为running
     TaskOpt.set_task_status(db_session, task_id, status='running')
+    task.real_accounts_num = real_accounts_num
 
     db_session.commit()
     ScopedSession.remove()

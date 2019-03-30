@@ -75,7 +75,7 @@ if __name__ == '__main__':
     else:
         run(relay=False, update_interval=interval)
 
-
+# pipenv run python3 main.py [new|restart] [30]
 
     # dispatch_test()
 """
