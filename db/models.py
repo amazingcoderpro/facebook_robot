@@ -5,7 +5,7 @@
 
 
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Table, ForeignKey)
+    Column, Integer, String, DateTime, Table, ForeignKey, TIMESTAMP)
 from sqlalchemy.orm import relationship
 from db.basic import Base, engine
 
@@ -125,6 +125,9 @@ class Task(Base):
     # 该任务需要的账号数量
     accounts_num = Column(Integer, default=0, server_default='0')
 
+    # 该任务实际使用的账号数量(会有账号不可用
+    real_accounts_num = Column(Integer, default=0, server_default='0')
+
     result = Column(String(2048), default='', server_default='')
 
     # 这个是在APScheduler中调度时的任务id 用以暂停、恢复、取消任务# 这个是在APScheduler中调度时的任务id
@@ -132,6 +135,9 @@ class Task(Base):
 
     # 这里保存任务的额外信息,以json字符形式保存,如post内容, 点赞规则, ads_code, keep time, 目标站点等
     configure = Column(String(2048), default='', server_default='')
+
+    # 最后一次更新的时间戳
+    last_update = Column(DateTime(6))
 
     def accounts_list(self):
         return [acc.account for acc in self.accounts]
@@ -222,7 +228,7 @@ class Account(Base):
     name = Column(String(100), default='', server_default='')
     profile_id = Column(String(100), default='', server_default='')
 
-    # 0-valid, 1-invalid, 2-verify, 3-other
+    # 0-valid, 1-invalid, 2-verifying, 3-other
     status = Column(String(20), default='valid', server_default='valid')
 
     # 是否正在被某任务使用 0-未使用, 大于1代表正在被使用,数字代表并发使用数

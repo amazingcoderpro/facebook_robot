@@ -1,21 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Created by Charles on 19-3-30
+# Function: 
+
+
+# !/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Created by Charles on 19-3-18
 # Function:
 
 
-import time
 import datetime
+from collections import namedtuple
 import json
-from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import JobLookupError
-from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt
+from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt, AccountOpt
 from tasks.processor import send_task_2_worker
 from config import logger
 from util import RedisOpt
 
-
-g_bk_scheduler = BackgroundScheduler()
+g_bk_scheduler = None
+Result = namedtuple('Result', ['res', 'msg'])
+last_check_time = datetime.datetime.now()
 
 
 def scheduler_task(scheduler_id, *args):
@@ -28,19 +34,23 @@ def scheduler_task(scheduler_id, *args):
     task_sch = SchedulerOpt.get_scheduler(scheduler_id)
     # 判断任务是否已经过期
     if task_sch.end_date and task_sch.end_date <= datetime.datetime.now():
-        logger.warning('Task has expired, end_date={}, scheduler id={}, args={}'.format(task_sch.end_date, scheduler_id, args))
+        logger.warning(
+            'Task has expired, end_date={}, scheduler id={}, args={}'.format(task_sch.end_date, scheduler_id, args))
         return None
 
     # 对于周期性任务, 最小时间间隔应该大于60秒
     if task_sch.mode in [1, 2] and task_sch.interval < 60:
-        logger.error('Task scheduler interval is too short. interval={}, scheduler_id={}, ars={}'.format(task_sch.interval, scheduler_id, args))
+        logger.error(
+            'Task scheduler interval is too short. interval={}, scheduler_id={}, ars={}'.format(task_sch.interval,
+                                                                                                scheduler_id, args))
         return None
 
-    # 对于指定启动时间的任务, 启动时间应该大于当前时间 
+    # 对于指定启动时间的任务, 启动时间应该大于当前时间
     if task_sch.mode in [1, 3] and task_sch.start_date < datetime.datetime.now():
-        logger.error('Timed task start date earlier than now. start date={}, scheduler_id={}, args={}'.format(task_sch.start_date, scheduler_id, args))
+        logger.error('Timed task start date earlier than now. start date={}, scheduler_id={}, args={}'.format(
+            task_sch.start_date, scheduler_id, args))
         return None
-    
+
     # 根据任务计划模式的不同启动不同的定时任务
     # 执行模式：
     # 0 - 立即执行（只执行一次）, 此时会忽略start_date,end_date参数
@@ -72,34 +82,6 @@ def scheduler_task(scheduler_id, *args):
     return aps_job
 
 
-def start_task(task_id) -> bool:
-    """
-    启动任务
-    :param task_id: 任务id
-    :return: 成功返回True, 失败返回False
-    """
-    task = TaskOpt.get_task_by_task_id(None, task_id)
-    if not task:
-        logger.error('start_task can not find the task, id={}. '.format(task_id))
-        return False
-
-    if task.status in ['succeed', 'failed']:
-        logger.error('start_task task have been finished, id={}. '.format(task_id))
-        return False
-
-    aps_job = scheduler_task(task.scheduler, task_id)
-
-    # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
-    if aps_job:
-        TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
-    else:
-        logger.error('start_task can not scheduler task, task id={}'.format(task_id))
-        return False
-
-    logger.info('----start task succeed. task id={}-----'.format(task_id))
-    return True
-
-
 def dispatch_test():
     import time
     from tasks.workers import app
@@ -121,7 +103,7 @@ def save_jobs():
     jobs = RedisOpt.pop_all(key='job_list', is_delete=True)
     job_num = len(jobs)
     last_job_num = RedisOpt.read_object('total_job')
-    total_jobs_num = job_num+int(last_job_num) if last_job_num != -1 else job_num
+    total_jobs_num = job_num + int(last_job_num) if last_job_num != -1 else job_num
     RedisOpt.write_object(key='total_job', value=total_jobs_num)
     logger.info('save_jobs total number={}'.format(total_jobs_num))
 
@@ -155,7 +137,7 @@ def update_task_status():
         sch = SchedulerOpt.get_scheduler(task.scheduler)
         # 如果是一次性任务,只要所有job结果都返回了, task即结束
         if sch.mode in [0, 3]:
-            if (task.failed_counts + task.succeed_counts) >= task.accounts_num:
+            if (task.failed_counts + task.succeed_counts) >= task.real_accounts_num:
                 if task.succeed_counts >= task.limit_counts:
                     task.status = 'succeed'
                 else:
@@ -177,8 +159,9 @@ def update_task_status():
                 g_bk_scheduler.remove_job(aps_id)
             except JobLookupError:
                 logger.warning('job have been removed. aps_id={}'.format(aps_id))
-            logger.info('update_task_status task {} status={}, succeed={}, failed={}'.format(task.id, task.status, task.succeed_counts,
-                                                                                          task.failed_counts))
+            logger.info('update_task_status task {} status={}, succeed={}, failed={}'.format(task.id, task.status,
+                                                                                             task.succeed_counts,
+                                                                                             task.failed_counts))
 
 
 def update_agent_status():
@@ -193,6 +176,16 @@ def update_agent_status():
         logger.info('Agent id={},  status={}'.format(agent.id, agent.status))
 
 
+def update_account_usage():
+    """
+    根據運行結果實時更新account的使用狀態
+    :return:
+    """
+    accounts = AccountOpt.get_all_accounts()
+    for account in accounts:
+        account.using = JobOpt.count_jobs_by_account_id(account.id, status='running')
+
+
 def update_results():
     """
     根据backend中的值更新数据库中job的状态, 同时逆向更新task状态
@@ -205,7 +198,7 @@ def update_results():
 
     results_num = len(results)
     last_results_num = RedisOpt.read_object('total_num')
-    total_result_num = results_num+int(last_results_num) if last_results_num != -1 else results_num
+    total_result_num = results_num + int(last_results_num) if last_results_num != -1 else results_num
     RedisOpt.write_object(key='total_num', value=total_result_num)
     logger.info('update_results total number={}'.format(total_result_num))
 
@@ -248,56 +241,198 @@ def update_results():
     # 根据运行结果实时更新agent的忙碌程度
     update_agent_status()
 
+    # 根據運行結果實時更新account的使用狀態
+    update_account_usage()
+
+    # 处理任务状态变更
+    process_updated_tasks()
+
+    # 启动所有新建任务
+    start_all_new_tasks()
+
+
+def process_updated_tasks():
+    """
+    处理任务状态变更
+    :return:
+    """
+    global last_check_time
+    tasks = TaskOpt.get_all_need_check_task(last_time=last_check_time)
+    for task_id, status, last_update in tasks:
+        if last_update >= last_check_time:
+            if status == 'cancelled':
+                cancel_task(task_id)
+            elif status == 'pausing':
+                pause_task(task_id)
+            elif status == 'running':
+                resume_task(task_id)
+    last_check_time = datetime.datetime.now()
+
+
+def start_all_new_tasks(scheduler=None):
+    """
+    检测新建任务, 并加入执行
+    :return:
+    """
+    if scheduler:
+        global g_bk_scheduler
+        g_bk_scheduler = scheduler
+
+    logger.info('start_all_new_tasks')
+    tasks = TaskOpt.get_all_new_task()
+    for task_id, status in tasks:
+        start_task(task_id)
+
+
+def restart_all_tasks(scheduler=None):
+    """
+    重新启动所有需要重新运行的任务, 可用于系统宕机后的重启
+    :return:
+    """
+    if scheduler:
+        global g_bk_scheduler
+        g_bk_scheduler = scheduler
+
+    logger.info('restart_all_tasks')
+    need_restart_tasks = TaskOpt.get_all_need_restart_task()
+    for task_id, status in need_restart_tasks:
+        logger.info('need restart task id={}, status={}.'.format(task_id, status))
+        start_task(task_id)
+
+    return Result(res=True, msg='')
+
 
 def clean_environment():
+    """
+    清空缓存
+    :return:
+    """
     RedisOpt.clean_cache_db()
     RedisOpt.clean_backend_db()
     RedisOpt.clean_broker_db()
 
 
-def start(start_new=True, update_interval=30):
+def start_task(task_id, force=False):
     """
-    启动任务调度系统
-    :param start_new: 是否全新开始,若是则清空缓存,从头开始； 若否,则继续上一次结束点开始,之前未处理完的任务将继续被执行
-    :param update_interval: 结果更新周期,默认30秒
+    启动任务
+    :param task_id: 任务id
+    :param force: 是否强制启动国（若是， 所有未完成的任务都将重新启动，用于系统重启）
+    :return: 成功返回True, 失败返回False
+    """
+    task = TaskOpt.get_task_by_task_id(None, task_id)
+    if not task:
+        logger.error('start_task can not find the task, id={}. '.format(task_id))
+        return Result(res=False, msg='can not find the task')
+
+    # 强制状态下，可以启动所有new, pending, pausing状态的任务
+    if force:
+        if task.status not in ['new', 'pending', 'pausing', 'running']:
+            logger.error('start_task task have been finished, id={}, status={}. '.format(task_id, task.status))
+            return Result(res=False, msg='task have been finished, status={}'.format(task.status))
+    else:
+        if task.status != 'new':
+            logger.error('start_task task is not a new task, status={}. '.format(task.status))
+            return Result(res=False, msg='is not a new task')
+
+    # 如果task已经启动，先移除(用于系统重启）
+    if task.status in ['pending', 'pausing', 'running']:
+        try:
+            g_bk_scheduler.remove(task.aps_id)
+        except JobLookupError:
+            logger.warning('job have been removed.')
+        task.status = 'new'
+        task.aps_id = ''
+        task.start_time = None
+
+    # 开始启动任务调度
+    aps_job = scheduler_task(task.scheduler, task_id)
+
+    # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
+    if aps_job:
+        task.status = 'running'
+        task.aps_id = aps_job.id
+        # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
+    else:
+        logger.error('start_task can not scheduler task, task id={}'.format(task_id))
+        return Result(res=False, msg='scheduler task failed')
+
+    logger.info('----start task succeed. task id={}-----'.format(task_id))
+    return Result(res=True, msg='start task succeed. id={}, aps id={}'.format(task_id, aps_job.id))
+
+
+def pause_task(task_id):
+    """
+    暂停任务
+    :param task_id:
     :return:
     """
+    task = TaskOpt.get_task_by_task_id(None, task_id)
+    if not task:
+        logger.error('pause_task can not find the task, id={}. '.format(task_id))
+        return Result(res=False, msg='can not find the task')
+
+    if task.status not in ['pending', 'running']:
+        logger.error('pause_task but task is not running, id={}. '.format(task_id))
+        return Result(res=False, msg='task have is not running')
+
     try:
-        logger.info('----Start Task Scheduler System.----')
-        if start_new:
-            logger.info('clean environment. ')
-            clean_environment()
-        else:
-            need_restart_tasks = TaskOpt.get_all_need_restart_task()
-            for task in need_restart_tasks:
-                logger.info('need restart task id={}, status={}.'.format(task.id, task.status))
-                start_task(task.id)
+        g_bk_scheduler.pause_job(task.aps_id)
+    except JobLookupError:
+        logger.exception('pause_task, job have been removed.')
+        return Result(res=False, msg='pause_task, job have been removed.')
 
-        # 启动定时结果更新
-        g_bk_scheduler.add_job(update_results, 'interval', seconds=update_interval, misfire_grace_time=20, max_instances=5)
-        g_bk_scheduler.start()
-
-        while True:
-            time.sleep(2)
-    except (KeyboardInterrupt, SystemExit):
-        g_bk_scheduler.shutdown()
-        logger.warning('Scheduler have been stopped.')
-    finally:
-        if g_bk_scheduler.running:
-            g_bk_scheduler.shutdown()
-    logger.info('----Stop Task Scheduler System.----')
+    task.status = 'pausing'
+    return Result(res=True, msg='')
 
 
-if __name__ == '__main__':
-    clean_environment()
-    start(start_new=False)
+def resume_task(task_id):
+    """
+    恢复任务
+    :param task_id:
+    :return:
+    """
+    task = TaskOpt.get_task_by_task_id(None, task_id)
+    if not task:
+        logger.error('resume_task can not find the task, id={}. '.format(task_id))
+        return Result(res=False, msg='can not find the task')
+
+    if task.status != 'pausing':
+        return Result(res=False, msg='task is not pausing')
+
+    try:
+        ret = g_bk_scheduler.resume_job(task.aps_id)
+    except JobLookupError:
+        logger.exception('resume_task, job have been removed.')
+        return Result(res=False, msg='job have been removed.')
+
+    # 如果任务已经过期则ret会是null
+    if ret:
+        task.status = 'running'
+        return Result(res=True, msg='')
+    else:
+        task.status = 'failed'
+        return Result(res=False, msg='task has already expired')
 
 
-    # dispatch_test()
-"""
-update facebook.task set status='new' where id>0;
-update facebook.task set failed_counts=0 where id>0;
-update facebook.task set succeed_counts=0 where id>0;
-update facebook.task set start_time=null where id>0;
-update facebook.task set end_time=null where id>0;
-"""
+def cancel_task(task_id):
+    """
+    取消任务
+    :param task_id: 任务id
+    :return: Result
+    """
+    task = TaskOpt.get_task_by_task_id(None, task_id)
+    if not task:
+        logger.error('cancel_task can not find the task, id={}. '.format(task_id))
+        return Result(res=False, msg='can not find the task')
+
+    if task.status in ['succeed', 'failed', 'cancelled']:
+        logger.error('cancel_task but task have been finished, id={}. '.format(task_id))
+        return Result(res=False, msg='task have been finished')
+
+    try:
+        g_bk_scheduler.remove_job(task.aps_id)
+    except JobLookupError:
+        pass
+
+    task.status = 'cancelled'
+    return Result(res=True, msg='')

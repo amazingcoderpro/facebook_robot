@@ -7,6 +7,7 @@
 import datetime
 from config import logger
 from db.basic import db_session, db_lock
+from sqlalchemy import and_
 from db.models import (Scheduler, Account, User, Task, TaskAccountGroup,
                        Job, TaskCategory, UserCategory, AccountCategory, Agent)
 
@@ -131,6 +132,10 @@ class AccountOpt:
         return db_session.query(Account).filter(Account.id == account_id).first()
 
     @classmethod
+    def get_all_accounts(cls):
+        return db_session.query(Account.id).all()
+
+    @classmethod
     def add_account_using_counts(cls, account_id):
         acc = db_session.query(Account).filter(Account.id == account_id).first()
         if acc:
@@ -155,12 +160,25 @@ class TaskOpt:
         return db_session.query(Task).filter(Task.status == 'pausing').all()
 
     @classmethod
+    def get_all_new_task(cls):
+        return db_session.query(Task.id, Task.status).filter(Task.status == 'new').all()
+
+    @classmethod
+    def get_all_need_check_task(cls, last_time):
+        """
+        获取所有需要检查的任务（即状态可能被用户修改的任务）
+        :return:
+        """
+        return db_session.query(Task.id, Task.status, Task.last_update)\
+            .filter(and_(Task.status.in_(('pausing', 'running', 'cancelled')), Task.last_update >= last_time)).all()
+
+    @classmethod
     def get_all_need_restart_task(cls):
         """
         主要用于服务器宕机后重新启动时获取所有需要启动的任务,包括pending状态和running状态的
         :return:
         """
-        return db_session.query(Task).filter(Task.status.notin_(('succeed', 'failed', 'cancelled'))).all()
+        return db_session.query(Task.id, Task.status).filter(Task.status.notin_(('succeed', 'failed', 'cancelled'))).all()
 
     @classmethod
     def get_all_succeed_task(cls):
@@ -177,11 +195,12 @@ class TaskOpt:
         task.category = category_id
         task.creator = creator_id
         task.scheduler = scheduler_id
-        task.accounts_num = len(account_ids)
+        task.real_accounts_num = task.accounts_num = len(account_ids)
         for k, v in kwargs.items():
             if hasattr(task, k):
                 setattr(task, k, v)
 
+        task.last_update = datetime.datetime.now()
         db_session.add(task)
         db_session.commit()
 
@@ -198,6 +217,7 @@ class TaskOpt:
     @classmethod
     def add_task(cls, task):
         if isinstance(task, Task):
+            task.last_update = datetime.datetime.now()
             db_session.add(task)
             db_session.commit()
             return True
@@ -219,6 +239,8 @@ class TaskOpt:
                     task.start_time = datetime.datetime.now()
                 elif status in ['succeed', 'failed']:
                     task.end_time = datetime.datetime.now()
+                    # 只有结束是系统自动调度出来的,需要更新last_update字段，其他状态更新不需要,交由webserver
+                    task.last_update = datetime.datetime.now()
 
                 task.status = status
                 session.commit()
@@ -231,6 +253,7 @@ class TaskOpt:
         task = db_session.query(Task).filter(Task.id == task_id).first()
         if task:
             task.result = result
+            task.last_update = datetime.datetime.now()
             db_session.commit()
             return True
 
@@ -335,6 +358,13 @@ class JobOpt:
             return db_session.query(Job).filter(Job.agent == agent_id, Job.status == status).count()
         else:
             return db_session.query(Job).filter(Job.agent == agent_id).count()
+
+    @classmethod
+    def count_jobs_by_account_id(cls, account_id, status='running'):
+        if status:
+            return db_session.query(Job).filter(Job.account == account_id, Job.status == status).count()
+        else:
+            return db_session.query(Job).filter(Job.account == account_id).count()
 
     @classmethod
     def set_job_status(cls, job_id, status):
@@ -588,10 +618,8 @@ def init_db_data():
 
 def show_test_data():
     tasks = TaskOpt.get_all_need_restart_task()
-    for task in tasks:
-        print("tasks = {}".format(task))
-        for acc in task.accounts:
-            print(acc.account)
+    for id, status in tasks:
+        print(id, status)
 
     acc = AccountOpt.get_account(account_id=0)
     print(acc)
