@@ -6,6 +6,7 @@ from django.db import transaction
 
 from users.models import UserCategory, User
 
+
 # Created by: guangda.lee
 # Created on: 2019/3/20
 # Function: 用户通用方法单元
@@ -40,7 +41,11 @@ def create_user(category, username, password, fullname, enable_tasks):
 
 # 根据 token 返回用户
 def user_by_token(request):
-    token = request.query_params.get('access-token', '')
+    key = 'access-token'
+    try:
+        token = request.query_params.get(key, '')
+    except AttributeError:
+        token = request.GET[key] if key in request.GET else ''
     if token != '':
         try:
             return User.objects.get(token=token)

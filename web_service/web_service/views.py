@@ -12,7 +12,7 @@ from web_service.settings import DEBUG
 # 页面上下文全局量
 GLOBAL_CONTEXT = {
     'static': {
-        'main': 49,
+        'main': 52,
         'require': 1,
         'debug': DEBUG
     }

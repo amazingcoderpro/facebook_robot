@@ -1,4 +1,4 @@
-require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, global, table, form){
+require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], function(Vue, global, table, form, taskCommon){
     global.initModule({
         title: '任务管理',
         sub: '新增、管理任务',
@@ -43,7 +43,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             'div': '#detail',
             'html': detailHtml,
             'data': item,
-            'displayScheduler': displayScheduler,
+            'displayScheduler': taskCommon.displayScheduler,
             'displayInterval': displayInterval
         }),
         $('#info .box-title').text(item.name+'的基本信息'),
@@ -89,14 +89,6 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             });
         })
     },
-    schedulerMode = ['立即执行（只执行一次）',
-                '间隔执行',
-                '间隔执行，立即开始',
-                '定时执行，指定时间执行'],
-    // 显示调度类型
-    displayScheduler=function(mode){
-        return schedulerMode[mode]
-    },
     // 显示间隔
     displayInterval=function(interval){
         interval /= 3600;
@@ -124,7 +116,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 {
                     title: '类型',
                     data: 'scheduler.mode',
-                    render: displayScheduler
+                    render: taskCommon.displayScheduler
                 },
                 {
                     title: '创建者',
@@ -184,7 +176,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 })
             }
         }),
-        $.each(schedulerMode, function(i, item){$('#modal-new select[name="scheduler"]').append('<option value="'+i+'">'+item+'</option>')})
+        $.each(taskCommon.schedulerMode, function(i, item){$('#modal-new select[name="scheduler"]').append('<option value="'+i+'">'+item+'</option>')})
         $('#modal-new select[name="scheduler"]').on('change', onModeChange);
         onModeChange();
 })

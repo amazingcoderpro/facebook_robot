@@ -40,4 +40,3 @@ class AccountCSVExportView(CSVExportView):
             many=True
         )
 
-

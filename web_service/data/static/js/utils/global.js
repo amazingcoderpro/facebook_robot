@@ -101,6 +101,16 @@ define(['vue'], function(Vue) {
       data: user
     });
     if(!user.category.isAdmin)$('ul.sidebar-menu li.admin').remove();
+    $('a.logout').on('click', function(){
+        $.ajax({
+            url: getAPI('/api/user/logout'),
+            contentType: "application/json",
+            method: 'get',
+            success: function(data){
+                location.assign('/user/login')
+            }
+        })
+    });
 
     return {
         user: user,
