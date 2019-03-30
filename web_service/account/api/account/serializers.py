@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from account.api.category.serializers import CategorySerializer
 from account.models import Account
+from users.api.user.serializers import UserSerializer
 
 
 # Created by: guangda.lee
@@ -14,6 +15,7 @@ from account.models import Account
 class AccountSerializer(serializers.HyperlinkedModelSerializer):
     # category = serializers.PrimaryKeyRelatedField(queryset=AccountCategory.objects.all())
     category = CategorySerializer()
+    owner = UserSerializer(read_only=True)
 
     # 创建账户
     def create(self, validated_data):
@@ -43,7 +45,7 @@ class AccountSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Account
-        fields = ('url', 'id', 'category', 'account', 'password', 'email', 'email_pwd', 'phone_number',
+        fields = ('url', 'id', 'owner', 'category', 'account', 'password', 'email', 'email_pwd', 'phone_number',
                   'gender', 'birthday', 'national_id', 'register_time', 'name', 'profile_id', 'status',
                   'enable_tasks', 'last_login', 'last_post', 'last_chat', 'last_farming', 'last_comment',
                   'last_edit')

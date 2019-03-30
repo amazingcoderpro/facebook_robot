@@ -10,8 +10,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             scheduler: {
                 mode: parseInt($('#modal-new select[name="scheduler"]').val()),
                 interval: parseInt($('#modal-new select[name="scheduler"]').val()) * 3600,
-                start_date: $('#modal-new input[name="schedulerBeginDate"]').val() + 'T' + $('#modal-new input[name="schedulerBeginTime"]').val(),
-                end_date: $('#modal-new input[name="schedulerEndDate"]').val() + 'T' + $('#modal-new input[name="schedulerEndTime"]').val()
+                start_date: $('#modal-new input[name="schedulerBeginDate"]').val() + ' ' + $('#modal-new input[name="schedulerBeginTime"]').val(),
+                end_date: $('#modal-new input[name="schedulerEndDate"]').val() + ' ' + $('#modal-new input[name="schedulerEndTime"]').val()
             }};
         if($('#modal-new select[name="intervalUnit"]').val()=='0')req.scheduler.interval*=24;
         if(isNaN(req.scheduler.interval))req.scheduler.interval=0;
@@ -20,6 +20,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         $.each($('#modal-new input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
         if(req.name=='')global.showTip('请输入任务名称');
         else if(req.limit_counts=='')global.showTip('请输入任务需求数');
+        else if(req.accounts_num=='')global.showTip('请输入任务账号数');
         else if((req.scheduler.mode==1||req.scheduler.mode==2)&&(req.scheduler.interval==0))global.showTip('请设置执行间隔');
         else if((req.scheduler.mode==1||req.scheduler.mode==3)&&!req.scheduler.start_date)global.showTip('请设置启动时间');
         else if((req.scheduler.mode==1||req.scheduler.mode==2)&&!req.scheduler.end_date)global.showTip('请设置最晚停止时间');
@@ -39,6 +40,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         }
     },
     modifyTask=function(item){
+        var canEditEndDate = item.scheduler.mode in [1, 2] && ['new', 'pending', 'pausing'].indexOf(item.status)>=0;
         global.showDetail({
             'div': '#detail',
             'html': detailHtml,
@@ -46,7 +48,19 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             'displayScheduler': taskCommon.displayScheduler,
             'displayInterval': displayInterval
         }),
-        $('#info .box-title').text(item.name+'的基本信息'),
+        $('#info .box-title').text(item.name+'的基本信息');
+        if(canEditEndDate){
+            $('#detail input.pick-date').val(item.scheduler.end_date?item.scheduler.end_date.substr(0,10):'').datepicker({
+              autoclose: true,
+              format: 'yyyy-mm-dd'
+            }),
+            $('#detail .timepicker').timepicker({
+              showInputs: false,
+              showMeridian: false,
+              defaultTime: item.scheduler.end_date?item.scheduler.end_date.substr(11, 8):'10:00:00'
+            }),
+            $('.form-group.end-date').find('p').remove()
+        }else $('.form-group.end-date').find('.input-group').remove()
         table.initTable('#accountTable', {
             ajax: {url: global.getAPI(url+item.id+'/account/')},
             columns: [
@@ -75,6 +89,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             var req={};
 //            Object.assign(req, item);
             $.each($('#detail input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
+            if(canEditEndDate)
+                req.scheduler={end_date: $('#detail input[name="schedulerEndDate"]').val() + ' ' + $('#detail input[name="schedulerEndTime"]').val()}
             if(req.name=='')global.showTip('请输入任务名称');
             else $.ajax({
                 url: global.getAPI(url+item.id+'/'),
@@ -88,6 +104,23 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 error: function(){global.showTip('任务信息更新失败，请稍后再试')}
             });
         })
+    },
+    updateStatus=function(id, newStatus, successMsg){
+        $.ajax({
+            url: global.getAPI(url+id+'/'),
+            contentType: "application/json",
+            method: 'patch',
+            data: JSON.stringify({status:newStatus}),
+            success: function(data){
+                global.showTip({word: successMsg, danger: false});
+                dataTable.ajax.reload(),
+                $('#detail').html('')
+            }
+        });
+    },
+    start_stop=function(item){
+        if(item.status=='running')updateStatus(item.id, 'pausing', '任务停止成功')
+        else if(item.status=='pausing')updateStatus(item.id, 'running', '任务启动成功')
     },
     // 显示间隔
     displayInterval=function(interval){
@@ -120,7 +153,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 },
                 {
                     title: '创建者',
-                    data: 'creator.fullname'
+                    data: 'creator.fullname',
+                    visible: global.user.category.isAdmin
                 },
                 {
                     title: '名称',
@@ -132,24 +166,21 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 }
             ],
             onSingleRowClick: function(item){
-                if(item)modifyTask(item);
-                else $('#detail').html('')
+                if(item){
+                    modifyTask(item);
+                    var button=$('button.start-stop');
+                    if(['running', 'pausing'].indexOf(item.status)>=0)
+                        button.removeClass('hide').text(item.status=='running'?'停止':'启动')
+                    else button.addClass('hide')
+                }else $('#detail').html('');
             },
             onButtonClick: function(button, table, item, id){
                 if(button.hasClass('modify'))modifyGroup(item);
                 else if(button.hasClass('reset-password'))resetPwd(item);
+                else if(button.hasClass('start-stop'))start_stop(item);
                 else if(button.hasClass('delete'))
                     global.dialog.deleteWarning('是否删除任务？', function(){
-                        $.ajax({
-                            url: global.getAPI(url+id+'/'),
-                            contentType: "application/json",
-                            method: 'delete',
-                            success: function(data){
-                                global.showTip({word: '任务删除成功', danger: false});
-                                dataTable.ajax.reload(),
-                                $('#detail').html('')
-                            }
-                        });
+                        updateStatus(id, 'cancelled', '任务删除成功')
                     });
             }
         });

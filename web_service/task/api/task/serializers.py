@@ -3,7 +3,7 @@
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-from task.models import Task, Scheduler
+from task.models import Task, Scheduler, TaskAccountRelationship
 from users.api.user.serializers import UserSerializer
 from task.api.category.serializers import CategorySerializer
 from task.api.scheduler.serializers import SchedulerSerializer
@@ -22,17 +22,25 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
     scheduler = SchedulerSerializer()
     # accounts = AccountSerializer(many=True)
 
+    @staticmethod
+    def update_timestamp(instance):
+        from django.utils.timezone import now
+        instance.last_update = now()
+        instance.save()
+
     def create(self, validated_data):
         validated_data['category'] = CategorySerializer().create(validated_data.pop('category'))
         has_accounts = 'accounts' in validated_data
         if has_accounts:
             accounts_data = validated_data.pop('accounts')
         from users.common import user_by_token
-        validated_data['creator'] = user_by_token(self.context.get("request"))
+        user = user_by_token(self.context.get("request"))
+        validated_data['creator'] = user
         with transaction.atomic():
             scheduler_data = validated_data.pop('scheduler')
-            print(scheduler_data)
             validated_data['scheduler'] = Scheduler.objects.create(**scheduler_data)  # SchedulerSerializer().create(scheduler_data)  # (validated_data.pop('scheduler'))
+            print(validated_data)
+            account_count = int(validated_data['accounts_num'])
             instance = super(TaskSerializer, self).create(validated_data)
             # if has_accounts and accounts_data:
             #     for account_data in accounts_data:
@@ -42,6 +50,13 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             #         except ObjectDoesNotExist:
             #             pass
             #     instance.save()
+            # 分配账号
+            from django.db.models import Q
+            accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
+                                              Q(status='valid')).order_by('using')[:account_count]
+            for account in accounts:
+                TaskAccountRelationship.objects.create(account_id=account.id, task_id=instance.id)
+            self.update_timestamp(instance)
             return instance
 
     def update(self, instance, validated_data):
@@ -54,6 +69,10 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
         #                 instance.accounts.add(account)
         #             except ObjectDoesNotExist:
         #                 pass
+        if 'scheduler' in validated_data and instance.status in ('new', 'pending', 'pausing') and instance.scheduler.mode in (1, 2):
+            instance.scheduler.end_date = validated_data.pop('scheduler')['end_date']
+            instance.scheduler.save()
+        self.update_timestamp(instance)
         return super(TaskSerializer, self).update(instance, validated_data)
 
     class Meta:
@@ -67,7 +86,7 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             'failed_counts': {'read_only': True},
             'succeed_counts': {'read_only': True},
             # 'limit_counts': {'allow_blank': True},
-            'accounts_num': {'read_only': True},
+            # 'accounts_num': {'read_only': True},
             'result': {'read_only': True},
             'configure': {'read_only': True}
         }

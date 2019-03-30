@@ -54,6 +54,11 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             ajax: {url: global.getAPI(url)},
             columns: [
                 {
+                    title: '所有者',
+                    data: 'owner.fullname',
+                    visible: global.user.category.isAdmin
+                },
+                {
                     title: '类型',
                     data: 'category.name'
                 },

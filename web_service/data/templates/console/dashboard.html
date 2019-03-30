@@ -7,7 +7,7 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-3">
         <div class="box box-danger">
             <div class="box-header with-border">
               <h3 class="box-title">任务状态分布</h3>
@@ -18,10 +18,28 @@
               </div>
             </div>
             <div class="box-body">
-              <canvas id="pieChart" style="height:250px"></canvas>
+              <canvas id="taskStatus" style="height:250px"></canvas>
             </div>
             <!-- /.box-body -->
-          </div>
+        </div>
+    </div>
+    <div class="col-md-3 admin">
+        <div class="box box-danger">
+            <div class="box-header with-border">
+              <h3 class="box-title">Agent 状态分布</h3>
+
+              <div class="box-tools pull-right">
+                <button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="box-body">
+              <canvas id="agentStatus" style="height:250px"></canvas>
+            </div>
+            <!-- /.box-body -->
+        </div>
+    </div>
+    <div class="col-md-6">
           <div class="box box-primary" id="runningTask">
             <div class="box-header">
               <h3 class="box-title">运行中的任务</h3>
@@ -46,7 +64,8 @@
 
 {% block js %}
 <!-- ChartJS -->
-<script src="/static/AdminLTE-2.4.10/bower_components/chart.js/Chart.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
+<!--<script src="/static/AdminLTE-2.4.10/bower_components/chart.js/Chart.js"></script>-->
 {% endblock %}
 
 {% block depsJS %}

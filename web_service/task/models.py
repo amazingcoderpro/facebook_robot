@@ -92,6 +92,8 @@ class Task(models.Model):
     # 这个是在APScheduler中调度时的任务id, 用以暂停、重启、终止等 操作,一个任务+一个账号构成一个唯一的task
     # aps_id = models.CharField(max_length=100, default='')
 
+    last_update = models.DateTimeField(auto_now_add=True)
+
     # def accounts_list(self):
     #     return [acc.account for acc in self.taskaccountrelationship_set.all()]
 

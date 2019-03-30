@@ -18,11 +18,13 @@ from .serializers import AccountSerializer, ExportSerializer
 
 # 处理查询数据集
 def get_queryset(request):
-    from users.common import user_by_token
+    from users.common import user_by_token, is_admin
     user = user_by_token(request)
     if request.method == 'GET' and 'all' in request.query_params:
         from django.db.models import Q
         queryset = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'))
+    elif is_admin(user):
+        queryset = Account.objects.all()
     else:
         queryset = Account.objects.filter(owner_id=user.id)
     from django.db.models import Q
