@@ -21,7 +21,7 @@ require(['vue', 'utils/global', 'utils/table', 'task/common'], function(Vue, glo
                     value    : item['value'],
                     color    : colors[i % colors.length],
                     highlight: colors[i % colors.length],
-                    label    : item['status']
+                    label    : taskCommon.displayStatus(item['status'])
                 })
             });
             var pieOptions     = {

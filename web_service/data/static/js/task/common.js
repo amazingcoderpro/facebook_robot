@@ -22,6 +22,7 @@ define(['utils/global'], function(global) {
 
     return {
         schedulerMode: schedulerMode,
-        displayScheduler: displayScheduler
+        displayScheduler: displayScheduler,
+        displayStatus: displayStatus
     }
 });
