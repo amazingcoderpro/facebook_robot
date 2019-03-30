@@ -14,6 +14,7 @@
             </div>
             <div class="box-buttons" id="dataTableButtons">
                 <button type="button" class="btn btn-primary new" data-toggle="modal" data-target="#modal-new">新增</button>
+                <button type="button" class="btn single-row start-stop">启动/停止</button>
                 <button type="button" class="btn single-row delete">删除</button>
             </div>
             <!-- /.box-header -->
@@ -66,9 +67,23 @@
                         <label>执行时间</label>
                         <p class="scheduler__start_date"></p>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group end-date">
                         <label>终止时间</label>
                         <p class="scheduler__end_date"></p>
+                        <div class="input-group date">
+                          <div class="input-group-addon">
+                            <i class="fa fa-calendar"></i>
+                          </div>
+                          <input type="text" class="form-control pull-right pick-date" name="schedulerEndDate">
+                        </div>
+                        <!-- /.input group -->
+                        <div class="input-group">
+                          <input type="text" class="form-control timepicker" name="schedulerEndTime">
+
+                          <div class="input-group-addon">
+                            <i class="fa fa-clock-o"></i>
+                          </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>第一次启动时间</label>
@@ -152,6 +167,10 @@
         <div class="form-group">
             <label>任务需求数</label>
             <input type="tel" class="form-control" name="limit_counts" placeholder="请输入任务需求数" value="1" />
+        </div>
+        <div class="form-group">
+            <label>账号数</label>
+            <input type="tel" class="form-control" name="accounts_num" placeholder="请输入为任务分配的账号数" value="1" />
         </div>
         <div class="form-group">
             <label>执行间隔</label>

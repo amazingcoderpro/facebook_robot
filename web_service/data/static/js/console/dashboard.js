@@ -1,7 +1,7 @@
-require(['vue', 'utils/global', 'utils/table', 'task/common'], function(Vue, global, table, taskCommon){
+require(['vue', 'utils/global', 'utils/table', 'task/common', 'vps/common'], function(Vue, global, table, taskCommon, vpsCommon){
     global.initModule({
         title: '控制台',
-        sub: 'Facebook Auto 驾驶舱',
+        sub: 'Facebook Auto 状态舱',
         path: ['dashboard']
     });
 
@@ -11,46 +11,71 @@ require(['vue', 'utils/global', 'utils/table', 'task/common'], function(Vue, glo
         contentType: "application/json",
         method: 'get',
         success: function(data){
-            data = JSON.parse(data);
-            var pieChartCanvas = $('#pieChart').get(0).getContext('2d'),
-                pieChart = new Chart(pieChartCanvas),
-                colors = ['#f56954', '#00a65a', '#f39c12', '#00c0ef', '#3c8dbc', '#d2d6de'],
-                PieData = [];
-            $.each(data.data, function(i, item){
-                PieData.push({
-                    value    : item['value'],
-                    color    : colors[i % colors.length],
-                    highlight: colors[i % colors.length],
-                    label    : taskCommon.displayStatus(item['status'])
-                })
-            });
-            var pieOptions     = {
-              //Boolean - Whether we should show a stroke on each segment
-              segmentShowStroke    : true,
-              //String - The colour of each segment stroke
-              segmentStrokeColor   : '#fff',
-              //Number - The width of each segment stroke
-              segmentStrokeWidth   : 2,
-              //Number - The percentage of the chart that we cut out of the middle
-              percentageInnerCutout: 50, // This is 0 for Pie charts
-              //Number - Amount of animation steps
-              animationSteps       : 100,
-              //String - Animation easing effect
-              animationEasing      : 'easeOutBounce',
-              //Boolean - Whether we animate the rotation of the Doughnut
-              animateRotate        : true,
-              //Boolean - Whether we animate scaling the Doughnut from the centre
-              animateScale         : false,
-              //Boolean - whether to make the chart responsive to window resizing
-              responsive           : true,
-              // Boolean - whether to maintain the starting aspect ratio or not when responsive, if set to false, will take up entire container
-              maintainAspectRatio  : true,
-              //String - A legend template
-              legendTemplate       : '<ul class="<%=name.toLowerCase()%>-legend"><% for (var i=0; i<segments.length; i++){%><li><span style="background-color:<%=segments[i].fillColor%>"></span><%if(segments[i].label){%><%=segments[i].label%><%}%></li><%}%></ul>'
+            if(typeof data=='string')data = JSON.parse(data);
+            var labels=[], values=[];
+            $.each(data.data, function(i,item){labels.push(item['status']),values.push(item['value'])})
+
+            new Chart($('#taskStatus').get(0).getContext('2d'),{
+                "type": "doughnut",
+                "data":{
+                    "labels":labels,
+                    "datasets":[{
+                        "label":"My First Dataset",
+                        "data":values,
+                        "backgroundColor":['#f56954', '#00a65a', '#f39c12', '#00c0ef', '#3c8dbc', '#d2d6de']
+                    }]
+                },
+            })
+        }
+    });
+    // 获取 Agent 状态
+    if(global.user.category.isAdmin)
+    $.ajax({
+        url: global.getAPI('/api/agent/?all=true'),
+        contentType: "application/json",
+        method: 'get',
+        success: function(data){
+            if(typeof data=='string')data = JSON.parse(data);
+            data = vpsCommon.groupByStatus(data, true);
+            new Chart($('#agentStatus').get(0).getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: data['status'],
+                datasets: [{
+                    label: '# of Votes',
+                    data: data['count'],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                legend: {
+                    display: false
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
             }
-            //Create pie or douhnut chart
-            // You can switch between pie and douhnut using the method below.
-            pieChart.Doughnut(PieData, pieOptions)
+        })
         }
     }),
     // 展示运行中的任务
@@ -69,7 +94,8 @@ require(['vue', 'utils/global', 'utils/table', 'task/common'], function(Vue, glo
             },
             {
                 title: '创建者',
-                data: 'creator.fullname'
+                data: 'creator.fullname',
+                visible: global.user.category.isAdmin
             },
             {
                 title: '名称',

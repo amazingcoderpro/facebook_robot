@@ -53,6 +53,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                     title: '状态',
                     data: 'status',
                     render: function(data){
+
                         switch(data){
                             case '0': return 'idle';
                             case '1': return 'normal';

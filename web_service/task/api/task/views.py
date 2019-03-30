@@ -21,12 +21,12 @@ class TaskViewSet(viewsets.ModelViewSet):
     permission_classes = [AuthPermission, ]
 
     def get_queryset(self):
+        from django.db.models import Q
         from users.common import user_by_token, is_admin
         user = user_by_token(self.request)
-        queryset = Task.objects.all() if is_admin(user) else Task.objects.filter(creator_id=user.id)
+        queryset = Task.objects.filter(~Q(status='cancelled')) if is_admin(user) else Task.objects.filter(creator_id=user.id)
         if 'status' in self.request.query_params:
             queryset = queryset.filter(status=self.request.query_params['status'])
-        from django.db.models import Q
         queryset = search(self.request, queryset,
                           lambda qs, keyword: qs.filter(Q(name__icontains=keyword)))
         return queryset

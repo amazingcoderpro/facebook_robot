@@ -25,3 +25,11 @@ class AgentViewSet(viewsets.ModelViewSet):
         queryset = search(self.request, queryset,
                           lambda qs, keyword: qs.filter(Q(queue_name__icontains=keyword) | Q(area__icontains=keyword)))
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'all' in request.query_params:
+            from rest_framework.response import Response
+            serializer = AgentSerializer(self.get_queryset(), many=True, context={'request': request})
+            return Response(serializer.data)
+        return super(AgentViewSet, self).list(request, *args, **kwargs)
+

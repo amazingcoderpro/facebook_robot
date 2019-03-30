@@ -100,13 +100,13 @@ define(['vue'], function(Vue) {
       el: '.user-panel',
       data: user
     });
-    if(!user.category.isAdmin)$('ul.sidebar-menu li.admin').remove();
+    if(!user.category.isAdmin){$('ul.sidebar-menu li.admin').remove(),$('div.admin').remove();}
     $('a.logout').on('click', function(){
         $.ajax({
             url: getAPI('/api/user/logout'),
             contentType: "application/json",
             method: 'get',
-            success: function(data){
+            complete: function(data){
                 location.assign('/user/login')
             }
         })
