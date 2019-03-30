@@ -222,7 +222,7 @@ class Account(Base):
     name = Column(String(100), default='', server_default='')
     profile_id = Column(String(100), default='', server_default='')
 
-    # 0-valid, 1-invalid, 2-verify, 3-other
+    # 0-valid, 1-invalid, 2-verifying, 3-other
     status = Column(String(20), default='valid', server_default='valid')
 
     # 是否正在被某任务使用 0-未使用, 大于1代表正在被使用,数字代表并发使用数
