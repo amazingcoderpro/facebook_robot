@@ -82,6 +82,10 @@ class Task(models.Model):
     limit_counts = models.IntegerField(default=1)
     # 该任务需要的账号数量
     accounts_num = models.IntegerField(default=0)
+
+    # 實際可用的賬號數量（因爲會有賬號狀態不可用）
+    real_accounts_num = models.IntegerField(default=0)
+
     result = models.CharField(max_length=2048, default='')
     # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
     configure = models.CharField(max_length=2048, default='')

@@ -63,8 +63,10 @@ def send_task_2_worker(task_id):
     agents = AgentOpt.get_enable_agents(db_session, status_order=True)
 
     # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
+    task.real_accounts_num = task.accounts_num = len(task.accounts)
     for account in task.accounts:
         if account.status != 'valid':
+            task.real_accounts_num -= 1
             logger.warning('account can not be used. task id={}, account id={}'.format(task_id, account.id))
             continue
 

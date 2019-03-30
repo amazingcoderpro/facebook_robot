@@ -4,4 +4,4 @@
 # Function: 
 
 from .models import Task, TaskCategory, Account, AccountCategory, Job, Scheduler, Agent
-from .dao import TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt, JobOpt
+from .dao import TaskOpt, TaskAccountGroupOpt, TaskCategoryOpt, SchedulerOpt, AgentOpt, JobOpt, AccountOpt

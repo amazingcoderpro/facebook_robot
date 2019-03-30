@@ -131,6 +131,10 @@ class AccountOpt:
         return db_session.query(Account).filter(Account.id == account_id).first()
 
     @classmethod
+    def get_all_accounts(cls):
+        return db_session.query(Account.id).all()
+
+    @classmethod
     def add_account_using_counts(cls, account_id):
         acc = db_session.query(Account).filter(Account.id == account_id).first()
         if acc:
@@ -155,12 +159,16 @@ class TaskOpt:
         return db_session.query(Task).filter(Task.status == 'pausing').all()
 
     @classmethod
+    def get_all_new_task(cls):
+        return db_session.query(Task.id, Task.status).filter(Task.status == 'new').all()
+
+    @classmethod
     def get_all_need_restart_task(cls):
         """
         主要用于服务器宕机后重新启动时获取所有需要启动的任务,包括pending状态和running状态的
         :return:
         """
-        return db_session.query(Task).filter(Task.status.notin_(('succeed', 'failed', 'cancelled'))).all()
+        return db_session.query(Task.id, Task.status).filter(Task.status.notin_(('succeed', 'failed', 'cancelled'))).all()
 
     @classmethod
     def get_all_succeed_task(cls):
@@ -177,7 +185,7 @@ class TaskOpt:
         task.category = category_id
         task.creator = creator_id
         task.scheduler = scheduler_id
-        task.accounts_num = len(account_ids)
+        task.real_accounts_num = task.accounts_num = len(account_ids)
         for k, v in kwargs.items():
             if hasattr(task, k):
                 setattr(task, k, v)
@@ -335,6 +343,13 @@ class JobOpt:
             return db_session.query(Job).filter(Job.agent == agent_id, Job.status == status).count()
         else:
             return db_session.query(Job).filter(Job.agent == agent_id).count()
+
+    @classmethod
+    def count_jobs_by_account_id(cls, account_id, status='running'):
+        if status:
+            return db_session.query(Job).filter(Job.account == account_id, Job.status == status).count()
+        else:
+            return db_session.query(Job).filter(Job.account == account_id).count()
 
     @classmethod
     def set_job_status(cls, job_id, status):
