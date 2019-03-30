@@ -7,8 +7,8 @@ from account.api.account.views import AccountViewSet
 from account.api.category.views import AccountCategoryViewSet
 from task.api.category.views import TaskCategoryViewSet
 from task.api.scheduler.views import SchedulerViewSet
-from task.api.task.views import TaskViewSet
 from task.api.task.account.views import TaskAccountViewSet
+from task.api.task.views import TaskViewSet, TaskSumView
 from users.api.category.views import UserCategoryViewSet
 from users.api.user.views import UserViewSet
 from vps.api.area.views import AreaViewSet
@@ -35,6 +35,7 @@ router.register(r'task/(\d*?)/account', TaskAccountViewSet)
 urlpatterns = [
     # path('admin/', admin.site.urls),
     url(r'^api/user/', include('users.api.urls')),
+    url(r'^api/task/sum/', TaskSumView.as_view()),
     url(r'^api/', include(router.urls)),
     # path('api/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^(.*?)$', render_page),
