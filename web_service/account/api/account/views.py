@@ -6,8 +6,7 @@ from django.views.generic import View
 from rest_framework import viewsets
 
 from account.models import Account
-from utils.request_utils import AuthPermission, search
-from utils.request_utils import response_as_json_without_auth
+from utils.request_utils import AuthPermission, search, handle_order
 from .serializers import AccountSerializer, ExportSerializer
 
 
@@ -40,6 +39,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     serializer_class = AccountSerializer
     permission_classes = [AuthPermission]
 
+    @handle_order
     def get_queryset(self):
         return get_queryset(self.request)
 

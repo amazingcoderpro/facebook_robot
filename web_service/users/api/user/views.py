@@ -4,7 +4,7 @@ from rest_framework import viewsets
 
 from users.api.user.serializers import UserSerializer
 from users.models import User
-from utils.request_utils import AdminPermission, search
+from utils.request_utils import AdminPermission, search, handle_order
 
 
 # Created by: guangda.lee
@@ -18,6 +18,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [AdminPermission]
 
+    @handle_order
     def get_queryset(self):
         queryset = User.objects.all()
         username = self.request.query_params.get('username', None)

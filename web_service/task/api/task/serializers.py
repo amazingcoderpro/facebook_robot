@@ -25,7 +25,6 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
     def update_timestamp(instance):
         from datetime import datetime
         instance.last_update = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(instance.last_update)
         instance.save()
 
     def create(self, validated_data):

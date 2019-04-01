@@ -2,7 +2,7 @@
 
 from rest_framework import viewsets
 
-from utils.request_utils import AdminPermission, search
+from utils.request_utils import AdminPermission, search, handle_order
 from vps.api.serializers import AgentSerializer
 from vps.models import Agent
 
@@ -19,6 +19,7 @@ class AgentViewSet(viewsets.ModelViewSet):
     serializer_class = AgentSerializer
     permission_classes = [AdminPermission]
 
+    @handle_order
     def get_queryset(self):
         queryset = Agent.objects.all()
         from django.db.models import Q

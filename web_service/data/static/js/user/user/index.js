@@ -79,12 +79,16 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                     data: 'category.name'
                 },
                 {
+                    title: '用户名',
+                    data: 'auth.username'
+                },
+                {
                     title: '姓名',
-                    data: 'fullname'
+                    data: 'auth.last_name'
                 },
                 {
                     title: '邮箱',
-                    data: 'email'
+                    data: 'auth.email'
                 },
                 {
                     title: '可执行任务',

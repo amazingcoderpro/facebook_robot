@@ -4,7 +4,7 @@ from rest_framework import viewsets
 
 from task.api.category.serializers import CategorySerializer
 from task.models import TaskCategory
-from utils.request_utils import AuthPermission, AdminPermission, search
+from utils.request_utils import AuthPermission, AdminPermission, search, handle_order
 
 
 # Created by: guangda.lee
@@ -26,6 +26,7 @@ class TaskCategoryViewSet(viewsets.ModelViewSet):
 
         return super(TaskCategoryViewSet, self).get_permissions()
 
+    @handle_order
     def get_queryset(self):
         from users.common import user_by_token, is_admin
         user = user_by_token(self.request)

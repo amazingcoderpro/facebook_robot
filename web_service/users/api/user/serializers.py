@@ -11,9 +11,18 @@ from users.api.category.serializers import CategorySerializer
 # Function: 用户序列化类
 
 
+# Auth User 序列化类
+class AuthUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuthUser
+        fields = ('username', 'last_name', 'email')
+
+
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     # category = serializers.PrimaryKeyRelatedField(queryset=UserCategory.objects.all())
     category = CategorySerializer()
+
+    auth = AuthUserSerializer(read_only=True)
 
     email = serializers.EmailField(source='auth.email', allow_blank=True)
     username = serializers.CharField(source='auth.username')
@@ -69,8 +78,10 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = User
-        fields = ('url', 'id', 'category', 'username', 'fullname', 'email', 'enable_tasks', 'password')
+        fields = ('url', 'id', 'auth', 'category', 'username', 'fullname', 'email', 'enable_tasks', 'password')
         related_fields = ['auth']
         extra_kwargs = {'password': {'write_only': True}}
         # depth = 2
+
+
 

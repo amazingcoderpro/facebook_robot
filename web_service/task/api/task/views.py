@@ -4,7 +4,7 @@ from rest_framework import viewsets
 
 from task.api.task.serializers import TaskSerializer
 from task.models import Task
-from utils.request_utils import AuthPermission, search
+from utils.request_utils import AuthPermission, search, handle_order
 from rest_framework.generics import GenericAPIView
 
 
@@ -19,6 +19,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [AuthPermission, ]
 
+    @handle_order
     def get_queryset(self):
         def try_str_to_int(s, default=0):
             try:

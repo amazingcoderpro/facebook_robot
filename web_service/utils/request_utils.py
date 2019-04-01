@@ -28,7 +28,8 @@ class CustomDjangoJSONEncoder(DjangoJSONEncoder):
             tt = o.timetuple()
             if tt.tm_year >= '1900':
                 return o.strftime('%Y/%m/%d %H:%M:%S')
-            return '%04d/%02d/%02d %02d:%02d:%02d' % (tt.tm_year, tt.tm_mon, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec)
+            return '%04d/%02d/%02d %02d:%02d:%02d' % (
+            tt.tm_year, tt.tm_mon, tt.tm_mday, tt.tm_hour, tt.tm_min, tt.tm_sec)
         if isinstance(o, date):
             tt = o.timetuple()
             if tt.tm_year >= '1900':
@@ -39,7 +40,6 @@ class CustomDjangoJSONEncoder(DjangoJSONEncoder):
 
 # 解析 request.body 为字典
 def pretreatment(f):
-
     def parse_payload(request, *params, **kwargs):
         if DEBUG:
             return f(request, json.loads(request.body), *params, **kwargs)
@@ -61,7 +61,6 @@ def pretreatment(f):
 
 # 检查登录状态，返回 JSON
 def response_as_json(f):
-
     @login_required(login_url='/err/auth')
     def as_json(request, *params, **kwargs):
         result, status = f(request, request.user.userinfo, *params, **kwargs)
@@ -72,7 +71,6 @@ def response_as_json(f):
 
 # 返回 JSON
 def response_as_json_without_auth(f):
-
     def as_json(request, *params, **kwargs):
         result, status = f(request, *params, **kwargs)
         return JsonResponse(result, status=status, encoder=CustomDjangoJSONEncoder)
@@ -129,8 +127,6 @@ def search(request, queryset, filter):
     return queryset
 
 
-
-
 # 是否已经登陆权限
 class AuthPermission(permissions.BasePermission):
     """
@@ -153,3 +149,20 @@ class AdminPermission(permissions.BasePermission):
         user = user_by_token(request)
         return user and is_admin(user)
 
+
+# 处理排序
+def handle_order(f):
+    def parse_order_params(obj):
+        queryset = f(obj)
+        if 'query' in obj.request.query_params:
+            from json import loads
+            query = loads(obj.request.query_params['query'])
+            if 'order' in query and 'columns' in query:
+                order_list = list(
+                    map(lambda x: '%s%s' % ('' if x['dir'] == 'asc' else '-',
+                                            query['columns'][x['column']]['data'].replace('.', '__')),
+                        query['order']))
+                if len(order_list) > 0:
+                    queryset = queryset.order_by(*order_list)
+        return queryset
+    return parse_order_params

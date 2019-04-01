@@ -4,7 +4,7 @@ from rest_framework import viewsets
 
 from account.api.category.serializers import CategorySerializer
 from account.models import AccountCategory
-from utils.request_utils import AuthPermission
+from utils.request_utils import AuthPermission, handle_order
 
 
 # Created by: guangda.lee
@@ -18,4 +18,10 @@ class AccountCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AccountCategory.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AuthPermission]
+
+    @handle_order
+    def get_queryset(self):
+        return super(AccountCategoryViewSet, self).get_queryset()
+
+
 

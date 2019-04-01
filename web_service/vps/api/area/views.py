@@ -2,9 +2,9 @@
 
 from rest_framework import viewsets
 
+from utils.request_utils import search, handle_order
 from vps.api.area.serializers import AreaSerializer
 from vps.models import Area
-from utils.request_utils import AuthPermission, AdminPermission, search
 
 
 # Created by: guangda.lee
@@ -18,6 +18,7 @@ class AreaViewSet(viewsets.ModelViewSet):
     queryset = Area.objects.all()
     serializer_class = AreaSerializer
 
+    @handle_order
     def get_queryset(self):
         queryset = Area.objects.all()
         queryset = search(self.request, queryset,
