@@ -357,12 +357,12 @@ def start_task(task_id, force=False):
         if status:
             task.status = status     # 如果任务调度开始执行了, task状态会被置为running,就不用再改回pending
         task.aps_id = aps_job.id
+        logger.info('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, task.status))
         # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
     else:
-        logger.error('start_task can not scheduler task, task id={}'.format(task_id))
+        logger.error('start task can not scheduler task, task id={}'.format(task_id))
         return Result(res=False, msg='scheduler task failed')
 
-    logger.info('----start task succeed. task id={}-----'.format(task_id))
     return Result(res=True, msg='start task succeed. id={}, aps id={}'.format(task_id, aps_job.id))
 
 
@@ -381,6 +381,7 @@ def pause_task(task_id):
         logger.error('pause_task but task is not running, id={}. '.format(task_id))
         return Result(res=False, msg='task have is not running')
 
+    logger.info('pause_task task id={}'.format(task_id))
     try:
         g_bk_scheduler.pause_job(task.aps_id)
     except JobLookupError:
@@ -405,6 +406,7 @@ def resume_task(task_id):
     if task.status != 'pausing':
         return Result(res=False, msg='task is not pausing')
 
+    logger.info('resume_task task id={}'.format(task_id))
     try:
         ret = g_bk_scheduler.resume_job(task.aps_id)
     except JobLookupError:
@@ -435,6 +437,7 @@ def cancel_task(task_id):
         logger.error('cancel_task but task have been finished, id={}. '.format(task_id))
         return Result(res=False, msg='task have been finished')
 
+    logger.info('cancel_task task id={}'.format(task_id))
     try:
         g_bk_scheduler.remove_job(task.aps_id)
     except JobLookupError:
