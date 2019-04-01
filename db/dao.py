@@ -236,6 +236,7 @@ class TaskOpt:
                     task.aps_id = aps_id
                 # 第一次变成running的时间即启动时间
                 elif status == 'running':
+                    logger.info('task begin running task id={}'.format(task_id))
                     task.start_time = datetime.datetime.now()
                 elif status in ['succeed', 'failed']:
                     task.end_time = datetime.datetime.now()
@@ -624,10 +625,6 @@ def show_test_data():
     acc = AccountOpt.get_account(account_id=0)
     print(acc)
 
-    TaskOpt.set_task_status(None, 1, 1)
-    res = TaskOpt.get_all_need_restart_task()
-    for t in res:
-        print(t)
 
     res = TaskOpt.get_all_running_task()
     for t in res:

@@ -46,8 +46,8 @@ def scheduler_task(scheduler_id, *args):
         return None
 
     # 对于指定启动时间的任务, 启动时间应该大于当前时间
-    if task_sch.mode in [1, 3] and task_sch.start_date < datetime.datetime.now():
-        logger.error('Timed task start date earlier than now. start date={}, scheduler_id={}, args={}'.format(
+    if task_sch.mode in [1, 3] and task_sch.start_date and task_sch.start_date < datetime.datetime.now():
+        logger.error('Timed task start date is null or earlier than now. start date={}, scheduler_id={}, args={}'.format(
             task_sch.start_date, scheduler_id, args))
         return None
 
@@ -131,7 +131,7 @@ def update_task_status():
 
         task.succeed_counts = succeed_counts
         task.failed_counts = failed_counts
-        logger.info('update_task_status task {} status={}, succeed={}, failed={}'.
+        logger.info('-----update_task_status task id={} status={}, succeed={}, failed={}'.
                     format(task.id, task.status, task.succeed_counts, task.failed_counts))
 
         sch = SchedulerOpt.get_scheduler(task.scheduler)
@@ -351,7 +351,8 @@ def start_task(task_id, force=False):
 
     # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
     if aps_job:
-        task.status = 'running'
+        if task.status == 'new':
+            task.status = 'pending'     # 如果任务调度开始执行了, task状态会被置为running,就不用再改回pending
         task.aps_id = aps_job.id
         # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
     else:
