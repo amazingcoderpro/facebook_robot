@@ -123,7 +123,6 @@ def update_task_status():
     """
     running_tasks = TaskOpt.get_all_running_task()
     for task in running_tasks:
-
         failed_counts = 0
         succeed_counts = 0
         jobs = JobOpt.get_jobs_by_task_id(task.id)

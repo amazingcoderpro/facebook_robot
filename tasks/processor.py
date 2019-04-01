@@ -45,89 +45,102 @@ def send_task_2_worker(task_id):
     :return: 成功返回True, 失败返回False
     """
     db_session = ScopedSession()
-    task = TaskOpt.get_task_by_task_id(db_session, task_id)
-    if not task:
-        logger.error('send_task_2_worker can not find the task, id={}. '.format(task_id))
-        return False
+    time_it_beg = datetime.datetime.now()
+    try:
+        task = TaskOpt.get_task_by_task_id(db_session, task_id)
+        if not task:
+            logger.error('send_task_2_worker can not find the task, id={}. '.format(task_id))
+            ScopedSession.remove()
+            return False
 
-    # 根据task的类别，找到task对应的处理函数
-    task_processor = TaskCategoryOpt.get_processor(db_session, task.category)
+        # 根据task的类别，找到task对应的处理函数
+        task_processor = TaskCategoryOpt.get_processor(db_session, task.category)
 
-    # 每一个类型的任务都对应一个处理器
-    if not task_processor:
-        logger.error('Task(id={}) have no processor, ignore processing.'.format(task_id))
-        return False
+        # 每一个类型的任务都对应一个处理器
+        if not task_processor:
+            logger.error('Task(id={}) have no processor, ignore processing.'.format(task_id))
+            return False
 
-    logger.info('send_task_2_worker task id={}. '.format(task_id))
+        logger.info('---------send_task_2_worker task id={}. --------'.format(task_id))
 
-    agents = AgentOpt.get_enable_agents(db_session, status_order=True)
+        agents = AgentOpt.get_enable_agents(db_session, status_order=True)
 
-    # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
-    real_accounts_num = 0
-    jobs = []
-    for account in task.accounts:
-        if account.status != 'valid':
+        # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
+        real_accounts_num = 0
+        jobs = []
+        for account in task.accounts:
+            if account.status != 'valid':
 
-            logger.warning('account can not be used. task id={}, account id={}'.format(task_id, account.id))
-            continue
+                logger.warning('account can not be used. task id={}, account id={}'.format(task_id, account.id))
+                continue
 
-        agent = find_optimal_agent(account=account, agents=agents)
-        if agent:
-            agent_id = agent.id
-            agent_queue_name = agent.queue_name if agent.queue_name else agent.area.replace(' ', '_')
-        else:
-            logger.warning('There have no optimal agent for task, task id={}, account id={}, account_area={}'
-                           .format(task_id, account.id, account.active_area))
-            agent_id = None
-            agent_queue_name = 'default'
+            agent = find_optimal_agent(account=account, agents=agents)
+            if agent:
+                agent_id = agent.id
+                agent_queue_name = agent.queue_name if agent.queue_name else agent.area.replace(' ', '_')
+            else:
+                logger.warning('There have no optimal agent for task, task id={}, account id={}, account_area={}'
+                               .format(task_id, account.id, account.active_area))
+                agent_id = None
+                agent_queue_name = 'default'
 
-        # 构建任务执行必备参数
-        inputs = {
-            'task_id': task_id,
-            'task_configure': task.configure,
-            'account': account.account,
-            'password': account.password,
-            'account_active_browser': account.active_browser
-        }
+            # 构建任务执行必备参数
+            inputs = {
+                'task_id': task_id,
+                'task_configure': task.configure,
+                'account': account.account,
+                'password': account.password,
+                'account_active_browser': account.active_browser
+            }
 
-        celery_task_name = "tasks.tasks.{}".format(task_processor)
+            celery_task_name = "tasks.tasks.{}".format(task_processor)
 
-        real_accounts_num += 1
+            real_accounts_num += 1
 
-        track = app.send_task(
-            celery_task_name,
-            args=(inputs, ),
-            queue=agent_queue_name,
-            routing_key=agent_queue_name
-        )
+            track = app.send_task(
+                celery_task_name,
+                args=(inputs, ),
+                queue=agent_queue_name,
+                routing_key=agent_queue_name
+            )
 
-        logger.info('-----send sub task to worker, celery task name={}, queue={}, '
-                    'task id={}, account id={}, track id={}'.format(celery_task_name, agent_queue_name, task_id, account.id, track.id))
+            logger.info('-----send sub task to worker, celery task name={}, queue={}, '
+                        'task id={}, account id={}, track id={}'.format(celery_task_name, agent_queue_name, task_id, account.id, track.id))
 
-        job = Job()
-        job.task = task_id
-        job.task = task_id
-        job.account = account.id
-        job.agent = agent_id
-        job.status = 'running'
-        job.track_id = track.id
-        job.start_time = datetime.datetime.now()
-        jobs.append(job)
-        # JobOpt.save_job(db_session, task_id, account.id, agent_id=agent_id, track_id=track.id, status='running')
+            job = Job()
+            job.task = task_id
+            job.task = task_id
+            job.account = account.id
+            job.agent = agent_id
+            job.status = 'running'
+            job.track_id = track.id
+            job.start_time = datetime.datetime.now()
+            jobs.append(job)
+            # JobOpt.save_job(db_session, task_id, account.id, agent_id=agent_id, track_id=track.id, status='running')
 
+        # 更新任务状态为running
+        # TaskOpt.set_task_status(db_session, task_id, status='running')
+        if task.status in ['new', 'pending']:
+            task.status = 'running'
+            task.start_time = datetime.datetime.now()
+            logger.info('Task first running, task id={}, real used accounts num={}'.format(task.id, real_accounts_num))
+
+        # task实际可用的账号数目, 会根据每次轮循时account状态的不同而变化
+        task.real_accounts_num = real_accounts_num
+        db_session.commit()
+    except Exception as e:
+        logger.exception('send_task_2_worker exception task id={}'.format(task_id))
+    finally:
+        ScopedSession.remove()
+
+    logger.info('time it end, send task {}, used {} seconds'.format(task_id, (datetime.datetime.now()-time_it_beg).seconds))
+
+    db_session = ScopedSession()
+    time_it_beg = datetime.datetime.now()
     db_session.add_all(jobs)
-    # 更新任务状态为running
-    # TaskOpt.set_task_status(db_session, task_id, status='running')
-    if task.status in ['new', 'pending']:
-        task.status = 'running'
-        task.start_time = datetime.datetime.now()
-        logger.info('Task first running, task id={}, real used accounts num={}'.format(task.id, real_accounts_num))
-
-    # task实际可用的账号数目, 会根据每次轮循时account状态的不同而变化
-    task.real_accounts_num = real_accounts_num
-
     db_session.commit()
     ScopedSession.remove()
+    logger.info('time it end, add jobs num={}, used {} seconds'.format(len(jobs), (datetime.datetime.now()-time_it_beg).seconds))
 
     # job_dict = {'task': task_id, 'account': account.id, 'agent': agent_id, 'status': 'running', 'track_id': track.id}
     # RedisOpt.push_object('job_list', json.dumps(job_dict))
