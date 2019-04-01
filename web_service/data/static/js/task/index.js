@@ -150,6 +150,14 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                     data: 'id'
                 },
                 {
+                    title: '名称',
+                    data: 'name'
+                },
+                {
+                    title: '状态',
+                    data: 'status'
+                },
+                {
                     title: '类型',
                     data: 'category.name'
                 },
@@ -162,14 +170,6 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                     title: '创建者',
                     data: 'creator.fullname',
                     visible: global.user.category.isAdmin
-                },
-                {
-                    title: '名称',
-                    data: 'name'
-                },
-                {
-                    title: '状态',
-                    data: 'status'
                 }
             ],
             onSingleRowClick: function(item){
