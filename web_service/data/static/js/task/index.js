@@ -9,11 +9,13 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         var req={accounts: [], category: categories[parseInt($('#modal-new select[name="category"]').val())],
             scheduler: {
                 mode: parseInt($('#modal-new select[name="scheduler"]').val()),
-                interval: parseInt($('#modal-new select[name="scheduler"]').val()) * 3600,
+                interval: parseInt($('#modal-new input[name="interval"]').val()),
                 start_date: $('#modal-new input[name="schedulerBeginDate"]').val() + ' ' + $('#modal-new input[name="schedulerBeginTime"]').val(),
                 end_date: $('#modal-new input[name="schedulerEndDate"]').val() + ' ' + $('#modal-new input[name="schedulerEndTime"]').val()
-            }};
-        if($('#modal-new select[name="intervalUnit"]').val()=='0')req.scheduler.interval*=24;
+            }}, intervalUnit=parseInt($('#modal-new select[name="intervalUnit"]').val());
+        if(intervalUnit==0)req.scheduler.interval*=86400;
+        else if(intervalUnit==1)req.scheduler.interval*=3600;
+        else req.scheduler.interval *= 60;
         if(isNaN(req.scheduler.interval))req.scheduler.interval=0;
         if(req.scheduler.start_date.length<15)req.scheduler.start_date=null;
         if(req.scheduler.end_date.length<15)req.scheduler.end_date=null;
@@ -22,6 +24,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         else if(req.limit_counts=='')global.showTip('请输入任务需求数');
         else if(req.accounts_num=='')global.showTip('请输入任务账号数');
         else if((req.scheduler.mode==1||req.scheduler.mode==2)&&(req.scheduler.interval==0))global.showTip('请设置执行间隔');
+        else if((req.scheduler.mode==1||req.scheduler.mode==2)&&intervalUnit==2&&req.scheduler.interval<300)global.showTip('时间间隔不能小于5分钟');
         else if((req.scheduler.mode==1||req.scheduler.mode==3)&&!req.scheduler.start_date)global.showTip('请设置启动时间');
         else if((req.scheduler.mode==1||req.scheduler.mode==2)&&!req.scheduler.end_date)global.showTip('请设置最晚停止时间');
         else {
@@ -124,9 +127,9 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
     },
     // 显示间隔
     displayInterval=function(interval){
-        interval /= 3600;
-        if(interval / 24 >= 1)return interval / 24 + '天';
-        return interval + '时'
+        if(interval / 86400 >= 1)return interval / 86400 +'天';
+        else if(interval / 3600 >= 1) return interval / 3600 + '小时';
+        return interval / 60 + '分钟';
     },
     // 调度类型切换
     onModeChange=function(){
@@ -183,8 +186,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 else if(button.hasClass('reset-password'))resetPwd(item);
                 else if(button.hasClass('start-stop'))start_stop(item);
                 else if(button.hasClass('delete'))
-                    global.dialog.deleteWarning('是否删除任务？', function(){
-                        updateStatus(id, 'cancelled', '任务删除成功')
+                    global.dialog.deleteWarning('是否取消任务？', function(){
+                        updateStatus(id, 'cancelled', '任务取消成功')
                     });
             }
         });
