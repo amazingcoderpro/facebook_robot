@@ -143,11 +143,15 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             ajax: {url: global.getAPI(url)},
             columns: [
                 {
+                    title: 'ID',
+                    data: 'id'
+                },
+                {
                     title: '类型',
                     data: 'category.name'
                 },
                 {
-                    title: '类型',
+                    title: '调度类型',
                     data: 'scheduler.mode',
                     render: taskCommon.displayScheduler
                 },

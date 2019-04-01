@@ -45,7 +45,7 @@ def scheduler_task(scheduler_id, *args):
                                                                                                 scheduler_id, args))
         return None
 
-    # 对于指定启动时间的任务, 启动时间应该大于当前时间
+    # 对于指定启动时间的任务, 启动时间应该大于当前时间, 对于1可以不指定start date
     if task_sch.mode in [1, 3] and task_sch.start_date and task_sch.start_date < datetime.datetime.now():
         logger.error('Timed task start date is null or earlier than now. start date={}, scheduler_id={}, args={}'.format(
             task_sch.start_date, scheduler_id, args))
@@ -58,16 +58,18 @@ def scheduler_task(scheduler_id, *args):
     # 2 - 间隔执行且立即开始, 此时会忽略start_date, 直接开始周期任务, 直到达到task指定的次数,或者到达end_date时间结束
     # 3 - 定时执行,指定时间执行, 此时必须要指定start_date, 将在start_date时间执行一次
     # dispatch_processor(processor, inputs)
+    status = ''
     if task_sch.mode == 0:
         aps_job = g_bk_scheduler.add_job(send_task_2_worker, args=args)
     elif task_sch.mode == 1:
-        if task_sch.start_date and task_sch.start_date > datetime.datetime.now():
+        if task_sch.start_date:
             aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval,
                                              start_date=task_sch.start_date, args=args,
                                              misfire_grace_time=120, coalesce=False, max_instances=5)
         else:
             aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval, args=args,
                                              misfire_grace_time=120, coalesce=False, max_instances=5)
+        status = 'pending'
     elif task_sch.mode == 2:
         send_task_2_worker(args)
         aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval, args=args,
@@ -75,11 +77,12 @@ def scheduler_task(scheduler_id, *args):
     elif task_sch.mode == 3:
         aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'date', run_date=task_sch.start_date, args=args,
                                          misfire_grace_time=120, coalesce=False, max_instances=5)
+        status = 'pending'
     else:
         logger.error('can not processing scheduler mode={}.'.format(task_sch.mode))
         return None
 
-    return aps_job
+    return aps_job, status
 
 
 def dispatch_test():
@@ -347,12 +350,12 @@ def start_task(task_id, force=False):
         task.start_time = None
 
     # 开始启动任务调度
-    aps_job = scheduler_task(task.scheduler, task_id)
+    aps_job, status = scheduler_task(task.scheduler, task_id)
 
     # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
     if aps_job:
-        if task.status == 'new':
-            task.status = 'pending'     # 如果任务调度开始执行了, task状态会被置为running,就不用再改回pending
+        if status:
+            task.status = status     # 如果任务调度开始执行了, task状态会被置为running,就不用再改回pending
         task.aps_id = aps_job.id
         # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
     else:
