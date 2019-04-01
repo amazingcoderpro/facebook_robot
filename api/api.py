@@ -31,25 +31,26 @@ def scheduler_task(scheduler_id, *args):
     :param args: 透传参数
     :return: 成功返回 APScheduler 任务id, 失败返回 None
     """
+    status = ''
     task_sch = SchedulerOpt.get_scheduler(scheduler_id)
     # 判断任务是否已经过期
     if task_sch.end_date and task_sch.end_date <= datetime.datetime.now():
         logger.warning(
             'Task has expired, end_date={}, scheduler id={}, args={}'.format(task_sch.end_date, scheduler_id, args))
-        return None
+        return None, status
 
     # 对于周期性任务, 最小时间间隔应该大于60秒
     if task_sch.mode in [1, 2] and task_sch.interval < 60:
         logger.error(
             'Task scheduler interval is too short. interval={}, scheduler_id={}, ars={}'.format(task_sch.interval,
                                                                                                 scheduler_id, args))
-        return None
+        return None, status
 
     # 对于指定启动时间的任务, 启动时间应该大于当前时间, 对于1可以不指定start date
     if task_sch.mode in [1, 3] and task_sch.start_date and task_sch.start_date < datetime.datetime.now():
         logger.error('Timed task start date is null or earlier than now. start date={}, scheduler_id={}, args={}'.format(
             task_sch.start_date, scheduler_id, args))
-        return None
+        return None, status
 
     # 根据任务计划模式的不同启动不同的定时任务
     # 执行模式：
@@ -58,7 +59,7 @@ def scheduler_task(scheduler_id, *args):
     # 2 - 间隔执行且立即开始, 此时会忽略start_date, 直接开始周期任务, 直到达到task指定的次数,或者到达end_date时间结束
     # 3 - 定时执行,指定时间执行, 此时必须要指定start_date, 将在start_date时间执行一次
     # dispatch_processor(processor, inputs)
-    status = ''
+
     if task_sch.mode == 0:
         aps_job = g_bk_scheduler.add_job(send_task_2_worker, args=args)
     elif task_sch.mode == 1:
@@ -80,7 +81,7 @@ def scheduler_task(scheduler_id, *args):
         status = 'pending'
     else:
         logger.error('can not processing scheduler mode={}.'.format(task_sch.mode))
-        return None
+        return None, status
 
     return aps_job, status
 
