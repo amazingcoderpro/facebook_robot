@@ -69,7 +69,7 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
         #                 instance.accounts.add(account)
         #             except ObjectDoesNotExist:
         #                 pass
-        if 'scheduler' in validated_data and instance.status in ('new', 'pending', 'pausing') and instance.scheduler.mode in (1, 2):
+        if 'scheduler' in validated_data and instance.status in ('new', 'pending', 'pausing', 'running') and instance.scheduler.mode in (1, 2):
             instance.scheduler.end_date = validated_data.pop('scheduler')['end_date']
             instance.scheduler.save()
         self.update_timestamp(instance)

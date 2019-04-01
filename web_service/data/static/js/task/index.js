@@ -43,7 +43,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         }
     },
     modifyTask=function(item){
-        var canEditEndDate = item.scheduler.mode in [1, 2] && ['new', 'pending', 'pausing'].indexOf(item.status)>=0;
+        var canEditEndDate = item.scheduler.mode in [1, 2] && ['new', 'pending', 'pausing', 'running'].indexOf(item.status)>=0;
         global.showDetail({
             'div': '#detail',
             'html': detailHtml,
@@ -122,14 +122,14 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         });
     },
     start_stop=function(item){
-        if(item.status=='running')updateStatus(item.id, 'pausing', '任务停止成功')
+        if(item.status=='running')updateStatus(item.id, 'pausing', '任务暂停成功')
         else if(item.status=='pausing')updateStatus(item.id, 'running', '任务启动成功')
     },
     // 显示间隔
     displayInterval=function(interval){
         if(interval / 86400 >= 1)return interval / 86400 +'天';
         else if(interval / 3600 >= 1) return interval / 3600 + '小时';
-        return interval / 60 + '分钟';
+        return (interval / 60).toFixed(1) + '分钟';
     },
     // 调度类型切换
     onModeChange=function(){
@@ -177,7 +177,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                     modifyTask(item);
                     var button=$('button.start-stop');
                     if(['running', 'pausing'].indexOf(item.status)>=0)
-                        button.removeClass('hide').text(item.status=='running'?'停止':'启动')
+                        button.removeClass('hide').text(item.status=='running'?'暂停':'启动')
                     else button.addClass('hide')
                 }else $('#detail').html('');
             },
