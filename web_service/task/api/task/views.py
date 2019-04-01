@@ -15,26 +15,34 @@ from rest_framework.generics import GenericAPIView
 
 # ViewSets define the view behavior.
 class TaskViewSet(viewsets.ModelViewSet):
-
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [AuthPermission, ]
 
     def get_queryset(self):
+        def try_str_to_int(s, default=0):
+            try:
+                return int(s)
+            except ValueError:
+                return default
+
         from django.db.models import Q
         from users.common import user_by_token, is_admin
         user = user_by_token(self.request)
-        queryset = Task.objects.filter(~Q(status='cancelled')) if is_admin(user) else Task.objects.filter(creator_id=user.id)
+        queryset = Task.objects.filter(~Q(status='cancelled'))
+        if not is_admin(user):
+            queryset = queryset.filter(creator_id=user.id)
         if 'status' in self.request.query_params:
             queryset = queryset.filter(status=self.request.query_params['status'])
         queryset = search(self.request, queryset,
-                          lambda qs, keyword: qs.filter(Q(name__icontains=keyword)))
+                          lambda qs, keyword: qs.filter(
+                              Q(pk=try_str_to_int(keyword)) | Q(creator__auth__last_name__icontains=keyword) | Q(
+                                  name__icontains=keyword)))
         return queryset
 
 
 # 任务统计
 class TaskSumView(GenericAPIView):
-
     permission_classes = (AuthPermission,)
 
     def get(self, request, *args, **kwargs):
@@ -54,7 +62,3 @@ class TaskSumView(GenericAPIView):
                 'value': result[x]
             }, result))
         }))
-
-
-
-
