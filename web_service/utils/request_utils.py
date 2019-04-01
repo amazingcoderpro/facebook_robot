@@ -88,6 +88,22 @@ class CustomDataSetPagination(LimitOffsetPagination):
     default_limit = 10
     max_limit = 100
 
+    def get_limit(self, request):
+        if 'query' in request.query_params:
+            from json import loads
+            query = loads(request.query_params['query'])
+            if self.limit_query_param in query:
+                return query[self.limit_query_param]
+        return super(CustomDataSetPagination, self).get_limit(request)
+
+    def get_offset(self, request):
+        if 'query' in request.query_params:
+            from json import loads
+            query = loads(request.query_params['query'])
+            if self.offset_query_param in query:
+                return query[self.offset_query_param]
+        return super(CustomDataSetPagination, self).get_offset(request)
+
     def get_paginated_response(self, data):
         draw = -1
         if 'query' in self.request.query_params:
