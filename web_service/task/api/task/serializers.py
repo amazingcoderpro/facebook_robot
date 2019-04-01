@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from django.db import transaction
-from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-from task.models import Task, Scheduler, TaskAccountRelationship
-from users.api.user.serializers import UserSerializer
+
+from account.models import Account
 from task.api.category.serializers import CategorySerializer
 from task.api.scheduler.serializers import SchedulerSerializer
-from account.models import Account
-from account.api.account.serializers import AccountSerializer
+from task.models import Task, Scheduler, TaskAccountRelationship
+from users.api.user.serializers import UserSerializer
 
 
 # Created by: guangda.lee
@@ -24,8 +23,9 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
 
     @staticmethod
     def update_timestamp(instance):
-        from django.utils.timezone import now
-        instance.last_update = now()
+        from datetime import datetime
+        instance.last_update = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(instance.last_update)
         instance.save()
 
     def create(self, validated_data):
@@ -39,7 +39,6 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
         with transaction.atomic():
             scheduler_data = validated_data.pop('scheduler')
             validated_data['scheduler'] = Scheduler.objects.create(**scheduler_data)  # SchedulerSerializer().create(scheduler_data)  # (validated_data.pop('scheduler'))
-            print(validated_data)
             account_count = int(validated_data['accounts_num'])
             instance = super(TaskSerializer, self).create(validated_data)
             # if has_accounts and accounts_data:

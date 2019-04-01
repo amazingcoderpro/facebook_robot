@@ -77,7 +77,7 @@ require(['vue', 'utils/global', 'utils/table', 'task/common', 'vps/common'], fun
             }
         })
         }
-    }),
+    });
     // 展示运行中的任务
     table.initTable('#runningTask table', {
         searching: false,

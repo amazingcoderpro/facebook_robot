@@ -10,8 +10,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             scheduler: {
                 mode: parseInt($('#modal-new select[name="scheduler"]').val()),
                 interval: parseInt($('#modal-new input[name="interval"]').val()),
-                start_date: $('#modal-new input[name="schedulerBeginDate"]').val() + ' ' + $('#modal-new input[name="schedulerBeginTime"]').val(),
-                end_date: $('#modal-new input[name="schedulerEndDate"]').val() + ' ' + $('#modal-new input[name="schedulerEndTime"]').val()
+                start_date: $('#modal-new input[name="schedulerBeginDate"]').val() + ' ' + $('#modal-new input[name="schedulerBeginTime"]').val(),//+'+08:00',
+                end_date: $('#modal-new input[name="schedulerEndDate"]').val() + ' ' + $('#modal-new input[name="schedulerEndTime"]').val()//+'+08:00'
             }}, intervalUnit=parseInt($('#modal-new select[name="intervalUnit"]').val());
         if(intervalUnit==0)req.scheduler.interval*=86400;
         else if(intervalUnit==1)req.scheduler.interval*=3600;
@@ -93,7 +93,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
 //            Object.assign(req, item);
             $.each($('#detail input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
             if(canEditEndDate)
-                req.scheduler={end_date: $('#detail input[name="schedulerEndDate"]').val() + ' ' + $('#detail input[name="schedulerEndTime"]').val()}
+                req.scheduler={end_date: $('#detail input[name="schedulerEndDate"]').val() + ' ' + $('#detail input[name="schedulerEndTime"]').val()}//+'+08:00'}
             if(req.name=='')global.showTip('请输入任务名称');
             else $.ajax({
                 url: global.getAPI(url+item.id+'/'),
