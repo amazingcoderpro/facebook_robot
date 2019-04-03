@@ -131,18 +131,10 @@ def update_task_status():
         running_tasks = db_session.query(Task).filter(Task.status == 'running').all()
         # running_tasks = TaskOpt.get_all_running_task()
         for task in running_tasks:
-            failed_counts = 0
-            succeed_counts = 0
-            # jobs = JobOpt.get_jobs_by_task_id(task.id)
-            jobs = db_session.query(Job.status).filter(Job.task == task.id).all()
-            unfinished_jobs = 0
-            for j in jobs:
-                if j[0] == 'succeed':
-                    succeed_counts += 1
-                elif j[0] == 'failed':
-                    failed_counts += 1
-                else:
-                    unfinished_jobs += 1
+
+            failed_counts = db_session.query(Job.status).filter(and_(Job.task == task.id, Job.status == 'failed')).count()
+            succeed_counts = db_session.query(Job.status).filter(
+                and_(Job.task == task.id, Job.status == 'succeed')).count()
 
             task.succeed_counts = succeed_counts
             task.failed_counts = failed_counts
@@ -154,8 +146,10 @@ def update_task_status():
                 .filter(Scheduler.id == task.scheduler).first()
             # 如果是一次性任务,只要所有job结果都返回了, task即结束
             if sch_mode in [0, 3]:
+                running_jobs = db_session.query(Job.status).filter(
+                and_(Job.task == task.id, Job.status == 'running')).count()
                 if ((task.failed_counts + task.succeed_counts) >= task.real_accounts_num) \
-                        or unfinished_jobs == 0 or (task.start_time and task.start_time < datetime.now()-timedelta(days=1)):
+                        or running_jobs == 0 or (task.start_time and task.start_time < datetime.now()-timedelta(days=3)):
                     if task.succeed_counts >= task.limit_counts:
                         task.status = 'succeed'
                     else:
@@ -168,7 +162,9 @@ def update_task_status():
                 elif sch_end_date and datetime.now() >= sch_end_date:
                     task.status = 'failed'
                 else:
-                    pass
+                    # 周期性任务的最长期限上限为120天, 超过120天自动关闭
+                    if task.start_time < datetime.now()-timedelta(days=120):
+                        task.status = 'failed'
 
             if task.status in ['succeed', 'failed']:
                 task.end_time = datetime.now()

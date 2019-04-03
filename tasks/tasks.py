@@ -45,11 +45,13 @@ def fb_auto_feed(self, inputs):
     time.sleep(60)
 
     a = random.randint(1, 100)
+    if a % 3 == 1:
+        return {'status': 'failed', 'err_msg': 'auto feed 3-1 failed'}
     if a % 2 == 0:
         logger.exception('fb_auto_feed')
-        raise 1
+        a = a/0
 
-    return 1
+    return {'status': 'succeed', 'err_msg': 'auto feed good.'}
 
     try:
         # 执行任务
@@ -70,14 +72,17 @@ def fb_click_farming(self, inputs):
     # self.update_state(state="running")
 
     # do something here
-    time.sleep(150)
+    time.sleep(70)
 
     a = random.randint(1, 100)
+    if a % 3 == 2:
+        return {'status': 'failed', 'err_msg': 'click farming 3-2 failed'}
+
     if a % 3 == 1:
         logger.exception('fb_auto_feed')
-        raise 1
+        a = a/0
 
-    return 1
+    return {'status': 'succeed', 'err_msg': 'click farming good'}
 
 
 # from celery import chain, signature

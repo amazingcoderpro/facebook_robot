@@ -4,7 +4,7 @@
 # Function: 任务的处理器，任务经由各处理器再发往任务队列, 处理器会被定时程序调用
 import datetime
 from .workers import app
-from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account
+from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler
 from config import logger
 from db.basic import ScopedSession
 from sqlalchemy import and_
@@ -51,27 +51,31 @@ def send_task_2_worker(task_id):
         jobs = []
         time_it_beg = datetime.datetime.now()
         db_scoped_session = ScopedSession()
-        task = db_scoped_session.query(Task.category, Task.configure, Task.limit_counts, Task.succeed_counts).filter(Task.id == task_id).first()
+        task = db_scoped_session.query(Task.category, Task.configure, Task.limit_counts, Task.succeed_counts, Task.scheduler).filter(Task.id == task_id).first()
         if not task:
             logger.error('send_task_2_worker can not find the task, id={}. '.format(task_id))
             return False
 
-        category, configure, limit_counts, succeed_counts = task
+        category, configure, limit_counts, succeed_counts, sch_id = task
 
-        if limit_counts:
-            # 如果当前任务的成功数大于需求数, 或者成功数加上正在运行的job数目大于用于需求数, 则不需要继续产生job
-            if succeed_counts >= limit_counts:
-                logger.error('send_task_2_worker ignore, task already finished, task id={}, succeed jobs({}) >= limit counts({})'.format(task_id, succeed_counts, limit_counts))
-                return True
+        sch_mode = db_scoped_session.query(Scheduler.mode).filter(Scheduler.id == sch_id).first()
 
-            task_running_jobs = db_scoped_session.query(Job).filter(and_(Job.task == task_id, Job.status == 'running')).count()
-            if task_running_jobs + succeed_counts >= limit_counts:
-                logger.error('send_task_2_worker ignore, task will finish, task id={}, succeed jobs({})+running jobs({})  >= limit counts({})'.format(task_id, succeed_counts, task_running_jobs, limit_counts))
-                return True
+        # 对于周期性任务,每次产生的job会严格控制, 但对于一次性任务, 用户指定多少个账号，就用多少个账号
+        if sch_mode[0] in [1, 2]:
+            if limit_counts:
+                # 如果当前任务的成功数大于需求数, 或者成功数加上正在运行的job数目大于用于需求数110%, 则不需要继续产生job
+                if succeed_counts >= int(limit_counts*1.2):
+                    logger.error('send_task_2_worker ignore, task already finished, task id={}, succeed jobs({}) >= limit counts({})*1.2'.format(task_id, succeed_counts, limit_counts))
+                    return True
 
-            # 一个任务正在运行job积压过多时, 暂时停止产生新的jobs
-            if task_running_jobs >= 10000:
-                logger.error('task({}) jobs num={} has reached jobs limit 10000'.format(task_id, task_running_jobs))
+                task_running_jobs = db_scoped_session.query(Job).filter(and_(Job.task == task_id, Job.status == 'running')).count()
+                if task_running_jobs + succeed_counts >= int(limit_counts*1.2):
+                    logger.error('send_task_2_worker ignore, task will finish, task id={}, succeed jobs({})+running jobs({})  >= limit counts({})*1.2'.format(task_id, succeed_counts, task_running_jobs, limit_counts))
+                    return True
+
+                # 一个任务正在运行job积压过多时, 暂时停止产生新的jobs
+                if task_running_jobs >= 10000:
+                    logger.error('task({}) jobs num={} has reached jobs limit 10000'.format(task_id, task_running_jobs))
 
         # 根据task的类别，找到task对应的处理函数
         tcg = db_scoped_session.query(TaskCategory.processor).filter(TaskCategory.category == category).first()
@@ -146,11 +150,12 @@ def send_task_2_worker(task_id):
             job.start_time = datetime.datetime.now()
             jobs.append(job)
 
-            # 如果已经在运行的jobs,加上当前产生的jobs数量超过用户需求数量,则break, 停止生产jobs, 下个调度周期重新检测再试
-            total_running_jobs = task_running_jobs + real_accounts_num
-            if (limit_counts and total_running_jobs >= limit_counts) or total_running_jobs >= 10000:
-                logger.error('task({}) total running jobs num({}) is already more than limit counts({})'.format(task_id, total_running_jobs, limit_counts))
-                break
+            if sch_mode[0] in [1, 2]:
+                # 如果已经在运行的jobs,加上当前产生的jobs数量超过用户需求数量,则break, 停止生产jobs, 下个调度周期重新检测再试
+                total_running_jobs = task_running_jobs + real_accounts_num
+                if (limit_counts and total_running_jobs >= int(limit_counts*1.2)) or total_running_jobs >= 10000:
+                    logger.error('task({}) total running jobs num({}) is already more than limit counts({})*1.2'.format(task_id, total_running_jobs, limit_counts))
+                    break
 
         # 更新任务状态为running
         # task实际可用的账号数目, 会根据每次轮循时account状态的不同而变化
