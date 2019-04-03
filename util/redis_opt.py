@@ -14,11 +14,11 @@ pool_cache = redis.ConnectionPool(host=redis_info.get('host'), port=redis_info.g
                                     password=redis_info.get('password'), db=redis_info.get('cache', 1), decode_responses=True)
 
 
+
 class RedisOpt:
     broker_db = redis.Redis(connection_pool=pool_broker)
     backend_db = redis.Redis(connection_pool=pool_backend)
     cache_db = redis.Redis(connection_pool=pool_cache)
-
     @classmethod
     def read_broker(cls, key):
         return cls.broker_db.lrange(key, 0, -1)

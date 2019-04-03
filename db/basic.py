@@ -16,8 +16,8 @@ def get_engine():
         args['db_type'], args['user'], args['password'],
         args['host'], args['port'], args['db_name']
     )
-    eng = create_engine(connect_str, encoding='utf-8', pool_size=100, pool_recycle=7200,
-                        pool_pre_ping=True, max_overflow=10, pool_timeout=120, pool_reset_on_return='commit')
+    eng = create_engine(connect_str, encoding='utf-8', pool_size=1000, pool_recycle=7200,
+                        pool_pre_ping=True, max_overflow=100, pool_timeout=1200, pool_reset_on_return='commit')
     return eng
 
 

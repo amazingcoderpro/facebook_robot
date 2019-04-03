@@ -14,11 +14,12 @@ from datetime import timedelta, datetime
 from collections import namedtuple
 import json
 from apscheduler.schedulers.base import JobLookupError
-from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt, AccountOpt, Job, Task, Scheduler
+from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt, AccountOpt, Job, Task, Scheduler, Agent, Account
 from tasks.processor import send_task_2_worker
 from config import logger
 from util import RedisOpt
 from db.basic import ScopedSession
+from sqlalchemy import and_
 
 
 g_bk_scheduler = None
@@ -26,7 +27,7 @@ Result = namedtuple('Result', ['res', 'msg'])
 last_check_time = datetime.now()
 
 
-def scheduler_task(scheduler_id, *args):
+def scheduler_task(db_session, scheduler_id, *args):
     """
     启动任务的定时处理程序
     :param scheduler_id: 调度实例id
@@ -34,10 +35,12 @@ def scheduler_task(scheduler_id, *args):
     :return: 成功返回 APScheduler 任务id, 失败返回 None
     """
     status = ''
-    mode, interval, start_date, end_date = SchedulerOpt.get_scheduler(scheduler_id)
+    # mode, interval, start_date, end_date = SchedulerOpt.get_scheduler(scheduler_id)
+    mode, interval, start_date, end_date = db_session.query(Scheduler.mode, Scheduler.interval, Scheduler.start_date, Scheduler.end_date).filter(
+        Scheduler.id == scheduler_id).first()
     # 判断任务是否已经过期
     if end_date and end_date <= datetime.now():
-        logger.warning(
+        logger.error(
             'Task has expired, end_date={}, scheduler id={}, args={}'.format(end_date, scheduler_id, args))
         return None, status
 
@@ -130,7 +133,8 @@ def update_task_status():
         for task in running_tasks:
             failed_counts = 0
             succeed_counts = 0
-            jobs = JobOpt.get_jobs_by_task_id(task.id)
+            # jobs = JobOpt.get_jobs_by_task_id(task.id)
+            jobs = db_session.query(Job.status).filter(Job.task == task.id).all()
             for j in jobs:
                 if j[0] == 'succeed':
                     succeed_counts += 1
@@ -164,7 +168,8 @@ def update_task_status():
 
             if task.status in ['succeed', 'failed']:
                 task.end_time = datetime.now()
-                aps_id = TaskOpt.get_aps_ids_by_task_id(task.id)
+                # aps_id = TaskOpt.get_aps_ids_by_task_id(task.id)
+                aps_id = db_session.query(Task.aps_id).filter(Task.id == task.id).first()[0]
                 try:
                     g_bk_scheduler.remove_job(aps_id)
                 except JobLookupError:
@@ -175,7 +180,7 @@ def update_task_status():
         db_session.commit()
     except Exception as e:
         logger.exception('update_task_status catch exception e={}'.format(e))
-        db_session.roll_back()
+        db_session.rollback()
     finally:
         ScopedSession.remove()
 
@@ -185,11 +190,19 @@ def update_agent_status():
     根据运行结果实时更新agent的忙碌程度
     :return:
     """
-    agents = AgentOpt.get_enable_agents(None)
-    for agent in agents:
-        running_jobs_num = JobOpt.count_jobs_by_agent_id(agent.id, status='running')
-        agent.status = running_jobs_num
-        logger.info('Agent id={},  status={}'.format(agent.id, agent.status))
+    try:
+        db_session = ScopedSession()
+        agent_ids = db_session.query(Agent.id).filter(Agent.status != -1).all()
+        for agent in agent_ids:
+            agent_id = agent[0]
+            running_jobs_num = db_session.query(Job).filter(Job.agent == agent_id, Job.status == 'running').count()
+            db_session.query(Agent).filter(Agent.id == agent_id).update({Agent.status: running_jobs_num}, synchronize_session=False)
+            logger.info('update_agent_status Agent id={},  status={}'.format(agent_id, running_jobs_num))
+    except Exception as e:
+        logger.exception('update_agent_status catch exception agent id={}, e={}'.format(agent_id, e))
+        db_session.rollback()
+    finally:
+        ScopedSession.remove()
 
 
 def update_account_usage():
@@ -197,84 +210,84 @@ def update_account_usage():
     根據運行結果實時更新account的使用狀態
     :return:
     """
-    accounts = AccountOpt.get_all_accounts()
-    for account in accounts:
-        account.using = JobOpt.count_jobs_by_account_id(account.id, status='running')
+    try:
+
+        db_session = ScopedSession()
+        running_jobs = db_session.query(Job.account).filter(Job.status == 'running').all()
+        logger.info('update_account_usage, running jobs={}'.format(len(running_jobs)))
+
+        account_usage = {}
+        for account in running_jobs:
+            account_id = account[0]
+            if account_id in account_usage:
+                account_usage[account_id] += 1
+            else:
+                account_usage[account_id] = 1
+
+        for account_id, using in account_usage.items():
+            db_session.query(Account).filter(Account.id == account_id).update({Account.using: using})
+
+        db_session.commit()
+    except Exception as e:
+        logger.exception('update_account_usage catch exception account id={}, e={}'.format(account_id, e))
+        db_session.rollback()
+    finally:
+        ScopedSession.remove()
 
 
 def update_results():
     """
-    根据backend中的值更新数据库中job的状态, 同时逆向更新task状态
+    根据backend中的值更新数据库中job的状态, 每次只更新运行超过5分钟的job, 同时逆向更新task状态
     :return:
     """
-    results = RedisOpt.pop_all_backend(pattern='celery-task-meta*', is_delete=False)
-    if not results:
-        logger.warning('have no results to update.')
-        return
-
-    results_num = len(results)
-    last_results_num = RedisOpt.read_object('total_num')
-    total_result_num = results_num + int(last_results_num) if last_results_num != -1 else results_num
-    RedisOpt.write_object(key='total_num', value=total_result_num)
-    logger.info('update_results total number={}'.format(total_result_num))
-
     status_map = {'SUCCESS': 'succeed', 'FAILURE': 'failed', 'PENDING': 'pending', 'RUNNING': 'running'}
-    track_ids = []
     del_keys = []
-    values = {}
     is_exception = False
     try:
+        updated_jobs_num = 0
         db_session = ScopedSession()
-        for res in results:
-            dict_res = json.loads(res)
-            status = status_map.get(dict_res.get('status'), dict_res.get('status'))
-            track_id = dict_res.get('task_id', '')
-            job_res = dict_res.get('result', '')
+        # 取出5分钟前启动且没有执行完毕的job, 去redis中查询结果是否已经出来了
+        job_start_time = datetime.now()-timedelta(seconds=300)
+        need_update_jobs = db_session.query(Job.id, Job.track_id).filter(and_(Job.status == 'running', Job.start_time <= job_start_time)).all()
+        logger.error('-------need update jobs num={}'.format(len(need_update_jobs)))
 
-            # 除了任务本身的成败外,还需要关注实际返回的结果
-            if isinstance(job_res, dict) and job_res.get('status', '') == 'failed':
-                status = 'failed'
+        for job_id, track_id in need_update_jobs:
+            key_job = 'celery-task-meta-'.format(track_id)
+            result = RedisOpt.read_backend(key=key_job)
+            if result:
+                dict_res = json.loads(result)
+                status = status_map.get(dict_res.get('status'), dict_res.get('status'))
 
-            job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
-            track_ids.append(track_id)
-            del_keys.append('celery-task-meta-{}'.format(track_id))
+                # 除了任务本身的成败外,还需要关注实际返回的结果
+                if isinstance(job_res, dict) and job_res.get('status', '') == 'failed':
+                    status = 'failed'
 
-            # values[track_id] = {
-            #     'track_id': track_id,
-            #     'status': status,
-            #     'result': job_res,
-            #     'traceback': str(dict_res.get('traceback', ''))
-            # }
-            if status == 'running':
-                db_session.query(Task).filter(Job.track_id == track_id).update(
-                    {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', '')),
-                     Job.start_time: datetime.now()},
-                    synchronize_session=False)
-            elif status in ['succeed', 'failed']:
-                db_session.query(Task).filter(Job.track_id == track_id).update(
+                job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
+
+                db_session.query(Job).filter(Job.id == job_id).update(
                     {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', '')),
                      Job.end_time: datetime.now()},
                     synchronize_session=False)
-            else:
-                db_session.query(Task).filter(Job.track_id == track_id).update(
-                    {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', ''))},
-                    synchronize_session=False)
+
+                del_keys.append(key_job)
+                updated_jobs_num += 1
 
         db_session.commit()
-        logger.info('update_results track ids num={}'.format(results_num))
+        logger.error('-------actually update jobs num={}'.format(updated_jobs_num))
     except Exception as e:
         is_exception = True
-        logger.exception('update_results catch exception e={}'.format(e))
-        db_session.roll_back()
+        logger.exception('--------update_results catch exception e={}'.format(e))
+        db_session.rollback()
     finally:
         ScopedSession.remove()
-    # unfinished_track_ids = JobOpt.set_job_by_track_ids(track_ids=track_ids.copy(), values=values)
-    # logger.info('update_results update num={}, unfinished num={}. unfinished track ids={}'
-    #             .format(len(track_ids), len(unfinished_track_ids), unfinished_track_ids))
 
     # 将落盘成功的数据从缓存区清掉
     if not is_exception:
-        RedisOpt.delete_backend_more(*track_ids)
+        if updated_jobs_num > 0:
+            RedisOpt.delete_backend_more(*del_keys)
+            last_num = RedisOpt.read_object('total_num')
+            total_updated_jobs_num = updated_jobs_num + int(last_num) if last_num != -1 else updated_jobs_num
+            RedisOpt.write_object(key='total_updated_jobs_num', value=total_updated_jobs_num)
 
     # 根据更新后的job状态,逆向更新任务状态
     update_task_status()
@@ -299,17 +312,28 @@ def process_updated_tasks():
     """
     global last_check_time
     logger.info('process_updated_tasks, last check time={}'.format(last_check_time))
-    tasks = TaskOpt.get_all_need_check_task(last_time=last_check_time-timedelta(seconds=1))
-    for task_id, status, last_update in tasks:
-        logger.info('process_updated_tasks task id={}, status={}, last_update={}'.format(task_id, status, last_update))
-        if last_update >= last_check_time:
-            if status == 'cancelled':
-                cancel_task(task_id)
-            elif status == 'pausing':
-                pause_task(task_id)
-            elif status == 'running':
-                resume_task(task_id)
-    last_check_time = datetime.now()
+    # tasks = TaskOpt.get_all_need_check_task(last_time=last_check_time-timedelta(seconds=1))
+    try:
+        db_session = ScopedSession()
+        last_time = last_check_time - timedelta(seconds=1)
+        tasks = db_session.query(Task.id, Task.status, Task.last_update) \
+            .filter(and_(Task.status.in_(('pausing', 'running', 'cancelled')), Task.last_update >= last_time)).all()
+        last_check_time = datetime.now()
+        for task_id, status, last_update in tasks:
+            logger.info('process_updated_tasks task id={}, status={}, last_update={}'.format(task_id, status, last_update))
+            if last_update >= last_check_time:
+                if status == 'cancelled':
+                    cancel_task(task_id)
+                elif status == 'pausing':
+                    pause_task(task_id)
+                elif status == 'running':
+                    resume_task(task_id)
+
+    except Exception as e:
+        logger.exception('process_updated_tasks catch exception e={}'.format(e))
+        db_session.rollback()
+    finally:
+        ScopedSession.remove()
 
 
 def start_all_new_tasks(scheduler=None):
@@ -378,7 +402,7 @@ def start_task(task_id, force=False):
                 return Result(res=False, msg='task have been finished, status={}'.format(status))
         else:
             if status != 'new':
-                logger.error('start_task task is not a new task, status={}. '.format(status))
+                logger.error('start_task task is not a new task, task id={} status={}. '.format(task_id, status))
                 return Result(res=False, msg='is not a new task')
 
         # 如果task已经启动，先移除(用于系统重启）
@@ -393,7 +417,7 @@ def start_task(task_id, force=False):
             db_session.commit()
 
         # 开始启动任务调度
-        aps_job, status_new = scheduler_task(scheduler, task_id)
+        aps_job, status_new = scheduler_task(db_session, scheduler, task_id)
 
         # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
         if aps_job:
@@ -413,11 +437,11 @@ def start_task(task_id, force=False):
             logger.error('start task can not scheduler task, task id={}'.format(task_id))
             return Result(res=False, msg='scheduler task failed')
     except Exception as e:
-        db_session.roll_back()
+        db_session.rollback()
         logger.exception('start_task catch exception task id={}, e={}'.format(task_id, e))
     finally:
         ScopedSession.remove()
-    return Result(res=True, msg='start task succeed. id={}, aps id={}'.format(task_id, aps_job.id))
+    return Result(res=True, msg='start task succeed. id={}'.format(task_id))
 
 
 def pause_task(task_id):

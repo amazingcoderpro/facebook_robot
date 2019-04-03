@@ -718,7 +718,7 @@ def produce_account():
 
 def produce_tasks():
     # 创建任务
-    for i in range(10):
+    for i in range(6):
         TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(100, 369)], name=u'养个号'.format(i), limit_counts=10)
         TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[x for x in range(1, 100)], name=u'刷个好评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=20)
         TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[x for x in range(1500, 2000)], name=u'登录浏览就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=100)
@@ -750,7 +750,6 @@ if __name__ == '__main__':
     # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
  # pipenv run python web_service/initialization/users/new_user.py
-
 
 
 
