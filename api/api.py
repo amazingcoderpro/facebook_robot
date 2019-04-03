@@ -135,11 +135,14 @@ def update_task_status():
             succeed_counts = 0
             # jobs = JobOpt.get_jobs_by_task_id(task.id)
             jobs = db_session.query(Job.status).filter(Job.task == task.id).all()
+            unfinished_jobs = 0
             for j in jobs:
                 if j[0] == 'succeed':
                     succeed_counts += 1
                 elif j[0] == 'failed':
                     failed_counts += 1
+                else:
+                    unfinished_jobs += 1
 
             task.succeed_counts = succeed_counts
             task.failed_counts = failed_counts
@@ -151,7 +154,8 @@ def update_task_status():
                 .filter(Scheduler.id == task.scheduler).first()
             # 如果是一次性任务,只要所有job结果都返回了, task即结束
             if sch_mode in [0, 3]:
-                if (task.failed_counts + task.succeed_counts) >= task.real_accounts_num:
+                if ((task.failed_counts + task.succeed_counts) >= task.real_accounts_num) \
+                        or unfinished_jobs == 0 or (task.start_time < datetime.now()-timedelta(days=3)):
                     if task.succeed_counts >= task.limit_counts:
                         task.status = 'succeed'
                     else:
@@ -289,7 +293,7 @@ def update_results():
     if not is_exception:
         if updated_jobs_num > 0:
             RedisOpt.delete_backend_more(*del_keys)
-            last_num = RedisOpt.read_object('total_num')
+            last_num = RedisOpt.read_object('total_updated_jobs_num')
             total_updated_jobs_num = updated_jobs_num + int(last_num) if last_num != -1 else updated_jobs_num
             RedisOpt.write_object(key='total_updated_jobs_num', value=total_updated_jobs_num)
 
