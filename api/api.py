@@ -155,7 +155,7 @@ def update_task_status():
             # 如果是一次性任务,只要所有job结果都返回了, task即结束
             if sch_mode in [0, 3]:
                 if ((task.failed_counts + task.succeed_counts) >= task.real_accounts_num) \
-                        or unfinished_jobs == 0 or (task.start_time < datetime.now()-timedelta(days=3)):
+                        or unfinished_jobs == 0 or (task.start_time and task.start_time < datetime.now()-timedelta(days=1)):
                     if task.succeed_counts >= task.limit_counts:
                         task.status = 'succeed'
                     else:
