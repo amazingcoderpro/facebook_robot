@@ -60,7 +60,7 @@ def run(relay=False, update_interval=30):
 if __name__ == '__main__':
     logger.info('start command={}'.format(sys.argv))
     mode = 'new'
-    interval = 30
+    interval = 60
     if len(sys.argv) > 2:
         mode = sys.argv[1]
         try:

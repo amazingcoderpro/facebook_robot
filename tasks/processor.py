@@ -118,7 +118,7 @@ def send_task_2_worker(task_id):
                 routing_key=agent_queue_name
             )
 
-            logger.info('-----send sub task to worker, celery task name={}, queue={}, '
+            logger.debug('-----send sub task to worker, celery task name={}, queue={}, '
                         'task id={}, account id={}, track id={}'.format(celery_task_name, agent_queue_name, task_id, acc_id, track.id))
 
             job = Job()
@@ -143,7 +143,7 @@ def send_task_2_worker(task_id):
 
         db_scoped_session.commit()
 
-        logger.info('time it end, send task {}, used {} seconds'.format(task_id, (
+        logger.error('----send_task_2_worker send task {}, produce jobs={}, used {} seconds. '.format(task_id, len(jobs), (
                 datetime.datetime.now() - time_it_beg).seconds))
     except BaseException as e:
         logger.exception('send_task_2_worker exception task id={}, e={}'.format(task_id, e))

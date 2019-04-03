@@ -40,20 +40,20 @@ def scheduler_task(db_session, scheduler_id, *args):
         Scheduler.id == scheduler_id).first()
     # 判断任务是否已经过期
     if end_date and end_date <= datetime.now():
-        logger.error(
+        logger.warning(
             'Task has expired, end_date={}, scheduler id={}, args={}'.format(end_date, scheduler_id, args))
         return None, status
 
     # 对于周期性任务, 最小时间间隔应该大于60秒
     if mode in [1, 2] and interval < 60:
-        logger.error(
+        logger.warning(
             'Task scheduler interval is too short. interval={}, scheduler_id={}, ars={}'.format(interval,
                                                                                                 scheduler_id, args))
         return None, status
 
     # 对于指定启动时间的任务, 启动时间应该大于当前时间, 对于1可以不指定start date
     if mode in [1, 3] and start_date and start_date < datetime.now():
-        logger.error('Timed task start date is null or earlier than now. start date={}, scheduler_id={}, args={}'.format(
+        logger.warning('Timed task start date is null or earlier than now. start date={}, scheduler_id={}, args={}'.format(
             start_date, scheduler_id, args))
         return None, status
 
@@ -243,6 +243,7 @@ def update_results():
     status_map = {'SUCCESS': 'succeed', 'FAILURE': 'failed', 'PENDING': 'pending', 'RUNNING': 'running'}
     del_keys = []
     is_exception = False
+    time_it_beg = datetime.now()
     try:
         updated_jobs_num = 0
         db_session = ScopedSession()
@@ -252,17 +253,20 @@ def update_results():
         logger.error('-------need update jobs num={}'.format(len(need_update_jobs)))
 
         for job_id, track_id in need_update_jobs:
-            key_job = 'celery-task-meta-'.format(track_id)
+            key_job = 'celery-task-meta-{}'.format(track_id)
             result = RedisOpt.read_backend(key=key_job)
             if result:
                 dict_res = json.loads(result)
                 status = status_map.get(dict_res.get('status'), dict_res.get('status'))
+                job_res = dict_res.get('result', '')
 
                 # 除了任务本身的成败外,还需要关注实际返回的结果
-                if isinstance(job_res, dict) and job_res.get('status', '') == 'failed':
-                    status = 'failed'
-
-                job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
+                if isinstance(job_res, dict):
+                    if job_res.get('status', '') == 'failed':
+                        status = 'failed'
+                    job_res = json.dumps(job_res)
+                else:
+                    job_res = str(job_res)
 
                 db_session.query(Job).filter(Job.id == job_id).update(
                     {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', '')),
@@ -303,6 +307,8 @@ def update_results():
 
     # 启动所有新建任务
     start_all_new_tasks()
+
+    logger.error('update results used {} seconds.'.format((datetime.now()-time_it_beg).seconds))
 
 
 def process_updated_tasks():
@@ -398,11 +404,11 @@ def start_task(task_id, force=False):
         # 强制状态下，可以启动所有new, pending, pausing状态的任务
         if force:
             if status not in ['new', 'pending', 'pausing', 'running']:
-                logger.error('start_task task have been finished, id={}, status={}. '.format(task_id, status))
+                logger.warning('start_task task have been finished, id={}, status={}. '.format(task_id, status))
                 return Result(res=False, msg='task have been finished, status={}'.format(status))
         else:
             if status != 'new':
-                logger.error('start_task task is not a new task, task id={} status={}. '.format(task_id, status))
+                logger.warning('start_task task is not a new task, task id={} status={}. '.format(task_id, status))
                 return Result(res=False, msg='is not a new task')
 
         # 如果task已经启动，先移除(用于系统重启）
@@ -430,11 +436,11 @@ def start_task(task_id, force=False):
                     update({Task.aps_id: aps_job.id}, synchronize_session=False)
 
             db_session.commit()
-            logger.info('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, status_new))
+            logger.error('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, status_new))
 
             # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
         else:
-            logger.error('start task can not scheduler task, task id={}'.format(task_id))
+            logger.warning('start task can not scheduler task, task id={}'.format(task_id))
             return Result(res=False, msg='scheduler task failed')
     except Exception as e:
         db_session.rollback()
