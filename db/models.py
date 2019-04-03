@@ -303,6 +303,13 @@ class Area(Base):
     description = Column(String(2048), default='', server_default='')
 
 
+class FingerPrint(Base):
+    __tablename__ = 'finger_print'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), default='', server_default='')
+    value = Column(String(2048), default='', server_default='')
+
+
 if __name__ == '__main__':
     while True:
         res = input("What do you want to do, create or drop? \n")

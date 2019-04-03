@@ -9,7 +9,7 @@ from config import logger
 from db.basic import db_session, db_lock
 from sqlalchemy import and_
 from db.models import (Scheduler, Account, User, Task, TaskAccountGroup,
-                       Job, TaskCategory, UserCategory, AccountCategory, Agent)
+                       Job, TaskCategory, UserCategory, AccountCategory, Agent, FingerPrint)
 
 
 class BaseOpt:
@@ -48,7 +48,7 @@ class SchedulerOpt(BaseOpt):
 
     @classmethod
     def get_scheduler(cls, scheduler_id):
-        return db_session.query(Scheduler).filter(Scheduler.id == scheduler_id).first()
+        return db_session.query(Scheduler.mode, Scheduler.interval, Scheduler.start_date, Scheduler.end_date).filter(Scheduler.id == scheduler_id).first()
 
 
 class UserOpt:
@@ -261,11 +261,12 @@ class TaskOpt:
         return False
 
     @classmethod
-    def get_task_by_task_id(cls, session, task_id):
-        if session:
-            return session.query(Task).filter(Task.id == task_id).first()
-        else:
-            return db_session.query(Task).filter(Task.id == task_id).first()
+    def get_task_by_task_id(cls, task_id):
+        return db_session.query(Task).filter(Task.id == task_id).first()
+
+    @classmethod
+    def get_task_status_apsid(cls, task_id):
+        return db_session.query(Task.status, Task.aps_id).filter(Task.id == task_id).first()
 
     @classmethod
     def get_aps_ids_by_task_id(cls, task_id):
@@ -516,6 +517,17 @@ class AgentOpt:
             return session.query(Agent).filter(Agent.status != -1).all()
 
 
+class FingerPrintOpt:
+    @classmethod
+    def save_finger_print(cls, name, value):
+        fp = FingerPrint()
+        fp.name = name
+        fp.value = value
+        db_session.add(fp)
+        db_session.commit()
+        return fp
+
+
 def init_db_data():
     """
     初始化各表基础配置数据,用于环境测试等
@@ -636,21 +648,105 @@ def show_test_data():
     # for j in jobs:
     #     print(j)
 
+def opt_db():
+    print(datetime.datetime.now())
+    jobs = []
+
+    for x in range(3000, 6000):
+        job = Job()
+        job.task = 2
+        job.account = 2
+        job.agent = 1
+        job.status = 'running_th'
+        job.track_id = '{}'.format(x)
+        job.start_time = datetime.datetime.now()
+        jobs.append(job)
+
+
+    db_lock.acquire()
+    print('thead dbs1={}'.format(db_session))
+    db_session.add_all(jobs)
+    db_session.commit()
+    db_lock.release()
+
+    db_lock.acquire()
+
+    print('thead dbs2={}'.format(db_session))
+    db_session.execute(Job.__table__.insert(), [
+        {'task': 1, 'account': 3, 'agent': 1, 'status': 'ffff', 'track_id': '{}'.format(x),
+         'start_time': datetime.datetime.now()} for x in range(8000, 10000)])
+    db_session.commit()
+    db_lock.release()
+
+
+def test_db():
+    import threading
+
+    th = threading.Thread(target=opt_db)
+    th.start()
+    jobs = []
+    for x in range(10010, 20000):
+        job = Job()
+        job.task = 2
+        job.account = 2
+        job.agent = 1
+        job.status = 'running11'
+        job.track_id = '{}'.format(x)
+        job.start_time = datetime.datetime.now()
+        jobs.append(job)
+
+    db_lock.acquire()
+    print(datetime.datetime.now())
+    db_session.add_all(jobs)
+    # db_session.commit()
+    db_session.execute(Job.__table__.insert(), [{'task':1, 'account':3, 'agent':1, 'status':'ffff', 'track_id': '{}'.format(x), 'start_time': datetime.datetime.now()} for x in range(1000)])
+    db_session.commit()
+    print(db_session)
+    db_session.close()
+    db_lock.release()
+    print(datetime.datetime.now())
+
+
+def produce_account():
+    # 添加账号
+    for i in range(10000):
+        AccountOpt.save_account(account='codynr4nzxh@outlook.com',
+                            password='qVhgldHmgp', owner=1, category=1,
+                            email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
+                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='valid')
+
+
+def produce_tasks():
+    # 创建任务
+    for i in range(10):
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(100, 369)], name=u'养个号'.format(i), limit_counts=10)
+        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[x for x in range(1, 100)], name=u'刷个好评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=20)
+        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[x for x in range(1500, 2000)], name=u'登录浏览就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=100)
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[x for x in range(6000, 6800)], name=u'养号'.format(i), limit_counts=30)
+        TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[x for x in range(756, 1200)], name=u'好评'.format(i), limit_counts=102)
+
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[x for x in range(8900, 9630)], name=u'来养号'.format(i), limit_counts=100)
+        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[x for x in range(6900, 7400)], name=u'刷评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=30)
+        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[x for x in range(5000, 5025)], name=u'登录就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=10)
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(5900, 6026)], name=u'yang'.format(i), limit_counts=400)
+        TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=2, account_ids=[x for x in range(2856, 3059)], name=u'shua'.format(i), limit_counts=5)
+
+
+def test11(*names):
+    print(names)
+    test12(*names)
+
+def test12(*names):
+    print(names)
 
 if __name__ == '__main__':
-    init_db_data()
-    show_test_data()
-
-    # for a in range(10000):
-    #     AccountOpt.save_account(account='yorkeru997a@outlook.com'+str(a),
-    #                         password='Ogec1eOAFA', owner=3, category=1,
-    #                         email='yorkeru997a@outlook.com', email_pwd='u3KLKTXye',
-    #                         gender=0, birthday='1986-5-21', profile_id='alana.williamson.1401',
-    #                         name='Alana Williamson', register_time='2017-9-2', active_area='Spanish',
-    #                         active_browser=str({'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36',
-    #                                             'upgrade-insecure-requests': 1, 'accept-language:':'zh-CN,zh;q=0.9'}))
-
-
+    # init_db_data()
+    # show_test_data()
+    # test_db()
+    # produce_account()
+    print(11)
+    produce_tasks()
+    test11(*[1,2,3])
     # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
  # pipenv run python web_service/initialization/users/new_user.py

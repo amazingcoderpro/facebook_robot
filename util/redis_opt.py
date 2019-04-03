@@ -43,6 +43,9 @@ class RedisOpt:
         for key in keys:
             cls.backend_db.delete(key)
 
+    @classmethod
+    def delete_backend_more(cls, *names):
+        cls.backend_db.delete(*names)
 
     @classmethod
     def push_object(cls, key, value):

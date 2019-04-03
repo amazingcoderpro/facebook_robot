@@ -37,7 +37,7 @@ require([], function(){
 
             dataType: 'json'
         }).fail(function(req){
-                alert('用户名或密码错误！')
+                showTip('用户名或密码错误！')
         })
     }
 

@@ -10,18 +10,20 @@
 # Function:
 
 
-import datetime
+from datetime import timedelta, datetime
 from collections import namedtuple
 import json
 from apscheduler.schedulers.base import JobLookupError
-from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt, AccountOpt
+from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt, AccountOpt, Job, Task, Scheduler
 from tasks.processor import send_task_2_worker
 from config import logger
 from util import RedisOpt
+from db.basic import ScopedSession
+
 
 g_bk_scheduler = None
 Result = namedtuple('Result', ['res', 'msg'])
-last_check_time = datetime.datetime.now()
+last_check_time = datetime.now()
 
 
 def scheduler_task(scheduler_id, *args):
@@ -32,24 +34,24 @@ def scheduler_task(scheduler_id, *args):
     :return: 成功返回 APScheduler 任务id, 失败返回 None
     """
     status = ''
-    task_sch = SchedulerOpt.get_scheduler(scheduler_id)
+    mode, interval, start_date, end_date = SchedulerOpt.get_scheduler(scheduler_id)
     # 判断任务是否已经过期
-    if task_sch.end_date and task_sch.end_date <= datetime.datetime.now():
+    if end_date and end_date <= datetime.now():
         logger.warning(
-            'Task has expired, end_date={}, scheduler id={}, args={}'.format(task_sch.end_date, scheduler_id, args))
+            'Task has expired, end_date={}, scheduler id={}, args={}'.format(end_date, scheduler_id, args))
         return None, status
 
     # 对于周期性任务, 最小时间间隔应该大于60秒
-    if task_sch.mode in [1, 2] and task_sch.interval < 60:
+    if mode in [1, 2] and interval < 60:
         logger.error(
-            'Task scheduler interval is too short. interval={}, scheduler_id={}, ars={}'.format(task_sch.interval,
+            'Task scheduler interval is too short. interval={}, scheduler_id={}, ars={}'.format(interval,
                                                                                                 scheduler_id, args))
         return None, status
 
     # 对于指定启动时间的任务, 启动时间应该大于当前时间, 对于1可以不指定start date
-    if task_sch.mode in [1, 3] and task_sch.start_date and task_sch.start_date < datetime.datetime.now():
+    if mode in [1, 3] and start_date and start_date < datetime.now():
         logger.error('Timed task start date is null or earlier than now. start date={}, scheduler_id={}, args={}'.format(
-            task_sch.start_date, scheduler_id, args))
+            start_date, scheduler_id, args))
         return None, status
 
     # 根据任务计划模式的不同启动不同的定时任务
@@ -60,27 +62,27 @@ def scheduler_task(scheduler_id, *args):
     # 3 - 定时执行,指定时间执行, 此时必须要指定start_date, 将在start_date时间执行一次
     # dispatch_processor(processor, inputs)
 
-    if task_sch.mode == 0:
+    if mode == 0:
         aps_job = g_bk_scheduler.add_job(send_task_2_worker, args=args)
-    elif task_sch.mode == 1:
-        if task_sch.start_date:
-            aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval,
-                                             start_date=task_sch.start_date, args=args,
+    elif mode == 1:
+        if start_date:
+            aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=interval,
+                                             start_date=start_date, args=args,
                                              misfire_grace_time=120, coalesce=False, max_instances=5)
         else:
-            aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval, args=args,
+            aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=interval, args=args,
                                              misfire_grace_time=120, coalesce=False, max_instances=5)
         status = 'pending'
-    elif task_sch.mode == 2:
+    elif mode == 2:
         send_task_2_worker(args)
-        aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=task_sch.interval, args=args,
+        aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'interval', seconds=interval, args=args,
                                          misfire_grace_time=120, coalesce=False, max_instances=5)
-    elif task_sch.mode == 3:
-        aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'date', run_date=task_sch.start_date, args=args,
+    elif mode == 3:
+        aps_job = g_bk_scheduler.add_job(send_task_2_worker, 'date', run_date=start_date, args=args,
                                          misfire_grace_time=120, coalesce=False, max_instances=5)
         status = 'pending'
     else:
-        logger.error('can not processing scheduler mode={}.'.format(task_sch.mode))
+        logger.error('can not processing scheduler mode={}.'.format(mode))
         return None, status
 
     return aps_job, status
@@ -121,50 +123,61 @@ def update_task_status():
     更新任务状态
     :return:
     """
-    running_tasks = TaskOpt.get_all_running_task()
-    for task in running_tasks:
-        failed_counts = 0
-        succeed_counts = 0
-        jobs = JobOpt.get_jobs_by_task_id(task.id)
-        for j in jobs:
-            if j[0] == 'succeed':
-                succeed_counts += 1
-            elif j[0] == 'failed':
-                failed_counts += 1
+    try:
+        db_session = ScopedSession()
+        running_tasks = db_session.query(Task).filter(Task.status == 'running').all()
+        # running_tasks = TaskOpt.get_all_running_task()
+        for task in running_tasks:
+            failed_counts = 0
+            succeed_counts = 0
+            jobs = JobOpt.get_jobs_by_task_id(task.id)
+            for j in jobs:
+                if j[0] == 'succeed':
+                    succeed_counts += 1
+                elif j[0] == 'failed':
+                    failed_counts += 1
 
-        task.succeed_counts = succeed_counts
-        task.failed_counts = failed_counts
-        logger.info('-----update_task_status task id={} status={}, succeed={}, failed={}'.
-                    format(task.id, task.status, task.succeed_counts, task.failed_counts))
+            task.succeed_counts = succeed_counts
+            task.failed_counts = failed_counts
+            logger.info('-----update_task_status task id={} status={}, succeed={}, failed={}'.
+                        format(task.id, task.status, task.succeed_counts, task.failed_counts))
 
-        sch = SchedulerOpt.get_scheduler(task.scheduler)
-        # 如果是一次性任务,只要所有job结果都返回了, task即结束
-        if sch.mode in [0, 3]:
-            if (task.failed_counts + task.succeed_counts) >= task.real_accounts_num:
+            # sch = SchedulerOpt.get_scheduler(task.scheduler)
+            sch_mode, sch_end_date = db_session.query(Scheduler.mode, Scheduler.end_date)\
+                .filter(Scheduler.id == task.scheduler).first()
+            # 如果是一次性任务,只要所有job结果都返回了, task即结束
+            if sch_mode in [0, 3]:
+                if (task.failed_counts + task.succeed_counts) >= task.real_accounts_num:
+                    if task.succeed_counts >= task.limit_counts:
+                        task.status = 'succeed'
+                    else:
+                        task.status = 'failed'
+            # 对于周期性任务, 如果成功次数达到需求最大值, 或者时间达到终止时间, 则任务置为结束, 并从scheduler中移除所有的aps job
+            else:
                 if task.succeed_counts >= task.limit_counts:
                     task.status = 'succeed'
-                else:
+                    task.end_time = datetime.now()
+                elif sch_end_date and datetime.now() >= sch_end_date:
                     task.status = 'failed'
-        # 对于周期性任务, 如果成功次数达到需求最大值, 或者时间达到终止时间, 则任务置为结束, 并从scheduler中移除所有的aps job
-        else:
-            if task.succeed_counts >= task.limit_counts:
-                task.status = 'succeed'
-                task.end_time = datetime.datetime.now()
-            elif sch.end_date and datetime.datetime.now() >= sch.end_date:
-                task.status = 'failed'
-            else:
-                pass
+                else:
+                    pass
 
-        if task.status in ['succeed', 'failed']:
-            task.end_time = datetime.datetime.now()
-            aps_id = TaskOpt.get_aps_ids_by_task_id(task.id)
-            try:
-                g_bk_scheduler.remove_job(aps_id)
-            except JobLookupError:
-                logger.warning('job have been removed. aps_id={}'.format(aps_id))
-            logger.info('update_task_status task {} status={}, succeed={}, failed={}'.format(task.id, task.status,
-                                                                                             task.succeed_counts,
-                                                                                             task.failed_counts))
+            if task.status in ['succeed', 'failed']:
+                task.end_time = datetime.now()
+                aps_id = TaskOpt.get_aps_ids_by_task_id(task.id)
+                try:
+                    g_bk_scheduler.remove_job(aps_id)
+                except JobLookupError:
+                    logger.warning('job have been removed. aps_id={}'.format(aps_id))
+                logger.info('update_task_status task {} status={}, succeed={}, failed={}'.format(task.id, task.status,
+                                                                                                 task.succeed_counts,
+                                                                                                 task.failed_counts))
+        db_session.commit()
+    except Exception as e:
+        logger.exception('update_task_status catch exception e={}'.format(e))
+        db_session.roll_back()
+    finally:
+        ScopedSession.remove()
 
 
 def update_agent_status():
@@ -207,36 +220,61 @@ def update_results():
 
     status_map = {'SUCCESS': 'succeed', 'FAILURE': 'failed', 'PENDING': 'pending', 'RUNNING': 'running'}
     track_ids = []
+    del_keys = []
     values = {}
+    is_exception = False
+    try:
+        db_session = ScopedSession()
+        for res in results:
+            dict_res = json.loads(res)
+            status = status_map.get(dict_res.get('status'), dict_res.get('status'))
+            track_id = dict_res.get('task_id', '')
+            job_res = dict_res.get('result', '')
 
-    for res in results:
-        dict_res = json.loads(res)
-        status = status_map.get(dict_res.get('status'), dict_res.get('status'))
-        track_id = dict_res.get('task_id', '')
-        job_res = dict_res.get('result', '')
+            # 除了任务本身的成败外,还需要关注实际返回的结果
+            if isinstance(job_res, dict) and job_res.get('status', '') == 'failed':
+                status = 'failed'
 
-        # 除了任务本身的成败外,还需要关注实际返回的结果
-        if isinstance(job_res, dict) and job_res.get('status', '') == 'failed':
-            status = 'failed'
+            job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
+            track_ids.append(track_id)
+            del_keys.append('celery-task-meta-{}'.format(track_id))
 
-        job_res = json.dumps(job_res) if isinstance(job_res, dict) else str(job_res)
-        track_ids.append(track_id)
-        values[track_id] = {
-            'track_id': track_id,
-            'status': status,
-            'result': job_res,
-            'traceback': str(dict_res.get('traceback', ''))
-        }
+            # values[track_id] = {
+            #     'track_id': track_id,
+            #     'status': status,
+            #     'result': job_res,
+            #     'traceback': str(dict_res.get('traceback', ''))
+            # }
+            if status == 'running':
+                db_session.query(Task).filter(Job.track_id == track_id).update(
+                    {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', '')),
+                     Job.start_time: datetime.now()},
+                    synchronize_session=False)
+            elif status in ['succeed', 'failed']:
+                db_session.query(Task).filter(Job.track_id == track_id).update(
+                    {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', '')),
+                     Job.end_time: datetime.now()},
+                    synchronize_session=False)
+            else:
+                db_session.query(Task).filter(Job.track_id == track_id).update(
+                    {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', ''))},
+                    synchronize_session=False)
 
-    logger.info('update_results track ids={}'.format(track_ids))
-    unfinished_track_ids = JobOpt.set_job_by_track_ids(track_ids=track_ids.copy(), values=values)
-    logger.info('update_results update num={}, unfinished num={}. unfinished track ids={}'
-                .format(len(track_ids), len(unfinished_track_ids), unfinished_track_ids))
+        db_session.commit()
+        logger.info('update_results track ids num={}'.format(results_num))
+    except Exception as e:
+        is_exception = True
+        logger.exception('update_results catch exception e={}'.format(e))
+        db_session.roll_back()
+    finally:
+        ScopedSession.remove()
+    # unfinished_track_ids = JobOpt.set_job_by_track_ids(track_ids=track_ids.copy(), values=values)
+    # logger.info('update_results update num={}, unfinished num={}. unfinished track ids={}'
+    #             .format(len(track_ids), len(unfinished_track_ids), unfinished_track_ids))
 
     # 将落盘成功的数据从缓存区清掉
-    for track_id in track_ids:
-        if track_id not in unfinished_track_ids:
-            RedisOpt.delete_backend('*{}'.format(track_id))
+    if not is_exception:
+        RedisOpt.delete_backend_more(*track_ids)
 
     # 根据更新后的job状态,逆向更新任务状态
     update_task_status()
@@ -261,7 +299,7 @@ def process_updated_tasks():
     """
     global last_check_time
     logger.info('process_updated_tasks, last check time={}'.format(last_check_time))
-    tasks = TaskOpt.get_all_need_check_task(last_time=last_check_time)
+    tasks = TaskOpt.get_all_need_check_task(last_time=last_check_time-timedelta(seconds=1))
     for task_id, status, last_update in tasks:
         logger.info('process_updated_tasks task id={}, status={}, last_update={}'.format(task_id, status, last_update))
         if last_update >= last_check_time:
@@ -271,7 +309,7 @@ def process_updated_tasks():
                 pause_task(task_id)
             elif status == 'running':
                 resume_task(task_id)
-    last_check_time = datetime.datetime.now()
+    last_check_time = datetime.now()
 
 
 def start_all_new_tasks(scheduler=None):
@@ -324,45 +362,61 @@ def start_task(task_id, force=False):
     :param force: 是否强制启动国（若是， 所有未完成的任务都将重新启动，用于系统重启）
     :return: 成功返回True, 失败返回False
     """
-    task = TaskOpt.get_task_by_task_id(None, task_id)
-    if not task:
-        logger.error('start_task can not find the task, id={}. '.format(task_id))
-        return Result(res=False, msg='can not find the task')
+    # res = TaskOpt.get_task_status_apsid(task_id)
+    try:
+        db_session = ScopedSession()
+        res = db_session.query(Task.status, Task.aps_id, Task.scheduler).filter(Task.id == task_id).first()
+        if not res:
+            logger.error('start_task can not find the task, id={}. '.format(task_id))
+            return Result(res=False, msg='can not find the task')
 
-    # 强制状态下，可以启动所有new, pending, pausing状态的任务
-    if force:
-        if task.status not in ['new', 'pending', 'pausing', 'running']:
-            logger.error('start_task task have been finished, id={}, status={}. '.format(task_id, task.status))
-            return Result(res=False, msg='task have been finished, status={}'.format(task.status))
-    else:
-        if task.status != 'new':
-            logger.error('start_task task is not a new task, status={}. '.format(task.status))
-            return Result(res=False, msg='is not a new task')
+        status, aps_id, scheduler = res
+        # 强制状态下，可以启动所有new, pending, pausing状态的任务
+        if force:
+            if status not in ['new', 'pending', 'pausing', 'running']:
+                logger.error('start_task task have been finished, id={}, status={}. '.format(task_id, status))
+                return Result(res=False, msg='task have been finished, status={}'.format(status))
+        else:
+            if status != 'new':
+                logger.error('start_task task is not a new task, status={}. '.format(status))
+                return Result(res=False, msg='is not a new task')
 
-    # 如果task已经启动，先移除(用于系统重启）
-    if task.status in ['pending', 'pausing', 'running']:
-        try:
-            g_bk_scheduler.remove(task.aps_id)
-        except JobLookupError:
-            logger.warning('job have been removed.')
-        task.status = 'new'
-        task.aps_id = ''
-        task.start_time = None
+        # 如果task已经启动，先移除(用于系统重启）
+        if status in ['pending', 'pausing', 'running']:
+            try:
+                g_bk_scheduler.remove(aps_id)
+            except JobLookupError:
+                logger.warning('job have been removed.')
 
-    # 开始启动任务调度
-    aps_job, status = scheduler_task(task.scheduler, task_id)
+            db_session.query(Task).filter(Task.id == task_id).\
+                update({Task.status: "new", Task.aps_id: '', Task.start_time: None}, synchronize_session=False)
+            db_session.commit()
 
-    # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
-    if aps_job:
-        if status:
-            task.status = status     # 如果任务调度开始执行了, task状态会被置为running,就不用再改回pending
-        task.aps_id = aps_job.id
-        logger.info('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, task.status))
-        # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
-    else:
-        logger.error('start task can not scheduler task, task id={}'.format(task_id))
-        return Result(res=False, msg='scheduler task failed')
+        # 开始启动任务调度
+        aps_job, status_new = scheduler_task(scheduler, task_id)
 
+        # 将aps id 更新到数据库中, aps id 将用于任务的暂停、恢复、终止
+        if aps_job:
+            if status_new:
+                # 如果任务调度开始执行了, task状态会被置为running,就不用再改回pending
+                db_session.query(Task).filter(Task.id == task_id). \
+                    update({Task.status: status_new, Task.aps_id: aps_job.id}, synchronize_session=False)
+            else:
+                db_session.query(Task).filter(Task.id == task_id). \
+                    update({Task.aps_id: aps_job.id}, synchronize_session=False)
+
+            db_session.commit()
+            logger.info('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, status_new))
+
+            # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
+        else:
+            logger.error('start task can not scheduler task, task id={}'.format(task_id))
+            return Result(res=False, msg='scheduler task failed')
+    except Exception as e:
+        db_session.roll_back()
+        logger.exception('start_task catch exception task id={}, e={}'.format(task_id, e))
+    finally:
+        ScopedSession.remove()
     return Result(res=True, msg='start task succeed. id={}, aps id={}'.format(task_id, aps_job.id))
 
 
@@ -374,11 +428,11 @@ def pause_task(task_id):
     """
     task = TaskOpt.get_task_by_task_id(None, task_id)
     if not task:
-        logger.error('pause_task can not find the task, id={}. '.format(task_id))
+        logger.error('pause_task can not find the task, task id={}. '.format(task_id))
         return Result(res=False, msg='can not find the task')
 
-    if task.status not in ['pending', 'running']:
-        logger.error('pause_task but task is not running, id={}. '.format(task_id))
+    if task.status not in ['pausing', 'pending', 'running']:
+        logger.error('pause_task but task is not running, task id={}. '.format(task_id))
         return Result(res=False, msg='task have is not running')
 
     logger.info('pause_task task id={}'.format(task_id))
@@ -400,11 +454,12 @@ def resume_task(task_id):
     """
     task = TaskOpt.get_task_by_task_id(None, task_id)
     if not task:
-        logger.error('resume_task can not find the task, id={}. '.format(task_id))
+        logger.error('resume_task can not find the task, task id={}. '.format(task_id))
         return Result(res=False, msg='can not find the task')
 
-    if task.status != 'pausing':
-        return Result(res=False, msg='task is not pausing')
+    if task.status not in ['pausing', 'pending', 'running']:
+        logger.error('resume_task task is not running, task id={}'.format(task_id))
+        return Result(res=False, msg='task is not running')
 
     logger.info('resume_task task id={}'.format(task_id))
     try:
@@ -433,7 +488,7 @@ def cancel_task(task_id):
         logger.error('cancel_task can not find the task, id={}. '.format(task_id))
         return Result(res=False, msg='can not find the task')
 
-    if task.status in ['succeed', 'failed', 'cancelled']:
+    if task.status in ['succeed', 'failed']:
         logger.error('cancel_task but task have been finished, id={}. '.format(task_id))
         return Result(res=False, msg='task have been finished')
 

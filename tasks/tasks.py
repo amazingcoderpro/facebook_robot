@@ -33,7 +33,7 @@ class BaseTask(Task):
 #                   queue='feed_account', routing_key='for_feed_account')
 
 
-@app.task(base=BaseTask, bind=True, max_retries=2, time_limit=30)
+@app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)
 def fb_auto_feed(self, inputs):
     logger.info('fb_auto_feed task running')
 
@@ -42,7 +42,7 @@ def fb_auto_feed(self, inputs):
     # self.update_state(state="running")
 
     # do something here
-    time.sleep(15)
+    time.sleep(60)
 
     a = random.randint(1, 100)
     if a % 2 == 0:
@@ -61,7 +61,7 @@ def fb_auto_feed(self, inputs):
     return 1
 
 
-@app.task(base=BaseTask, bind=True, max_retries=2, time_limit=30)
+@app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)
 def fb_click_farming(self, inputs):
     logger.info('fb_click_farming task running')
 
@@ -70,10 +70,10 @@ def fb_click_farming(self, inputs):
     # self.update_state(state="running")
 
     # do something here
-    time.sleep(15)
+    time.sleep(150)
 
     a = random.randint(1, 100)
-    if a % 2 == 0:
+    if a % 3 == 1:
         logger.exception('fb_auto_feed')
         raise 1
 

@@ -16,7 +16,7 @@ def get_engine():
         args['db_type'], args['user'], args['password'],
         args['host'], args['port'], args['db_name']
     )
-    eng = create_engine(connect_str, encoding='utf-8', pool_size=100, pool_recycle=60,
+    eng = create_engine(connect_str, encoding='utf-8', pool_size=100, pool_recycle=7200,
                         pool_pre_ping=True, max_overflow=10, pool_timeout=120, pool_reset_on_return='commit')
     return eng
 
@@ -36,3 +36,27 @@ metadata = MetaData(get_engine())
 db_lock = threading.RLock()
 
 __all__ = ['engine', 'Base', 'db_session', 'metadata', 'db_lock', 'db_scoped_session', 'ScopedSession']
+
+# ss = ScopedSession()
+# ss2 = ScopedSession()
+# if ss is ss2:
+#     print(1)
+# ScopedSession.remove()
+#
+# if ss is ss2:
+#     print(1)
+#
+# print(ss2.close())
+# if ss2:
+#     print(3)
+#
+# ss3 = ScopedSession()
+# if ss is ss3:
+#     print(2)
+#
+# ds = db_session
+# ds2=db_session
+# print(ds)
+# ds.close()
+# if ds is ds2:
+#     print(33)
