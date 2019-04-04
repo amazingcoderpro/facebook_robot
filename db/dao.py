@@ -528,6 +528,7 @@ class FingerPrintOpt:
         db_session.commit()
         return fp
 
+import json
 
 def init_db_data():
     """
@@ -549,7 +550,7 @@ def init_db_data():
     # name: title:type(bool / int / float / str): default[:option1[ | option2[ | optionN]] [\r\n(new
     # line)]
     TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed',
-                                       configure='is_post:是否发布状态:bool:false|true\r\nis_add_friend:是否加好友:bool:false:false|true\r\npost_content:状态内容:string:good morning everyone!\r\nfriend_key:好友关键字:string:lady gaga')
+                                       configure='is_post:是否发布状态:bool:false\r\nis_add_friend:是否加好友:bool:false\r\npost_content:状态内容:string:good morning everyone!\r\nfriend_key:好友关键字:string:lady gaga')
     TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming', configure='browser_time:浏览时长:int:600:120|3600\r\nads_code:广告码:string:')
     TaskCategoryOpt.save_task_category(category=3, name=u'facebook登录浏览', processor='fb_login', configure='browser_time:浏览时长:int:600:120|3600')
     TaskCategoryOpt.save_task_category(category=4, name=u'facebook点赞', processor='fb_thumb')
@@ -578,6 +579,15 @@ def init_db_data():
                                 end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
 
 
+    FingerPrintOpt.save_finger_print('iPhone 6s', value=json.dumps({'device': 'iPhone 6s'}))
+    FingerPrintOpt.save_finger_print('iPhone 6', value=json.dumps({'device': 'iPhone 6'}))
+    FingerPrintOpt.save_finger_print('iPhone 7', value=json.dumps({'device': 'iPhone 7'}))
+    FingerPrintOpt.save_finger_print('iPhone 8', value=json.dumps({'device': 'iPhone 8'}))
+    FingerPrintOpt.save_finger_print('iPhone X', value=json.dumps({'device': 'iPhone X'}))
+    FingerPrintOpt.save_finger_print('Nokia N9', value=json.dumps({'device': 'Nokia N9'}))
+    FingerPrintOpt.save_finger_print('iPad Mini', value=json.dumps({'device': 'iPad Mini'}))
+    FingerPrintOpt.save_finger_print('Nexus 6', value=json.dumps({'device': 'Nexus 6'}))
+    FingerPrintOpt.save_finger_print('Galaxy Note 3', value=json.dumps({'device': 'Galaxy Note 3'}))
 
     # 添加账号
     AccountOpt.save_account(account='codynr4nzxh@outlook.com',
@@ -602,26 +612,25 @@ def init_db_data():
                             password='j9akBXwslF', owner=2, category=1,
                             email='yorkeru997a@outlook.com', email_pwd='wSmEHMsg7C',
                             gender=1, birthday='1966-6-23', profile_id='franklyn.dyneley.5',
-                            enable_tasks='1;2;4;6', active_area='China')
+                            enable_tasks='1;2;4;6', active_area='China', active_browser=3, configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
 
     AccountOpt.save_account(account='yorkeru997a@outlook.com',
                             password='Ogec1eOAFA', owner=3, category=1,
                             email='yorkeru997a@outlook.com', email_pwd='u3KLKTXye',
                             gender=0, birthday='1986-5-21', profile_id='alana.williamson.1401',
                             name='Alana Williamson', register_time='2017-9-2', active_area='Spanish',
-                            active_browser=str({'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.75 Safari/537.36',
-                                                'upgrade-insecure-requests': 1, 'accept-language:':'zh-CN,zh;q=0.9'}))
+                            active_browser=1, configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
 
     # 创建任务
     TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3, 5], name=u'养个号', limit_counts=10)
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=20)
-    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=100)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=20)
+    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=100)
     TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10)
     TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[1], name=u'thumb', limit_counts=102)
 
     TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[1, 2, 3], name=u'养个号', limit_counts=100)
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 1], name=u'刷个好评', configure=str({'ads_code':'orderplus888'}), limit_counts=30)
-    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[4, 5, 1, 3], name=u'登录浏览就行了', configure=str({'keep_time': 900}), limit_counts=10)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 1], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=30)
+    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[4, 5, 1, 3], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=10)
     TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=40)
     TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4], name=u'thumb', limit_counts=5)
 
@@ -713,25 +722,25 @@ def test_db():
 
 def produce_account():
     # 添加账号
-    for i in range(10000):
+    for i in range(10001, 20000):
         AccountOpt.save_account(account='codynr4nzxh@outlook.com',
                             password='qVhgldHmgp', owner=1, category=1,
                             email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
-                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='valid', last_edit=datetime.datetime.now(), last_login=datetime.datetime.now())
+                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='valid', active_browser=(i%6+1), configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
 
 
 def produce_tasks():
     # 创建任务
     for i in range(3):
         TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(10100, 10369)], name=u'养个号'.format(i), limit_counts=10)
-        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[x for x in range(10021, 10100)], name=u'刷个好评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=20)
-        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[x for x in range(11500, 12000)], name=u'登录浏览就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=100)
-        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[x for x in range(16000, 16800)], name=u'养号'.format(i), limit_counts=30)
+        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[x for x in range(10021, 10100)], name=u'刷个好评'.format(i), configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=20)
+        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[x for x in range(11500, 12000)], name=u'登录浏览就行了'.format(i), configure=json.dumps({'keep_time': 900}), limit_counts=100)
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[x for x in range(16000, 16800)], name=u'养号'.format(i), limit_counts=30, configure=json.dumps({'ads_code':'2112121'}))
         TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[x for x in range(10756, 11200)], name=u'好评'.format(i), limit_counts=102)
 
         TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[x for x in range(18900, 19630)], name=u'来养号'.format(i), limit_counts=100, last_edit=datetime.datetime.now())
-        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[x for x in range(16900, 17400)], name=u'刷评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=30)
-        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[x for x in range(15000, 15025)], name=u'登录就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=10)
+        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[x for x in range(16900, 17400)], name=u'刷评'.format(i), configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=30)
+        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[x for x in range(15000, 15025)], name=u'登录就行了'.format(i), configure=json.dumps({'keep_time': 900}), limit_counts=10)
         TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(15900, 16026)], name=u'yang'.format(i), limit_counts=400)
         TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=2, account_ids=[x for x in range(12856, 13059)], name=u'shua'.format(i), limit_counts=5)
 
