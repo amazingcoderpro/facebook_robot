@@ -8,7 +8,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     getParam=function(div, source){
         var req={};
         if(source)Object.assign(req, source);
-        $.each($(div + ' input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
+        $.each($(div + ' input,'+div +' textarea'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
         if(req.name=='')global.showTip('请输入任务类型名称');
         else if(req.processor=='')global.showTip('请输入任务函数');
         else return req;
@@ -33,7 +33,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     modifyItem=function(item){
         $('#detail').removeClass('none').html(detailHtml),
         $('#info .box-title').text(item.name+'的基本信息'),
-        $.each(item, function(propName, value){$('#info input[name="'+propName+'"]').val(value)});
+        $.each(item, function(propName, value){$('#info input[name="'+propName+'"],#info textarea[name="'+propName+'"]').val(value)});
         $('#info .save').on('click',function(){
             var req=getParam('#detail', item);
             if(!req)return;

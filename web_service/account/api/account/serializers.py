@@ -47,17 +47,17 @@ class AccountSerializer(serializers.HyperlinkedModelSerializer):
         model = Account
         fields = ('url', 'id', 'owner', 'category', 'account', 'password', 'email', 'email_pwd', 'phone_number',
                   'gender', 'birthday', 'national_id', 'register_time', 'name', 'profile_id', 'status',
-                  'enable_tasks', 'last_login', 'last_post', 'last_chat', 'last_farming', 'last_comment',
-                  'last_edit')
+                  'enable_tasks',)  # 'last_login', 'last_post', 'last_chat', 'last_farming', 'last_comment', 'last_edit')
         extra_kwargs = {'phone_number': {'allow_blank': True},
                         'national_id': {'allow_blank': True},
                         'enable_tasks': {'allow_blank': True},
-                        'last_login': {'read_only': True},
-                        'last_post': {'read_only': True},
-                        'last_chat': {'read_only': True},
-                        'last_farming': {'read_only': True},
-                        'last_comment': {'read_only': True},
-                        'last_edit': {'read_only': True}}
+                        # 'last_login': {'read_only': True},
+                        # 'last_post': {'read_only': True},
+                        # 'last_chat': {'read_only': True},
+                        # 'last_farming': {'read_only': True},
+                        # 'last_comment': {'read_only': True},
+                        # 'last_edit': {'read_only': True}
+                        }
 
 
 # 导出账号序列化类

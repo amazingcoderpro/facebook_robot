@@ -44,6 +44,8 @@ class TaskCategory(models.Model):
     name = models.CharField(max_length=255, default='')
     processor = models.CharField(max_length=255, default='')  # 任务的处理函数名, 不能为空, 代码逻辑中将依赖这个函数名进行任务分发
     description = models.CharField(max_length=2048, default='')
+    # name:title:type(bool/int/float/string):default[:option1[|option2[|optionN]] [\r\n(new line)]
+    configure = models.CharField(max_length=2048, default='')
 
     def __unicode__(self):
         return self.name
@@ -88,7 +90,7 @@ class Task(models.Model):
 
     result = models.CharField(max_length=2048, default='')
     # 这里保存任务的额外信息，以json字符形式保存，如post内容， 点赞规则, ads_code, keep time, 目标站点等
-    configure = models.CharField(max_length=2048, default='')
+    configure = models.CharField(max_length=2048, default='{}')
     # 这个是在APScheduler中调度时的任务id, 用以暂停、重启、终止等 操作,一个任务+一个账号构成一个唯一的task
     # aps_id = models.CharField(max_length=100, default='')
 
