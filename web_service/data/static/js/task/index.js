@@ -30,8 +30,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         else if(req.accounts_num=='')global.showTip('请输入任务账号数');
         else if((req.scheduler.mode==1||req.scheduler.mode==2)&&(req.scheduler.interval==0))global.showTip('请设置执行间隔');
         else if((req.scheduler.mode==1||req.scheduler.mode==2)&&intervalUnit==2&&req.scheduler.interval<300)global.showTip('时间间隔不能小于5分钟');
-        else if((req.scheduler.mode==1||req.scheduler.mode==3)&&!req.scheduler.start_date)global.showTip('请设置启动时间');
-        else if((req.scheduler.mode==1||req.scheduler.mode==2)&&!req.scheduler.end_date)global.showTip('请设置最晚停止时间');
+        else if(/*(req.scheduler.mode==1||*/req.scheduler.mode==3&&!req.scheduler.start_date)global.showTip('请设置启动时间');
+//        else if((req.scheduler.mode==1||req.scheduler.mode==2)&&!req.scheduler.end_date)global.showTip('请设置最晚停止时间');
         else if(!isValidConfig(req.configure, req.category.cfg));
         else {
             req.configure = JSON.stringify(req.configure),
@@ -175,9 +175,12 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         switchEl('#modal-new input[name="interval"]', mode==1||mode==2);
         switchEl('#modal-new input[name="schedulerBeginDate"]', mode==1||mode==3);
         switchEl('#modal-new input[name="schedulerEndDate"]', mode==1||mode==2);
+//        $('input.pick-date').datepicker('setDate', new Date()),
+        $('.timepicker').timepicker('setTime', '08:00')
     },
     dataTable=table.initTable('#dataTable', {
             ajax: {url: global.getAPI(url)},
+            order: [[0, 'desc']],
             columns: [
                 {
                     title: 'ID',
@@ -321,5 +324,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         $.each(taskCommon.schedulerMode, function(i, item){$('#modal-new select[name="scheduler"]').append('<option value="'+i+'">'+item+'</option>')})
         $('#modal-new select[name="category"]').on('change', onCategoryChange);
         $('#modal-new select[name="scheduler"]').on('change', onModeChange);
-        onModeChange();
+        $('button.new').on('click', function(){
+            $('#modal-new').modal('show'),
+            onCategoryChange(), onModeChange()
+        })
 })
