@@ -77,12 +77,19 @@ def fb_auto_feed(self, inputs):
         account = inputs.get('account').get('account')
         # account = inputs['account']['account']
         password = inputs.get('password').get('password')
+        account_configure = account.get('configure', {})#last
+        lst_login = account_configure['last_login']
+        # if lst_login <fsfa:
+        #     return
         mobile_auto_feed.auto_login(driver=driver, account=account, password=password)
+        account_configure['last_login'] = '2018-03-15 18:21:06'
         time.sleep(15)
         mobile_auto_feed.user_messages(driver=driver)
         time.sleep(22)
         mobile_auto_feed.local_surface(driver=driver)
         TaskResult['status'] ='succeed'
+
+        TaskResult['account_configure'] = account_configure
 
         return TaskResult
         # a = random.randint(1, 100)
