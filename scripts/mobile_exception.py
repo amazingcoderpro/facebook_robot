@@ -174,8 +174,6 @@ class FacebookException(BaseException):
         return True
 
 
-
-
 # if __name__ == '__main__':
 #     fb = FacebookException(None)
 #     fb.check()
