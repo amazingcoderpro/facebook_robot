@@ -9,6 +9,7 @@ from .workers import app
 import scripts
 from celery import Task
 from config import logger
+from scripts import mobile_auto_feed
 
 
 class BaseTask(Task):
@@ -71,20 +72,28 @@ def fb_auto_feed(self, inputs):
     logger.info(inputs)
     try:
         # 分步执行任务
-        # do something here
+        driver = mobile_auto_feed.start_chrom()
         time.sleep(60)
+        account = inputs.get('account').get('account')
+        # account = inputs['account']['account']
+        password = inputs.get('password').get('password')
+        mobile_auto_feed.auto_login(driver=driver, account=account, password=password)
+        time.sleep(15)
+        mobile_auto_feed.user_messages(driver=driver)
+        time.sleep(22)
+        mobile_auto_feed.local_surface(driver=driver)
+        TaskResult['status'] ='succeed'
 
-        a = random.randint(1, 100)
-        if a % 3 == 1:
-            TaskResult['status'] = 'failed'
-            TaskResult['err_msg'] = 'a % 3 == 1'
-            return TaskResult
-
-        if a % 2 == 0:
-            logger.exception('fb_auto_feed')
-            a = a / 0
-            return TaskResult
-
+        return TaskResult
+        # a = random.randint(1, 100)
+        # if a % 3 == 1:
+        #     TaskResult['status'] = 'failed'
+        #     TaskResult['err_msg'] = 'a % 3 == 1'
+        #     return TaskResult
+        # if a % 2 == 0:
+        #     logger.exception('fb_auto_feed')
+        #     a = a / 0
+        #     return TaskResult
         # res = scripts.auto_feed(inputs)
     except Exception as e:
         logger.exception('fb_auto_feed catch exception.')
