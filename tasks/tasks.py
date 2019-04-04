@@ -41,11 +41,35 @@ TaskResult = {
     'profile_path': ''
 }
 
+# inputs = {
+#     'task_id': task_id,
+#     'task_configure': configure,
+#     'account': account,
+#     'password': password,
+#     'email': email,
+#     'email_pwd': email_pwd,
+#     'gender': gender,
+#     'phone_number': phone_number,
+#     'birthday': birthday,
+#     'national_id': national_id,
+#     'name': name,
+#     'active_area': active_area,
+#     'active_browser': active_browser,
+#     'profile_path': profile_path,
+#     'last_login': datetime.datetime.now(),
+#     'last_post': last_post,
+#     'last_chat': last_chat,
+#     'last_farming': last_farming,
+#     'last_comment': '2019-03-15 20:12:36',
+#     'last_edit': last_edit,
+#     'account_configure': configure
+# }
+
 
 @app.task(base=BaseTask, bind=True, max_retries=1, time_limit=1200)
 def fb_auto_feed(self, inputs):
-    logger.info('fb_auto_feed task running')
-
+    logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))
+    logger.info(inputs)
     try:
         # 分步执行任务
         # do something here
@@ -62,7 +86,7 @@ def fb_auto_feed(self, inputs):
             a = a / 0
             return TaskResult
 
-        res = scripts.auto_feed(inputs)
+        # res = scripts.auto_feed(inputs)
     except Exception as e:
         logger.exception('fb_auto_feed catch exception.')
         # self.retry(countdown=10 ** self.request.retries)

@@ -462,11 +462,12 @@ class JobOpt:
 
 class TaskCategoryOpt:
     @classmethod
-    def save_task_category(cls, category, name, processor, description=''):
+    def save_task_category(cls, category, name, processor, configure='', description=''):
         tag = TaskCategory()
         tag.category = category
         tag.name = name
         tag.processor = processor
+        tag.configure = configure
         tag.description = description
         db_session.add(tag)
         db_session.commit()
@@ -545,9 +546,12 @@ def init_db_data():
 
     # 初始化任务类别表
     # 1--fb自动养账号, 2-fb刷广告好评, 3- fb仅登录浏览, 4- fb点赞, 5- fb发表评论, 6- fb post状态, 7- fb 聊天, 8- fb 编辑个人信息, 未完待续...
-    TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed')
-    TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming')
-    TaskCategoryOpt.save_task_category(category=3, name=u'facebook登录浏览', processor='fb_login')
+    # name: title:type(bool / int / float / str): default[:option1[ | option2[ | optionN]] [\r\n(new
+    # line)]
+    TaskCategoryOpt.save_task_category(category=1, name=u'facebook自动养号', processor='fb_auto_feed',
+                                       configure='is_post:是否发布状态:bool:false|true\r\nis_add_friend:是否加好友:bool:false:false|true\r\npost_content:状态内容:string:good morning everyone!\r\nfriend_key:好友关键字:string:lady gaga')
+    TaskCategoryOpt.save_task_category(category=2, name=u'facebook刷好评', processor='fb_click_farming', configure='browser_time:浏览时长:int:600:120|3600\r\nads_code:广告码:string:')
+    TaskCategoryOpt.save_task_category(category=3, name=u'facebook登录浏览', processor='fb_login', configure='browser_time:浏览时长:int:600:120|3600')
     TaskCategoryOpt.save_task_category(category=4, name=u'facebook点赞', processor='fb_thumb')
     TaskCategoryOpt.save_task_category(category=5, name=u'facebook发表评论', processor='fb_comment')
     TaskCategoryOpt.save_task_category(category=6, name=u'facebook发表状态', processor='fb_post')
@@ -713,28 +717,29 @@ def produce_account():
         AccountOpt.save_account(account='codynr4nzxh@outlook.com',
                             password='qVhgldHmgp', owner=1, category=1,
                             email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
-                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='valid')
+                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='valid', last_edit=datetime.datetime.now(), last_login=datetime.datetime.now())
 
 
 def produce_tasks():
     # 创建任务
-    for i in range(6):
-        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(100, 369)], name=u'养个号'.format(i), limit_counts=10)
-        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[x for x in range(1, 100)], name=u'刷个好评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=20)
-        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[x for x in range(1500, 2000)], name=u'登录浏览就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=100)
-        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[x for x in range(6000, 6800)], name=u'养号'.format(i), limit_counts=30)
-        TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[x for x in range(756, 1200)], name=u'好评'.format(i), limit_counts=102)
+    for i in range(3):
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(10100, 10369)], name=u'养个号'.format(i), limit_counts=10)
+        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[x for x in range(10021, 10100)], name=u'刷个好评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=20)
+        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[x for x in range(11500, 12000)], name=u'登录浏览就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=100)
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[x for x in range(16000, 16800)], name=u'养号'.format(i), limit_counts=30)
+        TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[x for x in range(10756, 11200)], name=u'好评'.format(i), limit_counts=102)
 
-        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[x for x in range(8900, 9630)], name=u'来养号'.format(i), limit_counts=100)
-        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[x for x in range(6900, 7400)], name=u'刷评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=30)
-        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[x for x in range(5000, 5025)], name=u'登录就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=10)
-        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(5900, 6026)], name=u'yang'.format(i), limit_counts=400)
-        TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=2, account_ids=[x for x in range(2856, 3059)], name=u'shua'.format(i), limit_counts=5)
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[x for x in range(18900, 19630)], name=u'来养号'.format(i), limit_counts=100, last_edit=datetime.datetime.now())
+        TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[x for x in range(16900, 17400)], name=u'刷评'.format(i), configure=str({'ads_code':'orderplus888'}), limit_counts=30)
+        TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[x for x in range(15000, 15025)], name=u'登录就行了'.format(i), configure=str({'keep_time': 900}), limit_counts=10)
+        TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[x for x in range(15900, 16026)], name=u'yang'.format(i), limit_counts=400)
+        TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=2, account_ids=[x for x in range(12856, 13059)], name=u'shua'.format(i), limit_counts=5)
 
 
 def test11(*names):
     print(names)
     test12(*names)
+
 
 def test12(*names):
     print(names)
