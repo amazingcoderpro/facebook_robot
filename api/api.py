@@ -246,6 +246,8 @@ def update_results():
     time_it_beg = datetime.now()
     try:
         updated_jobs_num = 0
+        failed_jobs_num = 0
+        succeed_jobs_num = 0
         db_session = ScopedSession()
         # 取出5分钟前启动且没有执行完毕的job, 去redis中查询结果是否已经出来了
         job_start_time = datetime.now()-timedelta(seconds=300)
@@ -275,6 +277,10 @@ def update_results():
 
                 del_keys.append(key_job)
                 updated_jobs_num += 1
+                if status == 'succeed':
+                    succeed_jobs_num += 1
+                else:
+                    failed_jobs_num += 1
 
         db_session.commit()
         logger.error('-------actually update jobs num={}'.format(updated_jobs_num))
@@ -290,8 +296,16 @@ def update_results():
         if updated_jobs_num > 0:
             RedisOpt.delete_backend_more(*del_keys)
             last_num = RedisOpt.read_object('total_updated_jobs_num')
+            last_succeed_num = RedisOpt.read_object('succeed_jobs_num')
+            last_failed_num = RedisOpt.read_object('failed_jobs_num')
+
             total_updated_jobs_num = updated_jobs_num + int(last_num) if last_num != -1 else updated_jobs_num
+            succeed_jobs_num = succeed_jobs_num + int(last_succeed_num) if last_succeed_num != -1 else succeed_jobs_num
+            failed_jobs_num = failed_jobs_num + int(last_failed_num) if last_failed_num != -1 else failed_jobs_num
+
             RedisOpt.write_object(key='total_updated_jobs_num', value=total_updated_jobs_num)
+            RedisOpt.write_object(key='succeed_jobs_num', value=succeed_jobs_num)
+            RedisOpt.write_object(key='failed_jobs_num', value=failed_jobs_num)
 
     # 根据更新后的job状态,逆向更新任务状态
     update_task_status()
@@ -370,7 +384,7 @@ def restart_all_tasks(scheduler=None):
     need_restart_tasks = TaskOpt.get_all_need_restart_task()
     for task_id, status in need_restart_tasks:
         logger.info('need restart task id={}, status={}.'.format(task_id, status))
-        start_task(task_id)
+        start_task(task_id, force=True)
 
     return Result(res=True, msg='')
 
@@ -414,7 +428,7 @@ def start_task(task_id, force=False):
         # 如果task已经启动，先移除(用于系统重启）
         if status in ['pending', 'pausing', 'running']:
             try:
-                g_bk_scheduler.remove(aps_id)
+                g_bk_scheduler.remove_job(aps_id)
             except JobLookupError:
                 logger.warning('job have been removed.')
 

@@ -25,22 +25,24 @@ def dispatch_test():
         time.sleep(600)
 
 
-def run(relay=False, update_interval=30):
+def run(mode='new', update_interval=30):
     """
     启动任务调度系统
-    :param relay: 是否接力上次结束时的状态, 默认为否,清空缓存,从头开始； 若是, 则继续上一次结束点开始, 之前未处理完的任务将继续被执行
+    :param mode: 'new':清空缓存,从头开始； 'restart': 则继续上一次结束点开始, 之前未处理完的任务将继续被执行
     :param update_interval: 结果更新周期,默认30秒
     :return:
     """
     try:
         logger.info('----------------Start Task Scheduler System.--------------------')
         bk_scheduler = BackgroundScheduler()
-        if not relay:
+        if mode == 'restart':
+            # restart模式会将之前所有没有结束的任务重新拉起执行
+            restart_all_tasks(bk_scheduler)
+        else:
+            # new模式只会启动状态为new的任务, 默认
             logger.info('clean environment. ')
             clean_environment()
             start_all_new_tasks(bk_scheduler)
-        else:
-            restart_all_tasks(bk_scheduler)
 
         # 启动定时结果更新
         bk_scheduler.add_job(update_results, 'interval', seconds=update_interval, misfire_grace_time=20, max_instances=5)
@@ -70,10 +72,7 @@ if __name__ == '__main__':
     elif len(sys.argv) > 1:
         mode = sys.argv[1]
 
-    if mode == 'restart':
-        run(relay=True, update_interval=interval)
-    else:
-        run(relay=False, update_interval=interval)
+    run(mode=mode, update_interval=interval)
 
 # pipenv run python3 main.py [new|restart] [30]
 
