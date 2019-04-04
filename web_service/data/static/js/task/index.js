@@ -156,9 +156,9 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                     $.each(item.options, function(j,option){html.push('<option>'+ option +'</option>')})
                     html.push('</select>')
                 }else{
-                    html.push('<input type="'),
-                    html.push({str: 'text', int: 'tel', float: 'number'}[item.dataType]),
-                    html.push('" class="form-control" name="configure_'+ item.name +'">')
+                    html.push('<input type="'+{str: 'text', int: 'tel', float: 'number'}[item.dataType] +'" ');
+                    if(['int', 'float'].indexOf(item.dataType)>=0)html.push(' value="'+item.defaultValue+'" ');
+                    html.push('class="form-control" name="configure_'+ item.name +'">')
                 }
             }
             html.push('</div>')
@@ -262,6 +262,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 else{
                     var value = configure[field.name];
                     if(['int', 'float'].indexOf(field.dataType)>=0){
+                        configure[field.name] = field.dataType == 'int'?parseInt(value):parseFloat(value);
+                        value = configure[field.name];
                         if(isNaN(value)){
                             global.showTip(field.title+'没有输入正确的数字');
                             return false
