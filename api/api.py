@@ -251,27 +251,37 @@ def update_results():
         db_session = ScopedSession()
         # 取出5分钟前启动且没有执行完毕的job, 去redis中查询结果是否已经出来了
         job_start_time = datetime.now()-timedelta(seconds=300)
-        need_update_jobs = db_session.query(Job.id, Job.track_id).filter(and_(Job.status == 'running', Job.start_time <= job_start_time)).all()
+        need_update_jobs = db_session.query(Job.id, Job.track_id, Job.account).filter(and_(Job.status == 'running', Job.start_time <= job_start_time)).all()
         logger.error('-------need update jobs num={}'.format(len(need_update_jobs)))
 
-        for job_id, track_id in need_update_jobs:
+        for job_id, track_id, account_id in need_update_jobs:
             key_job = 'celery-task-meta-{}'.format(track_id)
             result = RedisOpt.read_backend(key=key_job)
             if result:
                 dict_res = json.loads(result)
                 status = status_map.get(dict_res.get('status'), dict_res.get('status'))
                 job_res = dict_res.get('result', '')
+                str_job_res = ''
 
                 # 除了任务本身的成败外,还需要关注实际返回的结果
                 if isinstance(job_res, dict):
                     if job_res.get('status', '') == 'failed':
                         status = 'failed'
-                    job_res = json.dumps(job_res)
+
+                    account_status = job_res.get('account_status', '')
+                    account_config = job_res.get('account_configure', {})
+                    if account_status:
+                        db_session.query(Account).filter(Account.id == account_id).update({Account.status: account_status})
+                    if account_config:
+                        db_session.query(Account).filter(Account.id == account_id).update(
+                            {Account.configure: json.dumps(account_config)})
+
+                    str_job_res = json.dumps(job_res)
                 else:
-                    job_res = str(job_res)
+                    str_job_res = str(job_res)
 
                 db_session.query(Job).filter(Job.id == job_id).update(
-                    {Job.status: status, Job.result: job_res, Job.traceback: str(dict_res.get('traceback', '')),
+                    {Job.status: status, Job.result: str_job_res, Job.traceback: str(dict_res.get('traceback', '')),
                      Job.end_time: datetime.now()},
                     synchronize_session=False)
 
