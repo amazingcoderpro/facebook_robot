@@ -82,7 +82,9 @@ def fb_auto_feed(self, inputs):
         mobile_auto_feed.user_messages(driver=driver)
         time.sleep(22)
         mobile_auto_feed.local_surface(driver=driver)
-        return {'status': 'succeed', 'account': account, 'driver': driver.name}
+        TaskResult['status'] ='succeed'
+
+        return TaskResult
         # a = random.randint(1, 100)
         # if a % 3 == 1:
         #     TaskResult['status'] = 'failed'
@@ -96,8 +98,8 @@ def fb_auto_feed(self, inputs):
     except Exception as e:
         logger.exception('fb_auto_feed catch exception.')
         # self.retry(countdown=10 ** self.request.retries)
-        # TaskResult['status'] = 'failed'
-        # TaskResult['err_msg'] = str(e)
+        TaskResult['status'] = 'failed'
+        TaskResult['err_msg'] = str(e)
 
     return TaskResult
 
