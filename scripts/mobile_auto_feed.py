@@ -8,9 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from PIL import Image
-from selenium.webdriver.support.ui import Select
-from scrapy.mobile_exception import FacebookException
+from scripts.mobile_exception import FacebookException
 from config import logger
 
 
@@ -55,7 +53,7 @@ def auto_login(driver, account, password):
     time.sleep(3)
     # account = inputs['account']
     # password = inputs['password']
-    logger.info('script runing:{},{}'.format(account_num, password))
+    logger.info('script runing:{},{}'.format(account, password))
     try:
         # FB登录
         email_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
@@ -73,7 +71,7 @@ def auto_login(driver, account, password):
         # driver.implicitly_wait(10)
         WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
-        logger.info("login success！username={}, passwork={}".format(account_num, password))
+        logger.info("login success！username={}, passwork={}".format(account, password))
         return True
     except Exception as e:
         fbexcept = FacebookException(driver)
