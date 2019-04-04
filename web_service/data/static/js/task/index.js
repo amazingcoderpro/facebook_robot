@@ -180,6 +180,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
     },
     dataTable=table.initTable('#dataTable', {
             ajax: {url: global.getAPI(url)},
+            order: [[0, 'desc']],
             columns: [
                 {
                     title: 'ID',
