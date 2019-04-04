@@ -86,5 +86,5 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             # 'limit_counts': {'allow_blank': True},
             # 'accounts_num': {'read_only': True},
             'result': {'read_only': True},
-            'configure': {'read_only': True}
+            'configure': {'allow_blank': True}
         }

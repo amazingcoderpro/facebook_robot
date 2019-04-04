@@ -22,7 +22,8 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = TaskCategory
-        fields = ('url', 'category', 'id', 'name', 'processor', 'description')
-        extra_kwargs = {'description': {'allow_blank': True}}
+        fields = ('url', 'category', 'id', 'name', 'processor', 'description', 'configure')
+        extra_kwargs = {'description': {'allow_blank': True},
+                        'configure': {'allow_blank': True}}
 
 
