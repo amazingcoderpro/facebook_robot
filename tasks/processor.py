@@ -142,7 +142,7 @@ def send_task_2_worker(task_id):
                     'national_id': national_id,
                     'name': name,
                     'active_area': active_area,
-                    'active_browser': active_browser[0] if active_browser else '',
+                    'active_browser': json.loads(active_browser[0]) if active_browser else {},
                     'profile_path': profile_path,
                     'configure': json.loads(account_configure) if account_configure else {}
                 }

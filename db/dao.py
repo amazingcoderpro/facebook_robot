@@ -579,7 +579,7 @@ def init_db_data():
                                 end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
 
 
-    FingerPrintOpt.save_finger_print('iPhone 6s', value=json.dumps({'device': 'iPhone 6s'}))
+    FingerPrintOpt.save_finger_print('iPhone 6s', value=json.dumps({'device': 'iPhone 6'}))
     FingerPrintOpt.save_finger_print('iPhone 6', value=json.dumps({'device': 'iPhone 6'}))
     FingerPrintOpt.save_finger_print('iPhone 7', value=json.dumps({'device': 'iPhone 7'}))
     FingerPrintOpt.save_finger_print('iPhone 8', value=json.dumps({'device': 'iPhone 8'}))

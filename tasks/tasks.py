@@ -71,16 +71,19 @@ def fb_auto_feed(self, inputs):
     logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))
     logger.info(inputs)
     try:
-        # 分步执行任务
-        driver = mobile_auto_feed.start_chrom()
-        time.sleep(60)
-        account = inputs.get('account').get('account')
+        account = inputs.get('account')
+        account_ = account.get('account')
         # account = inputs['account']['account']
-        password = inputs.get('password').get('password')
-        mobile_auto_feed.auto_login(driver=driver, account=account, password=password)
-        time.sleep(15)
+        password = account.get('password')
+        active_browser = account.get("active_browser")
+
+        # 分步执行任务
+        driver = mobile_auto_feed.start_chrom(finger_print=active_browser)
+
+        mobile_auto_feed.auto_login(driver=driver, account=account_, password=password)
+        time.sleep(10)
         mobile_auto_feed.user_messages(driver=driver)
-        time.sleep(22)
+        time.sleep(10)
         mobile_auto_feed.local_surface(driver=driver)
         TaskResult['status'] ='succeed'
 
