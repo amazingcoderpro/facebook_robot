@@ -93,8 +93,11 @@ def send_task_2_worker(task_id):
         # 找到任务的所有账号
         res = db_scoped_session.query(TaskAccountGroup.account_id).filter(TaskAccountGroup.task_id == task_id).all()
         account_ids = [x[0] for x in res]
-        accounts = db_scoped_session.query(Account.id, Account.status, Account.account, Account.password,
-                                           Account.configure, Account.active_area, Account.active_browser).filter(
+        accounts = db_scoped_session.query(Account.id, Account.status, Account.account, Account.password, Account.email,
+                                           Account.email_pwd, Account.gender, Account.phone_number, Account.birthday,
+                                           Account.national_id, Account.name, Account.active_area, Account.active_browser,
+                                           Account.profile_path, Account.last_login, Account.last_post, Account.last_chat,
+                                           Account.last_farming, Account.last_comment, Account.last_edit, Account.configure).filter(
             Account.id.in_(account_ids)).all()
 
         agents = db_scoped_session.query(Agent.id, Agent.queue_name, Agent.area).filter(Agent.status != -1).order_by(Agent.status).all()
@@ -102,7 +105,9 @@ def send_task_2_worker(task_id):
         # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
         real_accounts_num = 0
         for acc in accounts:
-            acc_id, status, account, password, configure, active_area, active_browser = acc
+            acc_id, status, account, password, email, email_pwd, gender, phone_number, birthday, national_id, name, \
+            active_area, active_browser, profile_path, last_login, last_post, last_chat, last_farming, \
+            last_comment, last_edit, configure = acc
             if status != 'valid':
                 logger.warning('account can not be used. task id={}, account id={}'.format(task_id, acc_id))
                 continue
@@ -124,7 +129,23 @@ def send_task_2_worker(task_id):
                 'task_configure': configure,
                 'account': account,
                 'password': password,
-                'account_active_browser': active_browser
+                'email': email,
+                'email_pwd': email_pwd,
+                'gender': gender,
+                'phone_number': phone_number,
+                'birthday': birthday,
+                'national_id': national_id,
+                'name': name,
+                'active_area': active_area,
+                'active_browser': active_browser,
+                'profile_path': profile_path,
+                'last_login': datetime.datetime.now(),
+                'last_post': last_post,
+                'last_chat': last_chat,
+                'last_farming': last_farming,
+                'last_comment': '2019-03-15 20:12:36',
+                'last_edit': last_edit,
+                'account_configure': configure
             }
 
             celery_task_name = "tasks.tasks.{}".format(task_processor)

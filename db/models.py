@@ -79,6 +79,7 @@ class TaskCategory(Base):
     name = Column(String(255))
 
     processor = Column(String(255))  # 任务的处理函数名, 不能为空, 代码逻辑中将依赖这个函数名进行任务分发
+    configure = Column(String(2048), default='', server_default='')    # 每种任务类型的配置参数, 形如：name:title:type(bool/int/float/str):default[:option1[|option2[|optionN]] [\r\n(new line)]
     description = Column(String(2048), default='', server_default='')
 
 
@@ -93,11 +94,6 @@ class Task(Base):
     # 任务类型, 0-养账号,1-刷好评,其他待续
     category = Column(Integer, ForeignKey('task_category.category'))
 
-    # 任务状态, -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing, new-新建,还没处理, cancelled--取消了
-    # status = Column(Integer, default=-1, server_default='-1')
-    # 任务状态改用字符串是为了直观, 避免前后端转换的麻烦
-    status = Column(String(20), default='new', server_default='new')
-
     # 任务的创建者
     creator = Column(Integer, ForeignKey('user.id'))
 
@@ -109,18 +105,25 @@ class Task(Base):
                             secondary=task_account_group_table)  # ,
     # back_populates='parents')
 
+    # 任务状态, -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing, new-新建,还没处理, cancelled--取消了
+    # status = Column(Integer, default=-1, server_default='-1')
+    # 任务状态改用字符串是为了直观, 避免前后端转换的麻烦
+    status = Column(String(20), default='new', server_default='new')
+
+    # 该任务最大执行次数（即成功的job次数）,比如刷分,可以指定最大刷多少次
+    limit_counts = Column(Integer, default=1, server_default='1')
+
+    # 该task成功、失败的次数（针对周期性任务）
+    succeed_counts = Column(Integer, default=0, server_default='0')
+
+    failed_counts = Column(Integer, default=0, server_default='0')
+
     # 第一次真正启动的时间
     start_time = Column(DateTime(3), default=None)
 
     # 实际结束时间
     end_time = Column(DateTime(3), default=None)
 
-    # 该task成功、失败的次数（针对周期性任务）
-    failed_counts = Column(Integer, default=0, server_default='0')
-    succeed_counts = Column(Integer, default=0, server_default='0')
-
-    # 该任务最大执行次数（即成功的job次数）,比如刷分,可以指定最大刷多少次
-    limit_counts = Column(Integer, default=1, server_default='1')
 
     # 该任务需要的账号数量
     accounts_num = Column(Integer, default=0, server_default='0')
@@ -294,13 +297,6 @@ class Agent(Base):
 
     # 该agent的配置信息
     configure = Column(String(2048), default='', server_default='')
-
-
-class Area(Base):
-    __tablename__ = 'area'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(255))
-    description = Column(String(2048), default='', server_default='')
 
 
 class FingerPrint(Base):
