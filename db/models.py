@@ -243,22 +243,22 @@ class Account(Base):
     # 存放用户profile文件
     profile_path = Column(String(255), default='', server_default='')
 
-    last_login = Column(DateTime(3))
-    last_post = Column(DateTime(3))
-    last_chat = Column(DateTime(3))
-    last_farming = Column(DateTime(3))
-    last_comment = Column(DateTime(3))
-    last_edit = Column(DateTime(3))
+    # last_login = Column(DateTime(3))
+    # last_post = Column(DateTime(3))
+    # last_chat = Column(DateTime(3))
+    # last_farming = Column(DateTime(3))
+    # last_comment = Column(DateTime(3))
+    # last_edit = Column(DateTime(3))
 
     # active_ip = Column(String(255), default='', server_default='')
     # 活跃地域
     active_area = Column(String(255), default='', server_default='')
     # 常用浏览器指纹
-    active_browser = Column(String(2048), default='', server_default='')
+    active_browser = Column(Integer, ForeignKey('finger_print.id'), default=None)
     # 一个账号有可能同是被多个任务占用,逻辑上是可以的, 但实际操作上应该尽量避免此种情况,以规避多IP同时登录带来的封号风险
     tasks = relationship("Task", secondary=task_account_group_table)  # ,back_populates='children')
 
-    # 账号的其他非常规配置信息
+    # 账号的其他非常规配置信息,json串
     configure = Column(String(2048), default='', server_default='')
 
     def __repr__(self):

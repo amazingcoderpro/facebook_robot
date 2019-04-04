@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-20
 # Function: 任务的处理器，任务经由各处理器再发往任务队列, 处理器会被定时程序调用
+import json
 import datetime
 from .workers import app
-from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler
+from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler, FingerPrint
 from config import logger
 from db.basic import ScopedSession
 from sqlalchemy import and_
@@ -56,7 +57,7 @@ def send_task_2_worker(task_id):
             logger.error('send_task_2_worker can not find the task, id={}. '.format(task_id))
             return False
 
-        category, configure, limit_counts, succeed_counts, sch_id = task
+        category, task_configure, limit_counts, succeed_counts, sch_id = task
 
         sch_mode = db_scoped_session.query(Scheduler.mode).filter(Scheduler.id == sch_id).first()
 
@@ -96,8 +97,7 @@ def send_task_2_worker(task_id):
         accounts = db_scoped_session.query(Account.id, Account.status, Account.account, Account.password, Account.email,
                                            Account.email_pwd, Account.gender, Account.phone_number, Account.birthday,
                                            Account.national_id, Account.name, Account.active_area, Account.active_browser,
-                                           Account.profile_path, Account.last_login, Account.last_post, Account.last_chat,
-                                           Account.last_farming, Account.last_comment, Account.last_edit, Account.configure).filter(
+                                           Account.profile_path, Account.configure).filter(
             Account.id.in_(account_ids)).all()
 
         agents = db_scoped_session.query(Agent.id, Agent.queue_name, Agent.area).filter(Agent.status != -1).order_by(Agent.status).all()
@@ -106,8 +106,8 @@ def send_task_2_worker(task_id):
         real_accounts_num = 0
         for acc in accounts:
             acc_id, status, account, password, email, email_pwd, gender, phone_number, birthday, national_id, name, \
-            active_area, active_browser, profile_path, last_login, last_post, last_chat, last_farming, \
-            last_comment, last_edit, configure = acc
+            active_area, active_browser_id, profile_path, account_configure = acc
+
             if status != 'valid':
                 logger.warning('account can not be used. task id={}, account id={}'.format(task_id, acc_id))
                 continue
@@ -123,29 +123,29 @@ def send_task_2_worker(task_id):
                 agent_id = None
                 agent_queue_name = 'default'
 
+            active_browser = db_scoped_session.query(FingerPrint.value).filter(FingerPrint.id == active_browser_id).first()
+
             # 构建任务执行必备参数
             inputs = {
-                'task_id': task_id,
-                'task_configure': configure,
-                'account': account,
-                'password': password,
-                'email': email,
-                'email_pwd': email_pwd,
-                'gender': gender,
-                'phone_number': phone_number,
-                'birthday': birthday,
-                'national_id': national_id,
-                'name': name,
-                'active_area': active_area,
-                'active_browser': active_browser,
-                'profile_path': profile_path,
-                'last_login': datetime.datetime.now(),
-                'last_post': last_post,
-                'last_chat': last_chat,
-                'last_farming': last_farming,
-                'last_comment': '2019-03-15 20:12:36',
-                'last_edit': last_edit,
-                'account_configure': configure
+                'task': {
+                    'task_id': task_id,
+                    'configure': json.loads(task_configure) if task_configure else {},
+                },
+                'account': {
+                    'account': account,
+                    'password': password,
+                    'email': email,
+                    'email_pwd': email_pwd,
+                    'gender': gender,
+                    'phone_number': phone_number,
+                    'birthday': birthday,
+                    'national_id': national_id,
+                    'name': name,
+                    'active_area': active_area,
+                    'active_browser': active_browser[0] if active_browser else '',
+                    'profile_path': profile_path,
+                    'configure': json.loads(account_configure) if account_configure else {}
+                }
             }
 
             celery_task_name = "tasks.tasks.{}".format(task_processor)

@@ -31,41 +31,40 @@ class BaseTask(Task):
 TaskResult = {
     'status': 'failed',        # 'failed', 'succeed'
     'err_msg': '',
-    'account_status': 'valid',  # valid, invalid, verifying
-    'last_post': '',
-    'last_login': '',
-    'last_chat': '',
-    'last_farming': '',
-    'last_comment': '',
-    'last_edit': '',
-    'phone_number': '',
-    'profile_path': ''
+    'account_status': '',  # valid, invalid, verifying
+    'account_configure': {}         # {
+    #     'last_post': '',
+    #     'last_login': '',
+    #     'last_chat': '',
+    #     'last_farming': '',
+    #     'last_comment': '',
+    #     'last_edit': '',
+    #     'phone_number': '',
+    #     'profile_path': ''
+    # }
 }
 
 # inputs = {
-#     'task_id': task_id,
-#     'task_configure': configure,
-#     'account': account,
-#     'password': password,
-#     'email': email,
-#     'email_pwd': email_pwd,
-#     'gender': gender,
-#     'phone_number': phone_number,
-#     'birthday': birthday,
-#     'national_id': national_id,
-#     'name': name,
-#     'active_area': active_area,
-#     'active_browser': active_browser,
-#     'profile_path': profile_path,
-#     'last_login': datetime.datetime.now(),
-#     'last_post': last_post,
-#     'last_chat': last_chat,
-#     'last_farming': last_farming,
-#     'last_comment': '2019-03-15 20:12:36',
-#     'last_edit': last_edit,
-#     'account_configure': configure
+#     'task': {
+#         'task_id': task_id,
+#         'configure': json.loads(task_configure) if task_configure else {},
+#     },
+#     'account': {
+#         'account': account,
+#         'password': password,
+#         'email': email,
+#         'email_pwd': email_pwd,
+#         'gender': gender,
+#         'phone_number': phone_number,
+#         'birthday': birthday,
+#         'national_id': national_id,
+#         'name': name,
+#         'active_area': active_area,
+#         'active_browser': active_browser,
+#         'profile_path': profile_path,
+#         'configure': json.loads(account_configure) if account_configure else {}
+#     }
 # }
-
 
 @app.task(base=BaseTask, bind=True, max_retries=1, time_limit=1200)
 def fb_auto_feed(self, inputs):
