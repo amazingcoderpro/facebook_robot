@@ -18,7 +18,7 @@ class FacebookException(BaseException):
                          2: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_save_telnumber', 'process': 'process_img_verify'},
                          3: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_add_imge', 'process': 'process_tel_verify'},
                          4: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_load_app', 'process': 'process_load_app'},
-                         5: {'key_word': 'button[id="checkpointSubmitButton-actual-button"]', 'check': 'check_verification', 'process': 'process_verification'}
+                         5: {'key_word': 'button[id="nnn"]', 'check': 'check_verification', 'process': 'process_verification'}
                          }
 
     def __init__(self, driver: WebDriver):

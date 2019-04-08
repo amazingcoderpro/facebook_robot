@@ -8,6 +8,9 @@ import random
 from .workers import app
 from celery import Task
 from config import logger
+import subprocess
+import time
+import re
 import scripts.facebook as fb
 
 
@@ -74,7 +77,6 @@ def fb_auto_feed(self, inputs):
         account = inputs.get('account')
         account_ = account.get('account')
         # account = inputs['account']['account']
-
         password = account.get('password')
         active_browser = account.get("active_browser")
         account_configure = account.get("account_configure", {})
@@ -92,26 +94,38 @@ def fb_auto_feed(self, inputs):
         time.sleep(10)
         fb.local_surface(driver=driver)
         TaskResult['status'] ='succeed'
-
         TaskResult['account_configure'] = account_configure
-
         return TaskResult
-        # a = random.randint(1, 100)
-        # if a % 3 == 1:
-        #     TaskResult['status'] = 'failed'
-        #     TaskResult['err_msg'] = 'a % 3 == 1'
-        #     return TaskResult
-        # if a % 2 == 0:
-        #     logger.exception('fb_auto_feed')
-        #     a = a / 0
-        #     return TaskResult
-        # res = scripts.auto_feed(inputs)
+
     except Exception as e:
         logger.exception('fb_auto_feed catch exception.')
         # self.retry(countdown=10 ** self.request.retries)
         TaskResult['status'] = 'failed'
         TaskResult['err_msg'] = str(e)
+    return TaskResult
 
+
+@app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)
+def change_ip_vps(self, inputs):
+    logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))
+    logger.info(inputs)
+    try:
+        subprocess.call("pppoe-stop", shell=True)
+        # subprocess.Popen('pppoe-stop', shell=True, stdout=subprocess.PIPE, encoding='utf8')
+        time.sleep(2)
+        subprocess.call('pppoe-start', shell=True)
+        time.sleep(2)
+        pppoe_restart = subprocess.call('pppoe-status', shell=True)
+        pppoe_restart.wait()
+        pppoe_log = pppoe_restart.communicate()[0]
+        adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
+        print('[*] New ip address : ' + adsl_ip)
+        # return True
+        TaskResult['status'] = 'success'
+        return TaskResult
+    except Exception as e:
+        TaskResult['err_msg'] = str(e)
+        # change_ip_for_vps()
     return TaskResult
 
 

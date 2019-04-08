@@ -22,49 +22,24 @@ def auto_feed_mobile(inputs):
     account_num = inputs['account']
     password = inputs['password']
     print('script runing:{},{}'.format(account_num, password))
-    # option = webdriver.ChromeOptions()
-    # # 伪装iphone登录
-    # # option.add_argument('--user-agent=iphone')
-    # # 伪装android
-    # option.add_argument('--user-agent=android')
-    # driver = webdriver.Chrome(chrome_options=option)
-    # # 自己下载的crx路径#加插件
-    # # option.add_extension('d:\crx\AdBlock_v2.17.crx')
-    # # 设置下载路径
-    # chromeOptions = webdriver.ChromeOptions()
-    # prefs = {"download.default_directory": "/path/download"}
-    # chromeOptions.add_experimental_option("prefs", prefs)
-    # driver = webdriver.Chrome(chrome_options=chromeOptions)
-    # # 设置代理
-    # # PROXY = "23.23.23.23:3128"  # IP:PORT or HOST:PORT
-    # chrome_options = webdriver.ChromeOptions()
-    # # chrome_options.add_argument('--proxy-server=http://%s' % PROXY)
-    # chrome = webdriver.Chrome(chrome_options=chrome_options)
-    # chrome.get("http://whatismyipaddress.com")
-    # pass
-
-
 
     # 定制浏览器启动项
     chrome_options = webdriver.ChromeOptions()
-    # chrome_options = webdriver.ChromeOptions()
-    # chrome_options.set_preference("general.useragent.override", "Mozilla/5.0 (Linux; Android 7.0; Moto G (5) Build/NPPS25.137-93-8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36")
-    # chrome_options.add_argument('--disable-extensions')
-    # chrome_options.add_argument('--profile-directory=Default')
     # chrome_options.add_argument("--incognito") # 隐身模式
     # chrome_options.add_argument('lang=zh_CN.UTF-8')
     # chrome_options.add_argument('--headless')  # 设置为 headless 模式
+    chrome_options.add_argument('--disable-infobars')
     chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
     chrome_options.add_argument('--user-agent=iphone')
-    chrome_options.add_argument("--test-type", "--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
+    chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
     chrome_options.add_argument('lang=en_US')
 
     # 设置代理
     # PROXY = "47.52.42.24:8989"  # IP:PORT or HOST:PORT
     # chrome_options = webdriver.ChromeOptions()
     # chrome_options.add_argument('--proxy-server=http://%s' % PROXY)
-    # # chrome_options.add_argument("--disable-plugins-discovery")
-    # # chrome_options.add_argument("--start-maximized")
+    # chrome_options.add_argument("--disable-plugins-discovery")
+    # chrome_options.add_argument("--start-maximized")
 
     # 移动设备仿真
     mobile_emulation = {
@@ -73,7 +48,6 @@ def auto_feed_mobile(inputs):
         # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36"
     }
 
-    # chrome_options = Options()
     chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
     driver = webdriver.Chrome(chrome_options=chrome_options)
     driver.delete_all_cookies()
@@ -152,8 +126,6 @@ def auto_feed_mobile(inputs):
         add__fridens.click()
 
 
-
-
         # driver.get("https://m.facebook.com/home.php?soft=search")
         # add_search_fridens = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-sigil="search-small-box"]')))
         # add_search_fridens.send_keys("kkk")
@@ -215,4 +187,4 @@ def auto_feed_mobile(inputs):
 
 
 if __name__ == '__main__':
-    auto_feed_mobile(inputs={'account': "bigeckc@aol.com", 'password': "paddy1875"})
+    auto_feed_mobile(inputs={'account': "bijupgnair@hotmail.com", 'password': "nandhu19"})
