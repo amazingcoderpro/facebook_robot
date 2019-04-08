@@ -110,7 +110,7 @@ cache/
 # test.html
 test.html
 /web_service/data/static/test.html
-/Pipfile.lock
+# /Pipfile.lock
 /Pipfile.lock~4ca206d43160e756925c06f0c2a255771dc2b9ee
 
 # png
