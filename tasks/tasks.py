@@ -74,8 +74,10 @@ def fb_auto_feed(self, inputs):
         account = inputs.get('account')
         account_ = account.get('account')
         # account = inputs['account']['account']
+
         password = account.get('password')
         active_browser = account.get("active_browser")
+        account_configure = account.get("account_configure", {})
 
         # 分步执行任务
         driver = mobile_auto_feed.start_chrom(finger_print=active_browser)
@@ -86,6 +88,8 @@ def fb_auto_feed(self, inputs):
         time.sleep(10)
         mobile_auto_feed.local_surface(driver=driver)
         TaskResult['status'] ='succeed'
+
+        TaskResult['account_configure'] = account_configure
 
         return TaskResult
         # a = random.randint(1, 100)
