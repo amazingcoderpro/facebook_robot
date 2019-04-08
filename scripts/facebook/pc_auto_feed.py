@@ -8,9 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from PIL import Image
-from selenium.webdriver.support.ui import Select
-from scripts.mobile_exception import FacebookException
+from scripts.facebook.mobile_exception import FacebookException
 
 
 def auto_feed_mobile(inputs):

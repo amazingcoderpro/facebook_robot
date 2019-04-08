@@ -6,10 +6,9 @@
 import time
 import random
 from .workers import app
-import scripts
 from celery import Task
 from config import logger
-from scripts import mobile_auto_feed
+import scripts.facebook as fb
 
 
 class BaseTask(Task):
@@ -81,13 +80,17 @@ def fb_auto_feed(self, inputs):
         account_configure = account.get("account_configure", {})
 
         # 分步执行任务
-        driver = mobile_auto_feed.start_chrom(finger_print=active_browser)
+        driver = fb.start_chrom(finger_print=active_browser)
 
-        mobile_auto_feed.auto_login(driver=driver, account=account_, password=password)
+        if not driver:
+            TaskResult['err_msg'] = 'start chrome failed. driver is None'
+            return TaskResult
+
+        fb.auto_login(driver=driver, account=account_, password=password)
         time.sleep(10)
-        mobile_auto_feed.user_messages(driver=driver)
+        fb.user_messages(driver=driver)
         time.sleep(10)
-        mobile_auto_feed.local_surface(driver=driver)
+        fb.local_surface(driver=driver)
         TaskResult['status'] ='succeed'
 
         TaskResult['account_configure'] = account_configure
