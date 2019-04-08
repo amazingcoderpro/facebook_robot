@@ -66,6 +66,7 @@ TaskResult = {
 #     }
 # }
 
+
 @app.task(base=BaseTask, bind=True, max_retries=1, time_limit=1200)
 def fb_auto_feed(self, inputs):
     logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))

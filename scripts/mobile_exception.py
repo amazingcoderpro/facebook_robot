@@ -13,8 +13,8 @@ class FacebookException(BaseException):
     """
     :action: 0 检查首页是否存在, 1 是否记住密码页面, 2 忽略电话号码, 3 忽略上传头像, 4 忽略app下载
     """
-    MAP_EXP_PROCESSOR = {0: {'key_word': 'div[id="MComposer"]', 'check': 'is_home', 'process': 'process_home'},
-                         1: {'key_word': 'button[type="submit"]', 'check': 'check_remember_password', 'process': 'process_add_password'},
+    MAP_EXP_PROCESSOR = {0: {'key_word': 'div[id="MComposer"]', 'check': 'check_is_home', 'process': 'process_home'},
+                         1: {'key_word': 'a[href^="/login/save-device/cancel/?"]', 'check': 'check_remember_password', 'process': 'process_add_password'},
                          2: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_save_telnumber', 'process': 'process_img_verify'},
                          3: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_add_imge', 'process': 'process_tel_verify'},
                          4: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_load_app', 'process': 'process_load_app'},

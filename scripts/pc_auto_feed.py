@@ -10,7 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from PIL import Image
 from selenium.webdriver.support.ui import Select
-from mobile_exception import FacebookException
+from scripts.mobile_exception import FacebookException
 
 
 def auto_feed_mobile(inputs):
@@ -27,6 +27,9 @@ def auto_feed_mobile(inputs):
 
     # 定制浏览器启动项
     chrome_options = webdriver.ChromeOptions()
+    # chrome_options = webdriver.ChromeOptions()
+    # chrome_options.set_preference("general.useragent.override",
+    #                               "Mozilla/5.0 (Linux; Android 7.0; Moto G (5) Build/NPPS25.137-93-8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36")
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--profile-directory=Default')
     # chrome_options.add_argument("--incognito")
@@ -35,13 +38,20 @@ def auto_feed_mobile(inputs):
     chrome_options.add_argument("--start-maximized")
 
     # 移动设备仿真
-    mobile_emulation = {
-        'deviceName': 'iPhone 5',
-        # "deviceMetrics": {"width": 600, "height":800, "pixelRatio": 4.0},
-        # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36"
+    # mobile_emulation = {
+    #     'deviceName': 'iPhone 6',
+    #     # "deviceMetrics": {"width": 600, "height":800, "pixelRatio": 4.0},
+    #     # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36"
+    # }
+    desired_cap = {
+            'osVersion': '11',
+            'deviceName': 'iPhone 8',
+            'realMobile': 'true',
+            'local': 'false',
     }
+
     chrome_options = Options()
-    chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
+    chrome_options.add_experimental_option("mobileEmulation", desired_cap)
     driver = webdriver.Chrome(chrome_options=chrome_options)
     driver.delete_all_cookies()
     driver.get('https://www.facebook.com/')

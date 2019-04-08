@@ -28,7 +28,7 @@ def start_chrom():
         chrome_options.add_argument("--start-maximized")
         # 移动设备仿真
         mobile_emulation = {
-            'deviceName': 'iPhone 5',
+            'deviceName': 'iPhone 6s',
             # "deviceMetrics": {"width": 600, "height":800, "pixelRatio": 4.0},
             # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36"
         }
