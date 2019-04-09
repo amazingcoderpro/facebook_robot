@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login as auth_login
 from utils.request_utils import pretreatment, response_as_json_without_auth
 
 # Created by: guangda.lee
@@ -11,10 +11,10 @@ from utils.request_utils import pretreatment, response_as_json_without_auth
 # 用户登录验证
 @response_as_json_without_auth
 @pretreatment
-def auth(request, data):
+def login(request, data):
     auth_user = authenticate(username=data['username'], password=data['password'])
     if auth_user and auth_user.is_active:
-        login(request, auth_user)
+        auth_login(request, auth_user)
         # 生成 token
         from utils.string_utils import generate_token
         user_item = auth_user.user
