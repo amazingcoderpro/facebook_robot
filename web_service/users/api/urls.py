@@ -8,6 +8,6 @@ from users.api import auth_views
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
-    url(r'^auth$', auth_views.auth),
+    url(r'^login$', auth_views.login),
     url(r'^logout$', auth_views.logout),
 ]
