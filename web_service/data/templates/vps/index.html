@@ -32,7 +32,7 @@
      <div class="col-xs-6 none" id="detail">
         <div class="box box-primary" id="info">
             <div class="box-header with-border">
-                <h3 class="box-title">基本信息</h3>
+                <h3 class="box-title">详情</h3>
             </div>
             <div class="box-buttons">
                 <button type="button" class="btn btn-primary save">保存</button>
@@ -40,22 +40,26 @@
             <form role="form">
                 <div class="box-body">
                     <div class="form-group">
-                        <label>列队名</label>
-                        <input type="text" class="form-control" name="queue_name" placeholder="请输入列队名称" />
+                      <label>地区</label>
+                      <input type="text" class="form-control" name="area" placeholder="请输入区域名称" />
+                      <!--<select class="form-control" name="area">-->
+                          <!--&lt;!&ndash;0-idle, 1-normal, 2-busy, 3-disable&ndash;&gt;-->
+                          <!--<option value="Spanish">Spanish</option>-->
+                          <!--<option value="China">China</option>-->
+                          <!--<option value="Japan">Japan</option>-->
+                          <!--<option value="North American">North American</option>-->
+                      <!--</select>-->
                     </div>
                     <div class="form-group">
                       <label>状态</label>
-                      <select class="form-control" name="status">
-                          <!--0-idle, 1-normal, 2-busy, 3-disable-->
-                          <option value="0">idle</option>
-                          <option value="1">normal</option>
-                          <option value="2">busy</option>
-                          <option value="3">disable</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label>地区</label>
-                      <select class="form-control" name="area"></select>
+                      <input type="text" class="form-control" name="status" disabled="true" />
+                      <!--<select class="form-control" name="status">-->
+                          <!--&lt;!&ndash;0-idle, 1-normal, 2-busy, 3-disable&ndash;&gt;-->
+                          <!--<option value="0">idle</option>-->
+                          <!--<option value="1">normal</option>-->
+                          <!--<option value="2">busy</option>-->
+                          <!--<option value="3">disable</option>-->
+                      <!--</select>-->
                     </div>
                     <div class="form-group">
                         <label>配置</label>
