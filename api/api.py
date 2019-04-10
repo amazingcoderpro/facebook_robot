@@ -271,8 +271,10 @@ def update_results():
                     account_status = job_res.get('account_status', '')
                     account_config = job_res.get('account_configure', {})
                     if account_status:
+                        logger.error('update account status={}'.format(account_status))
                         db_session.query(Account).filter(Account.id == account_id).update({Account.status: account_status})
                     if account_config:
+                        logger.error('update account config={}'.format(account_config))
                         db_session.query(Account).filter(Account.id == account_id).update(
                             {Account.configure: json.dumps(account_config)})
 

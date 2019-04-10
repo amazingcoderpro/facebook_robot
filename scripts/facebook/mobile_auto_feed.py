@@ -57,69 +57,46 @@ def auto_login(driver, account, password):
     # driver.delete_all_cookies()
     driver.get('https://www.facebook.com/')
     time.sleep(3)
-    # account = inputs['account']
-    # password = inputs['password']
     logger.info('script runing:{},{}'.format(account, password))
     try:
         # FB登录
         email_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
         email_box.send_keys(account)
         time.sleep(3)
-        password_box = driver.find_element_by_name("pass")
+
         password_tabindex = driver.find_elements_by_css_selector('input[tabindex^="-"]')
+        # 代表没有密码输入框
         if password_tabindex:
             login_btn = driver.find_element_by_css_selector('button[type="button"]')
             login_btn.click()
             time.sleep(2)
-            old_url = driver.current_url
-            password_box = driver.find_element_by_name("pass")
-            password_box.send_keys(password)
-            login_sbtu = driver.find_element_by_css_selector('button[data-sigil="touchable m_login_button"]')
-            time.sleep(3)
-            login_sbtu.click()
-            print("第二次点击完成"+"#"*60)
-            retry = 0
-            while retry < 3:
-                if driver.current_url == old_url:
-                    login_btn.click()
-                    retry += 1
-                    time.sleep(1)
-                else:
-                    break
-            return True, 0
+
+        password_box = driver.find_element_by_name("pass")
         password_box.send_keys(password)
         # driver.get_screenshot_as_file('login.png')
+
         time.sleep(3)
-        # login_img = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
-        # print(login_img)
         login_btn = driver.find_element_by_css_selector('button[type="button"]')
-        print(login_btn)
         old_url = driver.current_url
-        ret = login_btn.click()
-        print("error click" + "#" * 60)
-        # driver.implicitly_wait(10)
+
+        time.sleep(3)
         retry = 0
         while retry < 3:
-            time.sleep(1)
             if driver.current_url == old_url:
                 login_btn.click()
                 retry += 1
+                time.sleep(2)
             else:
                 break
+
         WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
         logger.info("login success！username={}, passwork={}".format(account, password))
         return True, 0
     except Exception as e:
-        fbexcept = FacebookException(driver)
-        return fbexcept.auto_process(2)
-
-        # driver.find_element_by_css_selector('button[id="checkpointSubmitButton-actual-button"]')
-        # time.sleep(5)
-        # print("该账号已经被限制访问, 更改数据内容")
-        # driver.delete_all_cookies()
-        # driver.quit()
-        # return False
+        logger.exception('auto_login exception, e={}'.format(e))
+        fb_exp = FacebookException(driver)
+        return fb_exp.auto_process(2)
 
 
 def browse_page_js(driver):
@@ -228,9 +205,9 @@ def user_home(driver):
         return fbexcept.auto_process(3)
 
 
-# if __name__ == '__main__':
-#     driver = start_chrom({'device': 'iPhone 6'})
-#     auto_login(driver, 'jonemarnug@hotmail.com', 'OA2TMcj8Fx')
+if __name__ == '__main__':
+    driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
+    auto_login(driver, 'jonemarnug@hotmail.com', 'OA2TMcj8Fx')
 
 
 

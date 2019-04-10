@@ -117,12 +117,12 @@ def fb_auto_feed(self, inputs):
 
         ret, err_code = fb.auto_login(driver=driver, account=account, password=password)
         if not ret:
-            msg = 'login failed, account={}, err_code={}, account_status ={}'.format(account, err_code)
+            msg = 'login failed, account={}, err_code={}'.format(account, err_code)
             logger.error(msg)
             return make_result(err_code=err_code, err_msg=err_msg)
 
-        random_num = random.randint(100)
-        if random/2 == 0 or random/3 == 0:
+        random_num = random.randint(0, 100)
+        if random_num/2 == 0 or random_num / 3 == 0:
             ret, err_code = fb.user_messages(driver=driver)
             if not ret:
                 msg = 'login failed, account={}, err_code={}'.format(account, err_code)
@@ -130,7 +130,7 @@ def fb_auto_feed(self, inputs):
                 return make_result(err_code=err_code, err_msg=err_msg)
 
         time.sleep(random_num % 5)
-        if random / 2 != 0 or random / 3 == 0:
+        if random_num / 2 != 0 or random_num / 3 == 0:
             ret, err_code = fb.local_surface(driver=driver)
             if not ret:
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)

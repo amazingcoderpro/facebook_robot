@@ -48,6 +48,7 @@ class FacebookException(BaseException):
             if not ret:
                 return ret, status
             retry -= 1
+            time.sleep(2)
         return True, 0
 
     def check(self):
@@ -142,8 +143,6 @@ class FacebookException(BaseException):
             return False
         return True
 
-
-
     def process_home(self):
         # 处理是否在HOME页面
         processor = self.MAP_EXP_PROCESSOR.get(self.exception_type)
@@ -164,7 +163,7 @@ class FacebookException(BaseException):
             print("不记录账号密码")
         except:
             return False, 1
-        return True, 0
+        return True, 1
 
     def process_tel_verify(self):
         # 忽略电话号码
@@ -175,7 +174,7 @@ class FacebookException(BaseException):
             print("忽略电话号码")
         except:
             return False, 2
-        return True, 0
+        return True, 2
 
     def process_img_verify(self):
         # 忽略上传头像
@@ -185,7 +184,7 @@ class FacebookException(BaseException):
             tel_number.click()
         except:
             return False, 3
-        return True, 0
+        return True, 3
 
     def process_load_app(self):
         # 上传头像
@@ -197,7 +196,7 @@ class FacebookException(BaseException):
             print("忽略上传头像")
         except:
             return False, 4
-        return True, 0
+        return True, 4
 
     def process_verification(self):
         # 过度页面点击
@@ -208,7 +207,7 @@ class FacebookException(BaseException):
             print("账号被封杀")
         except:
             return False, 5
-        return True, 0
+        return False, 5
 
     def process_question(self):
         # 身份验证
@@ -218,7 +217,7 @@ class FacebookException(BaseException):
             print("身份验证")
         except:
             return False, 6
-        return True, 0
+        return False, 6
 
     def process_phone_verification(self):
         # 手机短信验证码验证
@@ -228,7 +227,7 @@ class FacebookException(BaseException):
             print("手机短信验证")
         except:
             return False, 7
-        return True, 0
+        return False, 7
 
     def process_upload_photo(self):
         # 上传图片验证
@@ -238,7 +237,7 @@ class FacebookException(BaseException):
             print("上传图片验证")
         except:
             return False, 8
-        return True, 0
+        return False, 8
 
 
 
