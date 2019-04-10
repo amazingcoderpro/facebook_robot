@@ -23,7 +23,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     },
     modifyItem=function(item){
         $('#detail').removeClass('none').html(detailHtml),
-        $('#info .box-title').text(item.queue_name+'的基本信息'),
+        $('#info .box-title').text(item.queue_name+'基本信息'),
         $.each(item, function(propName, value){$('#info input[name="'+propName+'"]').val(value),$('#info select[name="'+propName+'"]').val(value)});
         $('#info .save').on('click',function(){
             var req={};
@@ -46,27 +46,28 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             ajax: {url: global.getAPI(url)},
             columns: [
                 {
-                    title: '列队名',
-                    data: 'queue_name'
+                    title: 'ID',
+                    data: 'id'
                 },
                 {
-                    title: '状态',
-                    data: 'status',
-                    render: function(data){
-
-                        switch(data){
-                            case '0': return 'idle';
-                            case '1': return 'normal';
-                            case '2': return 'busy';
-                            default:
-                                return 'disable'
-                        }
-                    }
-                },
-                {
-                    title: '所在地',
+                    title: '区域',
                     data: 'area'
+                },
+                {
+                    title: '忙闲状态',
+                    data: 'status',
+                    // render: function(data){
+                    //
+                    //     switch(data){
+                    //         case '0': return 'idle';
+                    //         case '1': return 'normal';
+                    //         case '2': return 'busy';
+                    //         default:
+                    //             return 'disable'
+                    //     }
+                    // }
                 }
+
             ],
             onSingleRowClick: function(item){
                 if(item)modifyItem(item);
