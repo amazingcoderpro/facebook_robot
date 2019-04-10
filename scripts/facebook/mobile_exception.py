@@ -11,15 +11,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 class FacebookException(BaseException):
     """
-    :action: 0 检查首页是否存在, 1 是否记住密码页面, 2 忽略电话号码, 3 忽略上传头像, 4 忽略app下载
+    :action: 0：检查首页是否存在, 1：是否记住密码页面, 2：忽略电话号码, 3：忽略上传头像, 4：忽略app下载  5：账号被封杀
+             6：上次登录机器&好友识别身份验证  7：手机短信验证  8：上传图片验证
     """
     MAP_EXP_PROCESSOR = {0: {'key_word': 'div[id="MComposer"]', 'check': 'check_is_home', 'process': 'process_home'},
                          1: {'key_word': 'a[href^="/login/save-device/cancel/?"]', 'check': 'check_remember_password', 'process': 'process_add_password'},
                          2: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_save_telnumber', 'process': 'process_img_verify'},
                          3: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_add_imge', 'process': 'process_tel_verify'},
                          4: {'key_word': 'div[data-sigil="mChromeHeaderRight"]', 'check': 'check_load_app', 'process': 'process_load_app'},
-                         5: {'key_word': 'button[id="nnn"]', 'check': 'check_verification', 'process': 'process_verification'}
-                         }
+                         5: {'key_word': 'div[class^="mvm uiP fsm"]', 'check': 'check_verification', 'process': 'process_verification', 'account_status': 'invalid'},
+                         6: {'key_word': 'div[id="checkpoint_subtitle"]', 'check': 'check_question', 'process': 'process_question', 'account_status': 'verifying'},
+                         7: {'key_word': 'option[value="US"]', 'check': 'check_phone_verification', 'process': 'process_phone_verification', 'account_status': 'verifying'},
+                         8: {'key_word': 'button[data-store^="{"nativeClick":true}"]', 'check': 'check_upload_photo', 'process': 'process_upload_photo', 'account_status': 'verifying'}
+                        }
 
     def __init__(self, driver: WebDriver):
         self.driver = driver
@@ -31,20 +35,20 @@ class FacebookException(BaseException):
 
             # 如果已经在home页面，不用处理
             if self.exception_type == 0:
-                return True
+                return True, 0
 
             processor = self.MAP_EXP_PROCESSOR.get(self.exception_type, {}).get('process', '')
             if processor:
                 if hasattr(self, processor):
-                    ret = getattr(self, processor)()
+                    ret, status = getattr(self, processor)()
             else:
-                ret = False
+                ret = False, -1
 
             # 如果无法处理，不用再重试
             if not ret:
-                return False
+                return ret, status
             retry -= 1
-        return True
+        return True, 0
 
     def check(self):
         # 检查点
@@ -103,7 +107,7 @@ class FacebookException(BaseException):
         return True
 
     def check_verification(self):
-        # 好友验证页面
+        # 过度页面
         try:
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(5)['key_word'])))
@@ -111,16 +115,45 @@ class FacebookException(BaseException):
             return False
         return True
 
+    def check_question(self):
+        # 身份验证
+        try:
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_word'])))
+        except:
+            return False
+        return True
+
+    def check_phone_verification(self):
+        # 手机短信验证码验证
+        try:
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_word'])))
+        except:
+            return False
+        return True
+
+    def check_upload_photo(self):
+        # 上传图片验证
+        try:
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_word'])))
+        except:
+            return False
+        return True
+
+
+
     def process_home(self):
         # 处理是否在HOME页面
         processor = self.MAP_EXP_PROCESSOR.get(self.exception_type)
         if not processor:
             print("未检测到Home页面")
-            return False
+            return False, 0
 
         if hasattr(self, self.processor):
             return getattr(self, processor)()
-        return False
+        return False, 0
 
     def process_add_password(self):
         # 记住账号密码
@@ -128,9 +161,10 @@ class FacebookException(BaseException):
             no_password = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_word'])))
             no_password.click()
+            print("不记录账号密码")
         except:
-            return False
-        return True
+            return False, 1
+        return True, 0
 
     def process_tel_verify(self):
         # 忽略电话号码
@@ -138,9 +172,10 @@ class FacebookException(BaseException):
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(2)['key_word'])))
             tel_number.click()
+            print("忽略电话号码")
         except:
-            return False
-        return True
+            return False, 2
+        return True, 0
 
     def process_img_verify(self):
         # 忽略上传头像
@@ -149,8 +184,8 @@ class FacebookException(BaseException):
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(3)['key_word'])))
             tel_number.click()
         except:
-            return False
-        return True
+            return False, 3
+        return True, 0
 
     def process_load_app(self):
         # 上传头像
@@ -159,24 +194,52 @@ class FacebookException(BaseException):
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(4)['key_word'])))
             never_save_number.click()
+            print("忽略上传头像")
         except:
-            return False
-        return True
+            return False, 4
+        return True, 0
 
     def process_verification(self):
-        # 处理好友验证
+        # 过度页面点击
         try:
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(5)['key_word'])))
             never_save_number.click()
+            print("账号被封杀")
         except:
-            return False
-        return True
+            return False, 5
+        return True, 0
+
+    def process_question(self):
+        # 身份验证
+        try:
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_word'])))
+            print("身份验证")
+        except:
+            return False, 6
+        return True, 0
+
+    def process_phone_verification(self):
+        # 手机短信验证码验证
+        try:
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_word'])))
+            print("手机短信验证")
+        except:
+            return False, 7
+        return True, 0
+
+    def process_upload_photo(self):
+        # 上传图片验证
+        try:
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_word'])))
+            print("上传图片验证")
+        except:
+            return False, 8
+        return True, 0
 
 
-# if __name__ == '__main__':
-#     fb = FacebookException(None)
-#     fb.check()
-#     fb.auto_process(6)
 
 

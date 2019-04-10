@@ -43,7 +43,7 @@ def auto_feed_mobile(inputs):
 
     # 移动设备仿真
     mobile_emulation = {
-        'deviceName': 'iPhone 6',
+        'deviceName': 'iPad Mini',
         # "deviceMetrics": {"width": 600, "height":800, "pixelRatio": 4.0},
         # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Mobile Safari/537.36"
     }
@@ -61,7 +61,7 @@ def auto_feed_mobile(inputs):
         time.sleep(3)
         password_box = driver.find_element_by_name('pass')
         password_box.send_keys(password)
-        # driver.get_screenshot_as_file('login.png')
+        driver.get_screenshot_as_file('login.png')
         time.sleep(3)
         # login_img = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
         # print(login_img)
@@ -124,7 +124,6 @@ def auto_feed_mobile(inputs):
         add__fridens = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
         add__fridens.click()
-
 
         # driver.get("https://m.facebook.com/home.php?soft=search")
         # add_search_fridens = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-sigil="search-small-box"]')))

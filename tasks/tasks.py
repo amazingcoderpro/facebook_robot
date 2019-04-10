@@ -74,6 +74,7 @@ def fb_auto_feed(self, inputs):
     logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))
     logger.info(inputs)
     try:
+        driver = None
         account = inputs.get('account')
         account_ = account.get('account')
         # account = inputs['account']['account']
@@ -88,20 +89,32 @@ def fb_auto_feed(self, inputs):
             TaskResult['err_msg'] = 'start chrome failed. driver is None'
             return TaskResult
 
-        fb.auto_login(driver=driver, account=account_, password=password)
+        ret = fb.auto_login(driver=driver, account=account_, password=password)
+        if not ret:
+            TaskResult['err_msg'] = 'login failed.'
+            return TaskResult
+
         time.sleep(10)
-        fb.user_messages(driver=driver)
+        ret, status = fb.user_messages(driver=driver)
+        if not ret:
+            TaskResult['err_msg'] = 'login failed.'
+            TaskResult['account_status'] = fb.FacebookException.MAP_EXP_PROCESSOR.get(status, {}).get('account_status', 'valid')
+            return TaskResult
+
         time.sleep(10)
         fb.local_surface(driver=driver)
-        TaskResult['status'] ='succeed'
+        TaskResult['status'] = 'succeed'
         TaskResult['account_configure'] = account_configure
         return TaskResult
-
     except Exception as e:
         logger.exception('fb_auto_feed catch exception.')
         # self.retry(countdown=10 ** self.request.retries)
         TaskResult['status'] = 'failed'
         TaskResult['err_msg'] = str(e)
+    finally:
+        print(dir(driver))
+        if driver:
+            driver.quit()
     return TaskResult
 
 
@@ -125,6 +138,7 @@ def change_ip_vps(self, inputs):
         return TaskResult
     except Exception as e:
         TaskResult['err_msg'] = str(e)
+
         # change_ip_for_vps()
     return TaskResult
 
