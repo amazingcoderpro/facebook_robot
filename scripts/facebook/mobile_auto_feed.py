@@ -12,7 +12,7 @@ from scripts.facebook.mobile_exception import FacebookException
 from config import logger
 
 
-def start_chrom(finger_print, headless=True):
+def start_chrome(finger_print, headless=True):
     """
     :action: 启动浏览器
     :return:

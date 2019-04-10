@@ -13,3 +13,6 @@ db:
     password: charles@orderplus
     db_name: facebook
     db_type: mysql
+
+account:
+    login_interval: 3600

@@ -43,3 +43,7 @@ def get_broker_and_backend():
 
 def get_db_args():
     return cfg.get('db')
+
+
+def get_account_args():
+    return cfg.get('account')

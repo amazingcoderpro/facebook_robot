@@ -10,7 +10,7 @@ import subprocess
 import re
 from celery import Task
 from .workers import app
-from config import logger
+from config import logger, get_account_args
 import scripts.facebook as fb
 
 
@@ -102,14 +102,14 @@ def fb_auto_feed(self, inputs):
         last_login_time = account_configure.get('last_login', '')
         if last_login_time:
             dt_last_login = datetime.strptime(last_login_time, "%Y-%m-%d %H:%M:%S")
-            if (datetime.datetime.now() - dt_last_login).total_seconds() < 3600:
+            if (datetime.datetime.now() - dt_last_login).total_seconds() < get_account_args().get('login_interval', 3600):
                 err_msg = 'Less than an hour before the last login, last login={}'.format(last_login_time)
                 logger.error(err_msg)
                 return make_result(err_msg=err_msg)
 
         # 分步执行任务
         # 启动浏览器
-        driver, err_msg = fb.start_chrom(finger_print=active_browser)
+        driver, err_msg = fb.start_chrome(finger_print=active_browser, headless=False)
         if not driver:
             msg = 'start chrome failed. err_msg={}'.format(err_msg)
             logger.error(msg)
