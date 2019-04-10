@@ -222,9 +222,9 @@ def user_home(driver):
         return fbexcept.auto_process(3)
 
 
-if __name__ == '__main__':
-    driver = start_chrom({'device': 'iPhone 6'})
-    auto_login(driver, 'jonemarnug@hotmail.com', 'OA2TMcj8Fx')
+# if __name__ == '__main__':
+#     driver = start_chrom({'device': 'iPhone 6'})
+#     auto_login(driver, 'jonemarnug@hotmail.com', 'OA2TMcj8Fx')
 
 
 
