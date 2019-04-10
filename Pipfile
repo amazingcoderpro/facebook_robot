@@ -23,6 +23,7 @@ djangorestframework = "*"
 markdown = "*"
 django-filter = "*"
 log-config = "*"
+mysqlclient = "*"
 
 [requires]
 python_version = "3.6"
