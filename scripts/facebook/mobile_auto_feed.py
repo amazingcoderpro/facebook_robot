@@ -12,7 +12,7 @@ from scripts.facebook.mobile_exception import FacebookException
 from config import logger
 
 
-def start_chrom(finger_print):
+def start_chrom(finger_print, headless=True):
     """
     :action: 启动浏览器
     :return:
@@ -20,6 +20,12 @@ def start_chrom(finger_print):
     try:
         # 定制浏览器启动项
         chrome_options = webdriver.ChromeOptions()
+        if headless:
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-gpu')
+
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
         chrome_options.add_argument('--user-agent=iphone')
@@ -37,10 +43,10 @@ def start_chrom(finger_print):
         # time.sleep(5)
         # driver.delete_all_cookies()
         # driver.get_screenshot_as_file("")
-        return driver
+        return driver, ''
     except Exception as e:
         logger.error("The browser did not start successfully driver:{}".format(str(e)))
-        return None
+        return None, str(e)
 
 
 def auto_login(driver, account, password):
@@ -129,7 +135,7 @@ def browse_page_js(driver):
         driver.execute_script("window.scrollTo(1800,0)")
         time.sleep(3)
         return True
-    except Exception as E:
+    except Exception as e:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -160,7 +166,7 @@ def local_surface(driver):
         driver.get("https://m.facebook.com/local_surface/?query_type=HOME&ref=bookmarks")
         browse_page_js()
         logger.info("View the local news success driver={}".format(driver.name))
-        return True
+        return True, 0
     except:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
@@ -178,7 +184,7 @@ def add_friends(driver):
         add__fridens = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
         add__fridens.click()
-        return True
+        return True, 0
     except:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
@@ -198,7 +204,7 @@ def send_messages(driver):
         add__fridens = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
         add__fridens.click()
-        return True
+        return True, 0
     except:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
@@ -216,7 +222,7 @@ def user_home(driver):
         add__fridens = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
         add__fridens.click()
-        return True
+        return True, 0
     except:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
