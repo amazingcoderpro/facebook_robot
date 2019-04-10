@@ -24,6 +24,7 @@ markdown = "*"
 django-filter = "*"
 log-config = "*"
 mysqlclient = "*"
+pyvirtualdisplay = "*"
 
 [requires]
 python_version = "3.6"
