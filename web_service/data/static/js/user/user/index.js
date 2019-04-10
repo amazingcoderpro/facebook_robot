@@ -4,7 +4,17 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         sub: '管理普通用户、设置管理员、授权可执行任务',
         path: ['user']
     });
-    var categories=[], url='/api/users/', detailHtml='',
+    var categories=[], url='/api/users/', detailHtml='', tasklist=[];
+
+    function contains(arr, obj) {  
+        var i = arr.length;  
+        while (i--) {  
+            if (arr[i] === obj) {  
+                return true;  
+            }  
+        }  
+        return false;  
+    }
     newUser=function(){
         var req={category: {name: $('#modal-new select[name="category"]').val()}};
         $.each($('#modal-new input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
@@ -30,10 +40,27 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         $('#info .box-title').text(item.fullname+'的基本信息'),
         $.each(item, function(propName, value){$('#info input[name="'+propName+'"]').val(value)});
         $('#info p.username').text(item.username);
+        selftypelist = item.enable_tasks.split(";");
+        var task=$('#tasklist');
+        $.each(tasklist, function(i, item){
+            if (contains(selftypelist,item.id.toString()) ) {
+                task.append('<div class="checkbox"> <label> <input name="task_checkbox" type="checkbox" checked="checked" value="'+ item.id + '">' + item.name + '</label> </div>')
+            }else
+                task.append('<div class="checkbox"> <label> <input name="task_checkbox" type="checkbox" value="' + item.id +'">' + item.name + '</label> </div>')
+        })
         $('#info .save').on('click',function(){
             var req={};
             Object.assign(req, item);
             $.each($('#detail input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
+
+            var enable_tasks = $('#tasklist input');
+            txt="";
+            for (i=0;i<enable_tasks.length;++ i){
+                if (enable_tasks[i].checked){
+                txt=txt + ";" + enable_tasks[i].value
+                }
+            };
+            req.enable_tasks = txt.slice(1)
             if(req.fullname=='')global.showTip('请输入用户姓名');
             else if(req.email=='')global.showTip('请输入邮件地址');
             else $.ajax({
@@ -130,6 +157,14 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 $.each(categories, function(i, item){
                     el.append('<option value="'+item.name+'">'+item.name+'</option>')
                 })
+            }
+        })
+        $.ajax({
+            url: global.getAPI('/api/taskCategories/'),
+            contentType: "application/json",
+            method: 'get',
+            success: function(data){
+                tasklist = data.data;
             }
         })
 })

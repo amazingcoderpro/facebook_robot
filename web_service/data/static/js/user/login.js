@@ -25,7 +25,7 @@ require([], function(){
         else if (param.password==='')showTip('请输入用户密码');
         else $.post({
             type: "POST",
-            url: '/api/user/auth',
+            url: '/api/user/login',
             data: JSON.stringify(param),
             success: function(req){
               if($('input[type="checkbox').prop('checked')){
