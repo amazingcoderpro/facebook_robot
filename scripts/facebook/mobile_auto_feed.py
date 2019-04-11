@@ -5,6 +5,7 @@
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
@@ -68,22 +69,23 @@ def auto_login(driver, account, password):
         # 代表没有密码输入框
         if password_tabindex:
             login_btn = driver.find_element_by_css_selector('button[type="button"]')
-            login_btn.click()
+            login_btn.send_keys(Keys.ENTER)
             time.sleep(2)
 
         password_box = driver.find_element_by_name("pass")
         password_box.send_keys(password)
-        # driver.get_screenshot_as_file('login.png')
 
+        # login_ebutn = driver.find_element_by_css_selector('button[type="button"]')
+        # login_ebutn.send_keys(Keys.ENTER)
         time.sleep(3)
-        login_btn = driver.find_element_by_css_selector('button[type="button"]')
+        password_box.send_keys(Keys.ENTER)
         old_url = driver.current_url
 
         time.sleep(3)
         retry = 0
         while retry < 3:
             if driver.current_url == old_url:
-                login_btn.click()
+                password_box.send_keys(Keys.ENTER)
                 retry += 1
                 time.sleep(2)
             else:
@@ -207,7 +209,7 @@ def user_home(driver):
 
 if __name__ == '__main__':
     driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-    auto_login(driver, 'jonemarnug@hotmail.com', 'OA2TMcj8Fx')
+    auto_login(driver, 'philissp8a@hotmail.com', 'jv3sh8gq0Oi')
 
 
 
