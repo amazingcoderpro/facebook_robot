@@ -121,11 +121,12 @@ def fb_auto_feed(self, inputs):
             logger.error(msg)
             return make_result(err_code=err_code, err_msg=err_msg)
 
+        logger.info('login succeed.')
         random_num = random.randint(0, 100)
         if random_num/2 == 0 or random_num / 3 == 0:
             ret, err_code = fb.user_messages(driver=driver)
             if not ret:
-                msg = 'login failed, account={}, err_code={}'.format(account, err_code)
+                msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
                 logger.error(msg)
                 return make_result(err_code=err_code, err_msg=err_msg)
 
@@ -136,6 +137,8 @@ def fb_auto_feed(self, inputs):
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
                 return make_result(err_code=err_code, err_msg=err_msg)
 
+        time.sleep(60)
+        logger.info('task fb_auto_feed succeed. account={}'.format(account))
     except Exception as e:
         err_msg = 'fb_auto_feed catch exception. e={}'.format(str(e))
         logger.exception(err_msg)
