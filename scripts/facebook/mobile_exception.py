@@ -54,14 +54,17 @@ class FacebookException(BaseException):
 
             # 如果已经在home页面或者是未知异常，不用处理
             if exception_type == 0:
+                logger.info('auto process succeed, status==0')
                 return True, 0
             elif exception_type == -1:
+                logger.info('auto process failed, status==-1')
                 return False, -1
 
             processor = 'process_{}'.format(self.MAP_EXP_PROCESSOR.get(exception_type, {}).get('name', ''))
             if hasattr(self, processor):
                 ret, status = getattr(self, processor)()
             else:
+                logger.error('auto_process can not find processor. processor={}'.format(processor))
                 ret, status = False, -1
 
             # 如果无法处理，不用再重试
@@ -72,7 +75,7 @@ class FacebookException(BaseException):
             time.sleep(wait)
 
         logger.error('auto process succeed')
-        return True, 0
+        return ret, status
 
     def auto_check(self):
         # 自动检查点, 返回相应的异常码
@@ -133,7 +136,7 @@ class FacebookException(BaseException):
             no_password = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_word'])))
             no_password.click()
-
+            logger.info("处理理忽略保存账号密码成功")
         except:
             return False, 1
         return True, 1
@@ -141,10 +144,11 @@ class FacebookException(BaseException):
     def process_save_phone_number(self):
         # 忽略电话号码
         try:
-            logger.info("忽略输入电话号码成功")
+            logger.info("忽略输入电话号码")
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(2)['key_word'])))
             tel_number.click()
+            logger.info("忽略输入电话号码成功")
         except:
             return False, 2
         return True, 2
@@ -156,6 +160,7 @@ class FacebookException(BaseException):
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(3)['key_word'])))
             tel_number.click()
+            logger.info('忽略上传图像成功')
         except:
             return False, 3
         return True, 3
