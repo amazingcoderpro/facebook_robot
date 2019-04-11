@@ -579,7 +579,7 @@ def init_db_data():
                                 end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
 
 
-    FingerPrintOpt.save_finger_print('iPhone 6s', value=json.dumps({'device': 'iPhone 6'}))
+    # FingerPrintOpt.save_finger_print('iPhone 6', value=json.dumps({'device': 'iPhone 6'}))
     FingerPrintOpt.save_finger_print('iPhone 6', value=json.dumps({'device': 'iPhone 6'}))
     FingerPrintOpt.save_finger_print('iPhone 7', value=json.dumps({'device': 'iPhone 7'}))
     FingerPrintOpt.save_finger_print('iPhone 8', value=json.dumps({'device': 'iPhone 8'}))
@@ -590,49 +590,50 @@ def init_db_data():
     FingerPrintOpt.save_finger_print('Galaxy Note 3', value=json.dumps({'device': 'Galaxy Note 3'}))
 
     # 添加账号
-    AccountOpt.save_account(account='codynr4nzxh@outlook.com',
-                            password='qVhgldHmgp', owner=1, category=1,
-                            email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
-                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='verifying')
-    AccountOpt.save_account(account='eddykkqf56@outlook.com',
-                            password='nYGcEXNjGY', owner=1, category=1,
-                            email='eddykkqf56@outlook.com', email_pwd='M4c5gs3SEx',
-                            gender=1, birthday='1974-6-8', profile_id='wheeler.degale.9', status='invalid')
-    AccountOpt.save_account(account='deckor31g90@outlook.com',
-                            password='mYIiw539Ke', owner=2, category=1,
-                            email='deckor31g90@outlook.com', email_pwd='GsMNVhEqHu',
-                            gender=1, birthday='1995-8-6', profile_id='harold.suddaby.1', active_area='North American')
-
-    AccountOpt.save_account(account='estevanlkz5rw0@outlook.com',
-                            password='QyjMNAhCGq', owner=2, category=1,
-                            email='estevanlkz5rw0@outlook.com', email_pwd='dD2EV7ptSk',
-                            gender=1, birthday='1996-11-27', profile_id='jervis.prockter.7', active_area='Japan')
-
-    AccountOpt.save_account(account='yorkeru997a@outlook.com',
-                            password='j9akBXwslF', owner=2, category=1,
-                            email='yorkeru997a@outlook.com', email_pwd='wSmEHMsg7C',
-                            gender=1, birthday='1966-6-23', profile_id='franklyn.dyneley.5',
-                            enable_tasks='1;2;4;6', active_area='China', active_browser=3, configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
-
-    AccountOpt.save_account(account='yorkeru997a@outlook.com',
-                            password='Ogec1eOAFA', owner=3, category=1,
-                            email='yorkeru997a@outlook.com', email_pwd='u3KLKTXye',
-                            gender=0, birthday='1986-5-21', profile_id='alana.williamson.1401',
-                            name='Alana Williamson', register_time='2017-9-2', active_area='Spanish',
-                            active_browser=1, configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
+    produce_account()
+    # AccountOpt.save_account(account='codynr4nzxh@outlook.com',
+    #                         password='qVhgldHmgp', owner=1, category=1,
+    #                         email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
+    #                         gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='verifying')
+    # AccountOpt.save_account(account='eddykkqf56@outlook.com',
+    #                         password='nYGcEXNjGY', owner=1, category=1,
+    #                         email='eddykkqf56@outlook.com', email_pwd='M4c5gs3SEx',
+    #                         gender=1, birthday='1974-6-8', profile_id='wheeler.degale.9', status='invalid')
+    # AccountOpt.save_account(account='deckor31g90@outlook.com',
+    #                         password='mYIiw539Ke', owner=2, category=1,
+    #                         email='deckor31g90@outlook.com', email_pwd='GsMNVhEqHu',
+    #                         gender=1, birthday='1995-8-6', profile_id='harold.suddaby.1', active_area='North American')
+    #
+    # AccountOpt.save_account(account='estevanlkz5rw0@outlook.com',
+    #                         password='QyjMNAhCGq', owner=2, category=1,
+    #                         email='estevanlkz5rw0@outlook.com', email_pwd='dD2EV7ptSk',
+    #                         gender=1, birthday='1996-11-27', profile_id='jervis.prockter.7', active_area='Japan')
+    #
+    # AccountOpt.save_account(account='yorkeru997a@outlook.com',
+    #                         password='j9akBXwslF', owner=2, category=1,
+    #                         email='yorkeru997a@outlook.com', email_pwd='wSmEHMsg7C',
+    #                         gender=1, birthday='1966-6-23', profile_id='franklyn.dyneley.5',
+    #                         enable_tasks='1;2;4;6', active_area='China', active_browser=3, configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
+    #
+    # AccountOpt.save_account(account='yorkeru997a@outlook.com',
+    #                         password='Ogec1eOAFA', owner=3, category=1,
+    #                         email='yorkeru997a@outlook.com', email_pwd='u3KLKTXye',
+    #                         gender=0, birthday='1986-5-21', profile_id='alana.williamson.1401',
+    #                         name='Alana Williamson', register_time='2017-9-2', active_area='Spanish',
+    #                         active_browser=1, configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
 
     # 创建任务
     TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3, 5], name=u'养个号', limit_counts=10)
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 2], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=20)
-    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=100)
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=10)
-    TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[1], name=u'thumb', limit_counts=102)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 6, 2], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=20)
+    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1, 8], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=100)
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4, 7], name=u'养个号11', limit_counts=10)
+    TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[6], name=u'thumb', limit_counts=102)
 
     TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[1, 2, 3], name=u'养个号', limit_counts=100)
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 1], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=30)
+    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 5], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=30)
     TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[4, 5, 1, 3], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=10)
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 4], name=u'养个号11', limit_counts=40)
-    TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4], name=u'thumb', limit_counts=5)
+    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 7, 4], name=u'养个号11', limit_counts=40)
+    TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4, 9], name=u'thumb', limit_counts=5)
 
 
 
@@ -722,11 +723,11 @@ def test_db():
 
 def produce_account():
     # 添加账号
-    for i in range(10001, 20000):
-        AccountOpt.save_account(account='codynr4nzxh@outlook.com',
-                            password='qVhgldHmgp', owner=1, category=1,
-                            email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
-                            gender=1, birthday='1986-8-4', profile_id='bank.charles.3', status='valid', active_browser=(i%6+1), configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
+    for i in range(1, 10):
+        AccountOpt.save_account(account='abc',
+                            password='def', owner=3, category=1,
+                            email='a@b.com', email_pwd='ddd',
+                            gender=1, birthday='1986-8-4', profile_id='', status='valid', active_browser=(i%6+1), configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
 
 
 def produce_tasks():
@@ -754,14 +755,19 @@ def test12(*names):
     print(names)
 
 if __name__ == '__main__':
-    # init_db_data()
+    init_db_data()
     # show_test_data()
     # test_db()
     # produce_account()
     print(11)
-    produce_tasks()
-    test11(*[1,2,3])
+    # produce_tasks()
     # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
+
+    ALTER_SQL = '''
+    ALTER TABLE `user` ADD COLUMN `auth_id` INT NOT NULL;
+    ALTER TABLE `user` ADD UNIQUE KEY `auth_id` (`auth_id`);
+    ALTER TABLE `user` ADD CONSTRAINT `user_auth_id_3666ad92_fk_auth_user_id` FOREIGN KEY (`auth_id`) REFERENCES `auth_user` (`id`);
+    '''
 
  # pipenv run python web_service/initialization/users/new_user.py
 

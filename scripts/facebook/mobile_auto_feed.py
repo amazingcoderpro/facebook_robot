@@ -58,7 +58,7 @@ def auto_login(driver, account, password):
     # driver.delete_all_cookies()
     driver.get('https://www.facebook.com/')
     time.sleep(3)
-    logger.info('script runing:{},{}'.format(account, password))
+    logger.info('auto_login:{},{}'.format(account, password))
     try:
         # FB登录
         email_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
@@ -98,12 +98,13 @@ def auto_login(driver, account, password):
     except Exception as e:
         logger.exception('auto_login exception, e={}'.format(e))
         fb_exp = FacebookException(driver)
-        return fb_exp.auto_process(2)
+        return fb_exp.auto_process(4)
 
 
 def browse_page_js(driver):
     # 浏览页面js
     try:
+        logger.info('browse_page_js start.')
         time.sleep(5)
         driver.execute_script("window.scrollTo(0,600)")
         time.sleep(4)
@@ -115,6 +116,7 @@ def browse_page_js(driver):
         time.sleep(3)
         return True
     except Exception as e:
+        logger.exception('browse_page_js exception.')
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -122,6 +124,7 @@ def browse_page_js(driver):
 def user_messages(driver):
     # 查看FB最新动态
     try:
+        logger.info('user_messages start.')
         time.sleep(3)
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
         user_news.click()
@@ -131,6 +134,7 @@ def user_messages(driver):
         logger.info("View the latest news success driver={}".format(driver.name))
         return True, 0
     except:
+        logger.exception('user_messages exception.')
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -138,7 +142,7 @@ def user_messages(driver):
 def local_surface(driver):
     # 浏览本地新闻
     try:
-        time.sleep(3)
+        logger.info('local_surface start.')
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
         user_news.click()
         browse_page_js()
@@ -147,6 +151,7 @@ def local_surface(driver):
         logger.info("View the local news success driver={}".format(driver.name))
         return True, 0
     except:
+        logger.exception('local_surface catch exception.')
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -210,6 +215,11 @@ def user_home(driver):
 if __name__ == '__main__':
     driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
     auto_login(driver, 'philissp8a@hotmail.com', 'jv3sh8gq0Oi')
+    user_messages(driver)
+    local_surface(driver)
+    time.sleep(100)
+    driver.quit()
+
 
 
 

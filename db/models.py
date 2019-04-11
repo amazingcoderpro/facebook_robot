@@ -5,7 +5,7 @@
 
 
 from sqlalchemy import (
-    Column, Integer, String, DateTime, Table, ForeignKey, TIMESTAMP)
+    Column, Integer, String, DateTime, Table, ForeignKey)
 from sqlalchemy.orm import relationship
 from db.basic import Base, engine
 
@@ -304,6 +304,7 @@ class FingerPrint(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), default='', server_default='')
     value = Column(String(2048), default='', server_default='')
+
 
 
 if __name__ == '__main__':
