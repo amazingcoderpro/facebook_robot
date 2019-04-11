@@ -306,7 +306,7 @@ def update_results():
     # 将落盘成功的数据从缓存区清掉
     if not is_exception:
         if updated_jobs_num > 0:
-            RedisOpt.delete_backend_more(*del_keys)
+            # RedisOpt.delete_backend_more(*del_keys)
             last_num = RedisOpt.read_object('total_updated_jobs_num')
             last_succeed_num = RedisOpt.read_object('succeed_jobs_num')
             last_failed_num = RedisOpt.read_object('failed_jobs_num')

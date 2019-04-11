@@ -15,7 +15,7 @@ with open(config_path, encoding='utf-8') as f:
     content = f.read()
 
 cfg = load(content, Loader=FullLoader)
-log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.ERROR)
+log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO)
 logger = logging.getLogger()
 
 

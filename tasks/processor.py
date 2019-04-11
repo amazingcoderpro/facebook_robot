@@ -158,7 +158,7 @@ def send_task_2_worker(task_id):
                 routing_key=agent_queue_name
             )
 
-            logger.debug('-----send sub task to worker, celery task name={}, queue={}, '
+            logger.info('-----send sub task to worker, celery task name={}, queue={}, '
                         'task id={}, account id={}, track id={}'.format(celery_task_name, agent_queue_name, task_id, acc_id, track.id))
 
             job = Job()
