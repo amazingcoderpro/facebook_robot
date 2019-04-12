@@ -231,7 +231,7 @@ class FacebookException(BaseException):
                 elif k == 'gender':
                     gender = v
 
-            photo_path = self.get_photo(account)
+            photo_path = self.get_photo(account, gender)
 
 
         except:
