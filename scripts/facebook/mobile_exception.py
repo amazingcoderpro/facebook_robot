@@ -24,6 +24,7 @@ class FacebookException(BaseException):
     6：上次登录机器&好友识别身份验证
     7：手机短信验证
     8：上传图象验证
+    9：完成几步的验证
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -35,7 +36,8 @@ class FacebookException(BaseException):
         5: {'name': 'account_invalid', 'key_words': ['div[class^="mvm uiP fsm"]'], 'account_status': 'invalid'},
         6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying'},
         7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying'},
-        8: {'name': 'photo_verify', 'key_words': ['button[data-store^="{"nativeClick":true}"]'], 'account_status': 'verifying'}
+        8: {'name': 'photo_verify', 'key_words': ['button[data-store^="{"nativeClick":true}"]'], 'account_status': 'verifying'},
+        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying'},
     }
 
     def __init__(self, driver: WebDriver):
@@ -217,6 +219,16 @@ class FacebookException(BaseException):
         except:
             return False, 8
         return False, 8
+
+    def process_step_verify(self):
+        try:
+            logger.info("处理完成步骤验证")
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_word'])))
+        except:
+            return False, 9
+        return False, 9
+
 
 
 

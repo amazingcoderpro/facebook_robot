@@ -214,7 +214,7 @@ def user_home(driver):
 
 if __name__ == '__main__':
     driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-    auto_login(driver, 'philissp8a@hotmail.com', 'jv3sh8gq0Oi')
+    auto_login(driver, 'leoniadaulv5@hotmail.com', 'zv9scJ8e4')
     user_messages(driver)
     local_surface(driver)
     time.sleep(100)
