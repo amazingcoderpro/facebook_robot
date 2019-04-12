@@ -90,6 +90,7 @@ def fb_auto_feed(self, inputs):
     logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))
     try:
         driver = None
+        last_login = None
         account_info = inputs.get('account', None)
         if not isinstance(account_info, dict):
             logger.error('inputs not valid.')
@@ -121,6 +122,8 @@ def fb_auto_feed(self, inputs):
             logger.error(msg)
             return make_result(err_code=err_code, err_msg=err_msg)
 
+        last_login = datetime.datetime.now()
+
         logger.info('login succeed.')
         random_num = random.randint(0, 100)
         if random_num/2 == 0 or random_num / 3 == 0:
@@ -147,7 +150,7 @@ def fb_auto_feed(self, inputs):
     finally:
         if driver:
             driver.quit()
-    return make_result(True, last_login=datetime.datetime.now())
+    return make_result(True, last_login=last_login)
 
 
 @app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)
