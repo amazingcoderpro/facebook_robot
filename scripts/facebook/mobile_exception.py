@@ -31,7 +31,7 @@ class FacebookException(BaseException):
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
         0: {'name': 'home', 'key_words': ['div[id="MComposer"]']},
-        1: {'name': 'remember_password', 'key_words': ['a[href^="/login/save-device/cancel/?"]']},
+        1: {'name': 'remember_password', 'key_words': ['a[href^="/login/save-device/cancel/?"]', 'button[type="submit"]']},
         2: {'name': 'save_phone_number', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         3: {'name': 'upload_photo', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         4: {'name': 'download_app', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
@@ -138,7 +138,7 @@ class FacebookException(BaseException):
         try:
             logger.info("处理理忽略保存账号密码")
             no_password = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_words'][0])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_words'][1])))
             no_password.click()
         except Exception as e:
             logger.exception("处理理忽略保存账号密码失败, e={}".format(e))

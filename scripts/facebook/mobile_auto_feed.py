@@ -128,9 +128,9 @@ def user_messages(driver):
         time.sleep(3)
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
         user_news.click()
-        browse_page_js()
+        browse_page_js(driver)
         driver.find_element_by_css_selector('span[data-sigil="most_recent_bookmark"]').click()
-        browse_page_js()
+        browse_page_js(driver)
         logger.info("View the latest news success driver={}".format(driver.name))
         return True, 0
     except:
@@ -145,9 +145,9 @@ def local_surface(driver):
         logger.info('local_surface start.')
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
         user_news.click()
-        browse_page_js()
+        browse_page_js(driver)
         driver.get("https://m.facebook.com/local_surface/?query_type=HOME&ref=bookmarks")
-        browse_page_js()
+        browse_page_js(driver)
         logger.info("View the local news success driver={}".format(driver.name))
         return True, 0
     except:
