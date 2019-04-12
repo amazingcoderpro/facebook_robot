@@ -90,6 +90,7 @@ def fb_auto_feed(self, inputs):
     logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))
     try:
         driver = None
+        last_login = None
         account_info = inputs.get('account', None)
         if not isinstance(account_info, dict):
             logger.error('inputs not valid.')
@@ -115,13 +116,15 @@ def fb_auto_feed(self, inputs):
             logger.error(msg)
             return make_result(err_msg=err_msg)
 
-        ret, err_code = fb.auto_login(driver=driver, account=account, password=password)
+        ret, err_code = fb.auto_login(driver=driver, account=account, password=password, gender=account_info.get('gender', 1))
         if not ret:
-            msg = 'login failed, account={}, err_code={}'.format(account, err_code)
+            msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)
             return make_result(err_code=err_code, err_msg=err_msg)
 
-        logger.info('login succeed.')
+        last_login = datetime.datetime.now()
+
+        logger.info('login succeed. account={}, password={}'.format(account, password))
         random_num = random.randint(0, 100)
         if random_num/2 == 0 or random_num / 3 == 0:
             ret, err_code = fb.user_messages(driver=driver)
@@ -147,7 +150,7 @@ def fb_auto_feed(self, inputs):
     finally:
         if driver:
             driver.quit()
-    return make_result(True, last_login=datetime.datetime.now())
+    return make_result(True, last_login=last_login)
 
 
 @app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)

@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
 
+import os
+import shutil
 import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from config import logger
+from config import logger, get_account_args
 
 
 class FacebookException(BaseException):
@@ -44,7 +46,7 @@ class FacebookException(BaseException):
         self.driver = driver
         self.exception_type = -1
 
-    def auto_process(self, retry=1, wait=2):
+    def auto_process(self, retry=1, wait=2, **kwargs):
         """
         自动处理异常，根据异常类型对症处理，
         :param retry: 重试次数
@@ -64,7 +66,7 @@ class FacebookException(BaseException):
 
             processor = 'process_{}'.format(self.MAP_EXP_PROCESSOR.get(exception_type, {}).get('name', ''))
             if hasattr(self, processor):
-                ret, status = getattr(self, processor)()
+                ret, status = getattr(self, processor)(**kwargs)
             else:
                 logger.error('auto_process can not find processor. processor={}'.format(processor))
                 ret, status = False, -1
@@ -131,105 +133,164 @@ class FacebookException(BaseException):
         else:
             return False
 
-    def process_remember_password(self):
+    def process_remember_password(self, **kwargs):
         # 记住账号密码
         try:
             logger.info("处理理忽略保存账号密码")
             no_password = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_words'][0])))
             no_password.click()
-            logger.info("处理理忽略保存账号密码成功")
-        except:
+        except Exception as e:
+            logger.exception("处理理忽略保存账号密码失败, e={}".format(e))
             return False, 1
+
+        logger.info("处理理忽略保存账号密码成功")
         return True, 1
 
-    def process_save_phone_number(self):
+    def process_save_phone_number(self, **kwargs):
         # 忽略电话号码
         try:
             logger.info("忽略输入电话号码")
             tel_number = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(2)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(2)['key_words'][0])))
             tel_number.click()
             logger.info("忽略输入电话号码成功")
-        except:
+        except Exception as e:
+            logger.exception("忽略输入电话号码失败, e={}".format(e))
             return False, 2
         return True, 2
 
-    def process_upload_photo(self):
+    def process_upload_photo(self, **kwargs):
         # 忽略上传头像
         try:
             logger.info('忽略上传图像')
             tel_number = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(3)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(3)['key_words'][0])))
             tel_number.click()
             logger.info('忽略上传图像成功')
-        except:
+        except Exception as e:
+            logger.info('忽略上传图像失败， e={}'.format(e))
             return False, 3
         return True, 3
 
-    def process_download_app(self):
+    def process_download_app(self, **kwargs):
         # 下载APP
         time.sleep(3)
         try:
             logger.info('忽略下载app')
             never_save_number = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(4)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(4)['key_words'][0])))
             never_save_number.click()
         except:
             return False, 4
         return True, 4
 
-    def process_account_invalid(self):
+    def process_account_invalid(self, **kwargs):
         # 过度页面点击
         try:
             logger.info('账号被封杀')
             never_save_number = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(5)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(5)['key_words'][0])))
             never_save_number.click()
         except:
             return False, 5
         return False, 5
 
-    def process_ask_question(self):
+    def process_ask_question(self, **kwargs):
         # 身份验证
         try:
             logger.info('处理身份验证问题')
             WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_words'][0])))
         except:
             return False, 6
         return False, 6
 
-    def process_phone_sms_verify(self):
+    def process_phone_sms_verify(self, **kwargs):
         # 手机短信验证码验证
         try:
             logger.info("处理手机短信验证")
             WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_words'][0])))
         except:
             return False, 7
         return False, 7
 
-    def process_photo_verify(self):
+    def process_photo_verify(self, **kwargs):
         # 上传图片验证
         try:
             logger.info("处理上传图片验证的异常")
             WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_words'][0])))
+
+            account = ''
+            gender=1
+            for k, v in kwargs.items():
+                if k == 'account':
+                    account = v
+                elif k == 'gender':
+                    gender = v
+
+            photo_path = self.get_photo(account)
+
+
         except:
             return False, 8
         return False, 8
 
-    def process_step_verify(self):
+    def process_step_verify(self, **kwargs):
         try:
             logger.info("处理完成步骤验证")
             WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_word'])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0])))
         except:
             return False, 9
         return False, 9
 
+    def download_photo(self, account, gender):
+        logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
+        remote_photo_path = get_account_args()['remote_photo_path']
+        local_photo_path = get_account_args()['local_photo_path']
+        save_path = os.path.join(local_photo_path, "{}.jpg".format(account))
+        # 下载保存到本地
+        # do something
+
+        # 测试阶段直接从本地拿图片, 根据性别请求一张图片
+        if gender == 0:
+            random_photo_dir = os.path.join(local_photo_path, 'female')
+        else:
+            random_photo_dir = os.path.join(local_photo_path, 'male')
+
+        photos = os.listdir(random_photo_dir)
+        for photo in photos:
+            if len(photo) <= 7:
+                random_photo_name = os.path.join(random_photo_dir, photo)
+                shutil.move(random_photo_name, save_path)
+                break
+        else:
+            save_path = ''
+
+        logger.info('download photo from server, account={}, gender={}, save_path={}'.format(account, gender, save_path))
+        return save_path
+
+    def get_photo(self, account, gender):
+        try:
+            local_photo_path = get_account_args()['local_photo_path']
+
+            # 先在本地找
+            local_photo_name = os.path.join(local_photo_path, "{}.jpg".format(account))
+            if os.path.exists(local_photo_name):
+                logger.info('get photo from local path={}'.format(local_photo_name))
+                return local_photo_name
+            else:
+                # 如果本地没有，则去下载
+                return self.download_photo(account, gender)
+        except Exception as e:
+            logger.error('get photo failed. account={}, e={}'.format(account, e))
+            return ''
 
 
-
-
+if __name__ == '__main__':
+    fbe = FacebookException(None)
+    photo = fbe.get_photo('abc@com', 1)
+    print(photo)

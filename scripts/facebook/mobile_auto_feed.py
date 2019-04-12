@@ -50,7 +50,7 @@ def start_chrome(finger_print, headless=True):
         return None, str(e)
 
 
-def auto_login(driver, account, password):
+def auto_login(driver, account, password, gender=1):
     """
     : 登录FB平台校验
     """
@@ -98,7 +98,7 @@ def auto_login(driver, account, password):
     except Exception as e:
         logger.exception('auto_login exception, e={}'.format(e))
         fb_exp = FacebookException(driver)
-        return fb_exp.auto_process(4)
+        return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
 def browse_page_js(driver):
@@ -151,7 +151,7 @@ def local_surface(driver):
         logger.info("View the local news success driver={}".format(driver.name))
         return True, 0
     except:
-        logger.exception('local_surface catch exception.')
+        logger.exception('local_surface catch exception. start process..')
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
