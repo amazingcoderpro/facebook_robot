@@ -10,7 +10,7 @@ import subprocess
 import re
 from celery import Task
 from .workers import app
-from config import logger, get_account_args
+from config import logger, get_account_args, get_fb_friend_keys
 import scripts.facebook as fb
 
 
@@ -144,6 +144,14 @@ def fb_auto_feed(self, inputs):
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
                 return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
+        time.sleep(random_num % 5)
+        if random_num % 2 == 0:
+            fks = get_fb_friend_keys(random_num % 3+1)
+            ret, err_code = fb.add_friends(driver, search_keys=fks, limit=random_num % 2+1)
+            if not ret:
+                err_msg = 'add_friends failed, err_code={}'.format(err_code)
+                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
+
         time.sleep(60)
         logger.info('task fb_auto_feed succeed. account={}'.format(account))
     except Exception as e:
@@ -170,12 +178,13 @@ def switch_vps_ip(self, inputs):
         pppoe_restart.wait()
         pppoe_log = pppoe_restart.communicate()[0]
         adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
-        logger.info('[*] New ip address : ' + adsl_ip)
+        logger.info('switch_vps_ip succeed. New ip address : {}'.format(adsl_ip))
     except Exception as e:
         err_msg = 'switch_vps_ip catch exception={}'.format(str(e))
         logger.error(err_msg)
         return make_result(err_msg=err_msg)
 
+    logger.info('')
     return make_result(ret=True)
 
 

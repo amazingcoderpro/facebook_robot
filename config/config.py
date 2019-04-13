@@ -6,6 +6,8 @@
 
 import os
 import logging
+import json
+import random
 from yaml import load, FullLoader
 from log_config import log_config
 
@@ -13,6 +15,11 @@ from log_config import log_config
 config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
 with open(config_path, encoding='utf-8') as f:
     content = f.read()
+
+facebook_json = os.path.join(os.path.dirname(__file__), 'facebook.json')
+with open(facebook_json, encoding='utf-8') as f:
+    fb_json = f.read()
+facebook_cfg = json.loads(fb_json)
 
 cfg = load(content, Loader=FullLoader)
 log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO)
@@ -47,3 +54,20 @@ def get_db_args():
 
 def get_account_args():
     return cfg.get('account')
+
+
+def get_fb_friend_keys(limit=0):
+    fks = facebook_cfg.get('friend_search_keys')
+    if limit <= 0:
+        return fks
+    else:
+        return random.sample(fks, limit)
+
+
+
+def get_fb_posts():
+    facebook_cfg.get('posts')
+
+
+def get_fb_chat_msgs():
+    facebook_cfg.get('chat_msgs')
