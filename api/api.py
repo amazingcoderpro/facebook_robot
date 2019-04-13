@@ -197,9 +197,9 @@ def update_agent_status():
             agent_id = agent[0]
             running_jobs_num = db_session.query(Job).filter(Job.agent == agent_id, Job.status == 'running').count()
             db_session.query(Agent).filter(Agent.id == agent_id).update({Agent.status: running_jobs_num}, synchronize_session=False)
-            logger.info('update_agent_status Agent id={},  status={}'.format(agent_id, running_jobs_num))
+            logger.info('update_agent_status Agent id={}, status={}'.format(agent_id, running_jobs_num))
     except Exception as e:
-        logger.exception('update_agent_status catch exception agent id={}, e={}'.format(agent_id, e))
+        logger.exception('update_agent_status catch exception agent e={}'.format(e))
         db_session.rollback()
     finally:
         ScopedSession.remove()
