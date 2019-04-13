@@ -6,7 +6,7 @@ import os
 import shutil
 import time
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -28,6 +28,7 @@ class FacebookException(BaseException):
     7：手机短信验证
     8：上传图象验证
     9：完成几步的验证
+    10：登录邮箱数字验证码验证
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -41,6 +42,7 @@ class FacebookException(BaseException):
         7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying'},
         8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying'},
         9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying'},
+        10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]']},
     }
 
     def __init__(self, driver: WebDriver):
@@ -213,6 +215,21 @@ class FacebookException(BaseException):
             logger.info("处理手机短信验证")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_words'][0])))
+            # 操作下拉列表
+            s1 = Select(self.driver.find_element_by_name('p_pc'))
+            s1.select_by_value('CN')
+            # 输入电话号码
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="tel"]'))).send_keys('18000000000')
+            # 点击继续
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]'))).click()
+            email_code = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'input[autocorrect="off"]')))
+            if email_code:
+                logger.info("The mailbox verification code has been sent successfully")
+                email_code.send_keys('456895')
+                pass
         except:
             return False, 7
         return False, 7
@@ -252,6 +269,15 @@ class FacebookException(BaseException):
             logger.info("处理完成步骤验证")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0]))).click()
+        except:
+            return False, 9
+        return False, 9
+
+    def process_email_verify(self, **kwargs):
+        try:
+            logger.info("登录邮箱数字验证码验证")
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(10)['key_words'][0]))).click()
         except:
             return False, 9
         return False, 9

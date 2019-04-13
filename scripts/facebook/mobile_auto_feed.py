@@ -290,6 +290,20 @@ def post_status(driver):
         pass
 
 if __name__ == '__main__':
+    filename = 'E:/accont_info.txt'
+    with open(filename, 'r') as line:
+        all_readline = line.readlines()
+        for date in all_readline:
+            str_info = date.split()
+            user_account = str(str_info[0])
+            user_password = str(str_info[1])
+            driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
+            auto_login(driver, user_account, user_password)
+            user_messages(driver)
+            local_surface(driver)
+            time.sleep(6)
+            driver.quit()
+
     driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
     auto_login(driver, 'michele53s@hotmail.com', 'v578jnd0jN1')
     # user_messages(driver)
