@@ -260,7 +260,7 @@ class FacebookException(BaseException):
             # 重新检查页面
             photo_but = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
-            if not photo_but:
+            if photo_but:
                 logger.info("image uploaded successfully!")
                 account_photo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(photo_path))), "{}.jpg".format(account))
                 shutil.move(photo_path, account_photo_path)

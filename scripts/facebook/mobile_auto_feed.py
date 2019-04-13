@@ -104,13 +104,13 @@ def auto_login(driver, account, password, gender=1):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
-def browse_page(driver, browse_times=10, distance=0, interval=3):
+def browse_page(driver, browse_times=10, distance=0, interval=0):
     """
     浏览页面
     :param driver: 浏览器驱动
     :param browse_times: 浏览次数
     :param distance: 每次间隔距离，默认为零，代表使用随机距离
-    :param interval: 间隔时间， 单位秒
+    :param interval: 间隔时间， 单位秒, 默认为零，代表使用随机停顿时间
     :return:
     """
     # 浏览页面js
@@ -124,7 +124,10 @@ def browse_page(driver, browse_times=10, distance=0, interval=3):
                 y_dis += random.randint(50, 500)
 
             driver.execute_script("window.scrollTo(0,{})".format(y_dis))
-            time.sleep(interval)
+            if interval <= 0:
+                time.sleep(random.randint(2, 10))
+            else:
+                time.sleep(interval)
 
         driver.execute_script("window.scrollTo(1800,0)")
         return True
@@ -164,7 +167,7 @@ def local_surface(driver):
         logger.info("View the local news success driver={}".format(driver.name))
         return True, 0
     except:
-        logger.exception('local_surface catch exception. start process..')
+        logger.error('local_surface catch exception. start process..')
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -237,7 +240,7 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
         driver.get('https://m.facebook.com')
         return True, 0
     except Exception as e:
-        logger.exception('add friends failed, page url={}, e={}'.format(page_url, e))
+        logger.error('add friends failed, page url={}, e={}'.format(page_url, e))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -299,7 +302,9 @@ if __name__ == '__main__':
             user_account = str(str_info[0])
             user_password = str(str_info[1])
             driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-            auto_login(driver, user_account, user_password)
+            res, statu = auto_login(driver, user_account, user_password)
+            if not res:
+                continue
             user_messages(driver)
             local_surface(driver)
             time.sleep(6)
