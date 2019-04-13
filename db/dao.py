@@ -766,6 +766,30 @@ def test12(*names):
     print(names)
 
 
+def generate_fb_json():
+    with open('name.txt', 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        names = []
+        limit = 0
+        for line in lines:
+            if limit >=1000:
+                break
+            name = line.strip()
+            names.append(name)
+            limit+=1
+    dict_cfg = {"friend_search_keys": names,
+                "chat_msgs": [],
+                "posts": []
+                }
+
+    import json
+    str_cfg = json.dumps(dict_cfg)
+    with open('facebook.json', 'w', encoding='utf-8') as f:
+        f.write(str_cfg)
+
+
+
+
 if __name__ == '__main__':
     # init_db_data()
     # show_test_data()
@@ -773,6 +797,7 @@ if __name__ == '__main__':
     produce_account()
     # print(11)
     # produce_tasks()
+    generate_fb_json()
     # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
     ALTER_SQL = '''

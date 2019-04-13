@@ -10,7 +10,7 @@ import subprocess
 import re
 from celery import Task
 from .workers import app
-from config import logger, get_account_args
+from config import logger, get_account_args, get_fb_friend_keys
 import scripts.facebook as fb
 
 
@@ -55,7 +55,7 @@ class BaseTask(Task):
 
 
 def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None, last_farming=None,
-                last_comment=None, last_edit=None, phone_number='', profile_path=''):
+                last_comment=None, last_edit=None, last_verify=None, phone_number='', profile_path='', **kwargs):
     task_result = {
         'status': 'failed',  # 'failed', 'succeed'
         'err_msg': '',
@@ -78,9 +78,13 @@ def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=N
         'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime.datetime) else '',
         'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime.datetime) else '',
         'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime.datetime) else '',
+        'last_verify': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime.datetime) else '',
         'phone_number': phone_number,
         'profile_path': profile_path,
     }
+
+    for k, v in kwargs.items():
+        task_result['account_configure'][k] = v
 
     return task_result
 
@@ -120,7 +124,7 @@ def fb_auto_feed(self, inputs):
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)
-            return make_result(err_code=err_code, err_msg=err_msg)
+            return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         last_login = datetime.datetime.now()
 
@@ -131,14 +135,22 @@ def fb_auto_feed(self, inputs):
             if not ret:
                 msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
                 logger.error(msg)
-                return make_result(err_code=err_code, err_msg=err_msg)
+                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         time.sleep(random_num % 5)
         if random_num / 2 != 0 or random_num / 3 == 0:
             ret, err_code = fb.local_surface(driver=driver)
             if not ret:
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
-                return make_result(err_code=err_code, err_msg=err_msg)
+                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
+
+        time.sleep(random_num % 5)
+        if random_num % 2 == 0:
+            fks = get_fb_friend_keys(random_num % 3+1)
+            ret, err_code = fb.add_friends(driver, search_keys=fks, limit=random_num % 2+1)
+            if not ret:
+                err_msg = 'add_friends failed, err_code={}'.format(err_code)
+                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         time.sleep(60)
         logger.info('task fb_auto_feed succeed. account={}'.format(account))
@@ -166,12 +178,13 @@ def switch_vps_ip(self, inputs):
         pppoe_restart.wait()
         pppoe_log = pppoe_restart.communicate()[0]
         adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
-        logger.info('[*] New ip address : ' + adsl_ip)
+        logger.info('switch_vps_ip succeed. New ip address : {}'.format(adsl_ip))
     except Exception as e:
         err_msg = 'switch_vps_ip catch exception={}'.format(str(e))
         logger.error(err_msg)
         return make_result(err_msg=err_msg)
 
+    logger.info('')
     return make_result(ret=True)
 
 
