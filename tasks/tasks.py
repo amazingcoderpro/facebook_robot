@@ -55,7 +55,7 @@ class BaseTask(Task):
 
 
 def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None, last_farming=None,
-                last_comment=None, last_edit=None, phone_number='', profile_path=''):
+                last_comment=None, last_edit=None, last_verify=None, phone_number='', profile_path='', **kwargs):
     task_result = {
         'status': 'failed',  # 'failed', 'succeed'
         'err_msg': '',
@@ -78,9 +78,13 @@ def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=N
         'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime.datetime) else '',
         'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime.datetime) else '',
         'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime.datetime) else '',
+        'last_verify': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime.datetime) else '',
         'phone_number': phone_number,
         'profile_path': profile_path,
     }
+
+    for k, v in kwargs.items():
+        task_result['account_configure'][k] = v
 
     return task_result
 
@@ -120,7 +124,7 @@ def fb_auto_feed(self, inputs):
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)
-            return make_result(err_code=err_code, err_msg=err_msg)
+            return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         last_login = datetime.datetime.now()
 
@@ -131,14 +135,14 @@ def fb_auto_feed(self, inputs):
             if not ret:
                 msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
                 logger.error(msg)
-                return make_result(err_code=err_code, err_msg=err_msg)
+                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         time.sleep(random_num % 5)
         if random_num / 2 != 0 or random_num / 3 == 0:
             ret, err_code = fb.local_surface(driver=driver)
             if not ret:
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
-                return make_result(err_code=err_code, err_msg=err_msg)
+                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         time.sleep(60)
         logger.info('task fb_auto_feed succeed. account={}'.format(account))

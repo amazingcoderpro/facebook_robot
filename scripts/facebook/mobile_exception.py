@@ -39,12 +39,12 @@ class FacebookException(BaseException):
         3: {'name': 'upload_photo', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         4: {'name': 'download_app', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         5: {'name': 'account_invalid', 'key_words': ['div[class^="mvm uiP fsm"]'], 'account_status': 'invalid'},
-        6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying'},
+        6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_ask'},
         7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying'},
-        8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying'},
-        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying'},
-        10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]']},
-        11: {'name': 'sms_verify', 'key_words': ['input[placeholder="######"]']},
+        8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying_photo'},
+        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying_step'},
+        10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email'},
+        11: {'name': 'sms_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_sms'},
     }
 
     def __init__(self, driver: WebDriver):
