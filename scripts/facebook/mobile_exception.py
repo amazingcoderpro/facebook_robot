@@ -6,6 +6,7 @@ import os
 import shutil
 import time
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -22,7 +23,7 @@ class FacebookException(BaseException):
     2：是否输入电话号码提示
     3：是否上传头像提示,
     4：是否下载app提示
-    5：账号被禁用的提示
+    5：账号被停用提示
     6：上次登录机器&好友识别身份验证
     7：手机短信验证
     8：上传图象验证
@@ -38,7 +39,7 @@ class FacebookException(BaseException):
         5: {'name': 'account_invalid', 'key_words': ['div[class^="mvm uiP fsm"]'], 'account_status': 'invalid'},
         6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying'},
         7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying'},
-        8: {'name': 'photo_verify', 'key_words': ['button[data-store^="{"nativeClick":true}"]'], 'account_status': 'verifying'},
+        8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying'},
         9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying'},
     }
 
@@ -220,20 +221,28 @@ class FacebookException(BaseException):
         # 上传图片验证
         try:
             logger.info("处理上传图片验证的异常")
-            WebDriverWait(self.driver, 6).until(
+            photo_upload = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_words'][0])))
-
-            account = ''
-            gender=1
-            for k, v in kwargs.items():
-                if k == 'account':
-                    account = v
-                elif k == 'gender':
-                    gender = v
-
-            photo_path = self.get_photo(account, gender)
-
-
+            # account = ''
+            # gender=1
+            # for k, v in kwargs.items():
+            #     if k == 'account':
+            #         account = v
+            #     elif k == 'gender':
+            #         gender = v
+            # photo_path = self.get_photo(account, gender)
+            photo_path = 'E:\\IMG_3563.JPG'
+            # 上传图片
+            photo_upload.send_keys(photo_path)
+            # 点击继续
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]'))).click()
+            # 重新检查页面
+            photo_but = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
+            if not photo_but:
+                logger.info("image uploaded successfully!")
+                return True, 8
         except:
             return False, 8
         return False, 8
@@ -242,7 +251,7 @@ class FacebookException(BaseException):
         try:
             logger.info("处理完成步骤验证")
             WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0])))
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0]))).click()
         except:
             return False, 9
         return False, 9
@@ -268,7 +277,9 @@ class FacebookException(BaseException):
                 shutil.move(random_photo_name, save_path)
                 break
         else:
-            save_path = ''
+            save_path = 'E:\IMG_3563.JPG'
+
+
 
         logger.info('download photo from server, account={}, gender={}, save_path={}'.format(account, gender, save_path))
         return save_path
