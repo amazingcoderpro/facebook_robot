@@ -5,6 +5,7 @@
 import time
 import random
 from selenium import webdriver
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,6 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from scripts.facebook.mobile_exception import FacebookException
 from config import logger
+from scripts.utils import super_click
 
 
 def start_chrome(finger_print, headless=True):
@@ -167,23 +169,69 @@ def local_surface(driver):
         return fbexcept.auto_process(3)
 
 
-def add_friends(driver, friends):
+def add_friends(driver:WebDriver, search_keys, limit=2):
     #添加朋友
     try:
-        for friend in friends:
-            driver.get("https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend))
-            time.sleep(3)
+        limit = 1 if limit <= 0 else limit
+        logger.info('start add friends, friends={}, limit={}'.format(search_keys, limit))
+        for friend in search_keys:
+            page_url = "https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend)
+            driver.get(page_url)
 
-            # main-search-input
+            # # 判断是否进入了加好友页面
+            search_inputs = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "input[id='main-search-input'")))
 
-            add_search_fridens = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, '#u_1e_z > div > div')))
-            add_search_fridens.click()
-            add__fridens = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
-            add__fridens.click()
+            # 找到所有相关人员图像元素
+            new_friends_avatar = driver.find_elements_by_css_selector("img[src^='https://scontent'")
+            if not new_friends_avatar:
+                logger.warning('can not find any friend avatar. friend keyword={}'.format(friend))
+                continue
+
+            i = 1
+            add_friends_index = [0]
+            limit = limit if limit < len(new_friends_avatar) else len(new_friends_avatar)-1
+            while i < limit:
+                idx = random.randint(1, 1000) % len(new_friends_avatar)
+                if idx == 0:
+                    continue
+                add_friends_index.append(idx)
+                i += 1
+
+            for idx in add_friends_index:
+                if not new_friends_avatar or idx >= len(new_friends_avatar):
+                    continue
+
+                # 点击对应好友的图像，进入其profile页面
+                super_click(new_friends_avatar[idx], driver)
+                time.sleep(3)
+
+                if 'id=' not in driver.current_url:
+                    continue
+
+                profile_id = driver.current_url.split("id=")[1]
+                # 获取添加好友或者点赞的按钮
+                # add_btn = driver.find_element_by_css_selector("a[href^='/a/mobile/friends/'")
+                # add_btn_1 = driver.find_element_by_css_selector("a[href*='{}'".format(profile_id))
+                add_btn = driver.find_element_by_css_selector("div[data-store*='{}'".format(profile_id))
+                if not add_btn:
+                    add_btn = driver.find_element_by_css_selector("a[href^='https://static.xx'")
+                    if not add_btn:
+                        driver.back()
+                        continue
+
+                super_click(add_btn, driver)
+                logger.info('add friend succeed, key word={}, new friend id={}'.format(friend, profile_id))
+                time.sleep(2)
+                # 回到好友列表页面，继续添加好友
+                if driver.current_url != page_url:
+                    driver.back()
+                    time.sleep(3)
+                new_friends_avatar = driver.find_elements_by_css_selector("img[src^='https://scontent'")
+        driver.get('https://m.facebook.com')
         return True, 0
-    except:
+    except Exception as e:
+        logger.exception('add friends failed, page url={}, e={}'.format(page_url, e))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -240,7 +288,7 @@ if __name__ == '__main__':
     auto_login(driver, 'michele53s@hotmail.com', 'v578jnd0jN1')
     # user_messages(driver)
     # local_surface(driver)
-    add_friends(driver, ['lady gaga', 'kobe'])
+    add_friends(driver, ['wu charles'], limit=3)
     time.sleep(100)
     driver.quit()
 
