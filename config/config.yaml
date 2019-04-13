@@ -16,5 +16,5 @@ db:
 
 account:
     login_interval: 300         # 账号登录的最小间隔时间
-    local_photo_path: /facebook_auto/photos/    # 账号图象的本地存储位置
+    local_photo_path: resource/photos/    # 账号图象的本地存储位置
     remote_photo_path: ftp://xxx.xx.xx/ab/cc    # 账号图象的服务器存储位置

@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
 
-import os
+import os, sys
 import shutil
 import time
+import random
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.webdriver import WebDriver
@@ -285,7 +286,7 @@ class FacebookException(BaseException):
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
         remote_photo_path = get_account_args()['remote_photo_path']
-        local_photo_path = get_account_args()['local_photo_path']
+        local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
         save_path = os.path.join(local_photo_path, "{}.jpg".format(account))
         # 下载保存到本地
         # do something
@@ -297,22 +298,18 @@ class FacebookException(BaseException):
             random_photo_dir = os.path.join(local_photo_path, 'male')
 
         photos = os.listdir(random_photo_dir)
-        for photo in photos:
-            if len(photo) <= 7:
-                random_photo_name = os.path.join(random_photo_dir, photo)
-                shutil.move(random_photo_name, save_path)
-                break
-        else:
-            save_path = 'E:\IMG_3563.JPG'
+        rad_idx = random.randint(1, 10000) % len(photos)
+        random_photo_name = os.path.join(random_photo_dir, photos[rad_idx])
 
-
+        # 把照片从随机池中取到账号池中
+        shutil.move(random_photo_name, save_path)
 
         logger.info('download photo from server, account={}, gender={}, save_path={}'.format(account, gender, save_path))
         return save_path
 
     def get_photo(self, account, gender):
         try:
-            local_photo_path = get_account_args()['local_photo_path']
+            local_photo_path = local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
 
             # 先在本地找
             local_photo_name = os.path.join(local_photo_path, "{}.jpg".format(account))
