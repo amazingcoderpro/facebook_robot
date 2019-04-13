@@ -216,7 +216,7 @@ if __name__ == '__main__':
     driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
     auto_login(driver, 'michele53s@hotmail.com', 'v578jnd0jN1')
     user_messages(driver)
-    local_surface(driver)
+    # local_surface(driver)
     time.sleep(100)
     driver.quit()
 
