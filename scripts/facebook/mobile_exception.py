@@ -221,21 +221,21 @@ class FacebookException(BaseException):
             logger.info("处理手机短信验证")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_words'][0])))
-            # 操作下拉列表
-            s1 = Select(self.driver.find_element_by_name('p_pc'))
-            s1.select_by_value('CN')
-            # 输入电话号码
-            WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="tel"]'))).send_keys('18000000000')
-            # 点击继续
-            WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]'))).click()
-            email_code = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'input[autocorrect="off"]')))
-            if email_code:
-                logger.info("The mailbox verification code has been sent successfully")
-                email_code.send_keys('456895')
-                pass
+            # # 操作下拉列表
+            # s1 = Select(self.driver.find_element_by_name('p_pc'))
+            # s1.select_by_value('CN')
+            # # 输入电话号码
+            # WebDriverWait(self.driver, 6).until(
+            #     EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="tel"]'))).send_keys('18000000000')
+            # # 点击继续
+            # WebDriverWait(self.driver, 6).until(
+            #     EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]'))).click()
+            # email_code = WebDriverWait(self.driver, 6).until(
+            #     EC.presence_of_element_located((By.CSS_SELECTOR, 'input[autocorrect="off"]')))
+            # if email_code:
+            #     logger.info("The mailbox verification code has been sent successfully")
+            #     email_code.send_keys('456895')
+
         except:
             return False, 7
         return False, 7
