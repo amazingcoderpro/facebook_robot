@@ -170,7 +170,13 @@ def local_surface(driver):
 
 
 def add_friends(driver:WebDriver, search_keys, limit=2):
-    # 添加朋友
+    """
+    添加朋友
+    :param driver: 浏览器驱动
+    :param search_keys: 搜索关键字集合.list
+    :param limit: 每个关键字添加好好的个数上限
+    :return:
+    """
     try:
         limit = 1 if limit <= 0 else limit
         logger.info('start add friends, friends={}, limit={}'.format(search_keys, limit))
