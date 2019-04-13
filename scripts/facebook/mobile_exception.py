@@ -30,6 +30,8 @@ class FacebookException(BaseException):
     8：上传图象验证
     9：完成几步的验证
     10：登录邮箱数字验证码验证
+    11: 登录手机短信验证码验证
+    12： 账号密码不正确
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -45,6 +47,7 @@ class FacebookException(BaseException):
         9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying_step'},
         10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email'},
         11: {'name': 'sms_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_sms'},
+        12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_sms'},
     }
 
     def __init__(self, driver: WebDriver):
@@ -288,8 +291,28 @@ class FacebookException(BaseException):
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(10)['key_words'][0]))).click()
         except:
-            return False, 9
-        return False, 9
+            return False, 10
+        return False, 10
+
+    def process_sms_verify(self, **kwargs):
+        try:
+            logger.info("登录短信验证码验证")
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0]))).click()
+        except:
+            return False, 11
+        return False, 11
+
+    def process_wrong_password(self, **kwargs):
+        try:
+            logger.info("账号密码不正确")
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(12)['key_words'][0]))).click()
+        except:
+            return False, 12
+        return False, 12
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
