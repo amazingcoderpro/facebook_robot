@@ -58,6 +58,7 @@ class FacebookException(BaseException):
         :param wait: 重试间隔，单位秒
         :return: 元组 -- （结果, 异常码）
         """
+        logger.info('call auto process, retry={}, wait={}, kwargs={}'.format(retry, wait, kwargs))
         while retry > 0:
             exception_type = self.auto_check()
 
@@ -261,7 +262,13 @@ class FacebookException(BaseException):
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
             if not photo_but:
                 logger.info("image uploaded successfully!")
+                account_photo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(photo_path))), "{}.jpg".format(account))
+                shutil.move(photo_path, account_photo_path)
+                logger.info("process photo verify succeed, photo path={}".format(account_photo_path))
                 return True, 8
+            else:
+                logger.warning("process photo verify unfinished, photo path={}".format(photo_path))
+                os.remove(photo_path)
         except:
             return False, 8
         return False, 8
@@ -303,7 +310,8 @@ class FacebookException(BaseException):
         random_photo_name = os.path.join(random_photo_dir, photos[rad_idx])
 
         # 把照片从随机池中取到账号池中
-        shutil.move(random_photo_name, save_path)
+        # shutil.move(random_photo_name, save_path)
+        save_path = random_photo_name
 
         logger.info('download photo from server, account={}, gender={}, save_path={}'.format(account, gender, save_path))
         return save_path
