@@ -723,11 +723,22 @@ def test_db():
 
 def produce_account():
     # 添加账号
-    for i in range(1, 10):
-        AccountOpt.save_account(account='abc',
-                            password='def', owner=3, category=1,
-                            email='a@b.com', email_pwd='ddd',
-                            gender=1, birthday='1986-8-4', profile_id='', status='valid', active_browser=(i%6+1), configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
+    filename = 'E:/accont_info.txt'
+    with open(filename, 'r') as line:
+        all_readline = line.readlines()
+        import random
+        t = random.randint(1, 100)
+        for i in all_readline:
+            str_info = i.split("/")
+            print(str_info)
+            user_account = str(str_info[0])
+            user_password = str(str_info[1])
+            email_password = str(str_info[2])
+            gender = int(str_info[3])
+            AccountOpt.save_account(account=user_account,
+                            password=user_password, owner=3, category=1,
+                            email='', email_pwd=email_password,
+                            gender=gender, birthday='1986-8-4', profile_id='', status='valid', active_browser=(t%6+1), configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
 
 
 def produce_tasks():
@@ -754,12 +765,13 @@ def test11(*names):
 def test12(*names):
     print(names)
 
+
 if __name__ == '__main__':
-    init_db_data()
+    # init_db_data()
     # show_test_data()
     # test_db()
-    # produce_account()
-    print(11)
+    produce_account()
+    # print(11)
     # produce_tasks()
     # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
