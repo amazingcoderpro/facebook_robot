@@ -78,7 +78,7 @@ def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=N
         'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime.datetime) else '',
         'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime.datetime) else '',
         'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime.datetime) else '',
-        'last_verify': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime.datetime) else '',
+        'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime.datetime) else '',
         'phone_number': phone_number,
         'profile_path': profile_path,
     }
