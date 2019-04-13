@@ -43,6 +43,7 @@ class FacebookException(BaseException):
         8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying'},
         9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying'},
         10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]']},
+        11: {'name': 'sms_verify', 'key_words': ['input[placeholder="######"]']},
     }
 
     def __init__(self, driver: WebDriver):
@@ -240,15 +241,15 @@ class FacebookException(BaseException):
             logger.info("处理上传图片验证的异常")
             photo_upload = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_words'][0])))
-            # account = ''
-            # gender=1
-            # for k, v in kwargs.items():
-            #     if k == 'account':
-            #         account = v
-            #     elif k == 'gender':
-            #         gender = v
-            # photo_path = self.get_photo(account, gender)
-            photo_path = 'E:\\IMG_3563.JPG'
+            account = ''
+            gender=1
+            for k, v in kwargs.items():
+                if k == 'account':
+                    account = v
+                elif k == 'gender':
+                    gender = v
+            photo_path = self.get_photo(account, gender)
+            # photo_path = 'E:\\IMG_3563.JPG'
             # 上传图片
             photo_upload.send_keys(photo_path)
             # 点击继续

@@ -170,7 +170,7 @@ def local_surface(driver):
 
 
 def add_friends(driver:WebDriver, search_keys, limit=2):
-    #添加朋友
+    # 添加朋友
     try:
         limit = 1 if limit <= 0 else limit
         logger.info('start add friends, friends={}, limit={}'.format(search_keys, limit))
@@ -237,7 +237,7 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
 
 
 def send_messages(driver):
-    #跟朋友聊天
+    # 跟朋友聊天
     try:
         # 1.检查该账号是否存在好友
         # 2.向好友发送消息
@@ -257,7 +257,7 @@ def send_messages(driver):
 
 
 def user_home(driver):
-    #用户中心浏览
+    # 用户中心浏览
     try:
         time.sleep(3)
         driver.get("https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format("xiaoning"))
@@ -283,6 +283,7 @@ def post_status(driver):
     except Exception as e:
         pass
 
+
 if __name__ == '__main__':
     filename = 'E:/accont_info.txt'
     with open(filename, 'r') as line:
@@ -298,13 +299,7 @@ if __name__ == '__main__':
             time.sleep(6)
             driver.quit()
 
-    driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-    auto_login(driver, 'michele53s@hotmail.com', 'v578jnd0jN1')
-    # user_messages(driver)
-    # local_surface(driver)
-    add_friends(driver, ['wu charles'], limit=3)
-    time.sleep(100)
-    driver.quit()
+
 
 
 
