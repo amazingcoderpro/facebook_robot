@@ -112,14 +112,14 @@ def switch_vps_ip(self, inputs):
         time.sleep(3)
         subprocess.call('pppoe-start', shell=True)
         time.sleep(3)
-        pppoe_restart = subprocess.call('pppoe-status', shell=True, stdout=subprocess.PIPE)
-        pppoe_restart.wait()
-        pppoe_log = pppoe_restart.communicate()[0]
+        pppoe_restart = subprocess.Popen('pppoe-status', shell=True, stdout=subprocess.PIPE)
+        pppoe_restart.wait(timeout=5)
+        pppoe_log = str(pppoe_restart.communicate()[0])
         adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
         logger.info('switch_vps_ip succeed. New ip address : {}'.format(adsl_ip))
     except Exception as e:
         err_msg = 'switch_vps_ip catch exception={}'.format(str(e))
-        logger.error(err_msg)
+        logger.exception(err_msg)
         return make_result(err_msg=err_msg)
 
     logger.info('')
