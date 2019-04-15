@@ -27,10 +27,10 @@ class FacebookException(BaseException):
     5：账号被停用提示
     6：上次登录机器&好友识别身份验证
     7：手机短信验证
-    8：上传图象验证
+    8：上传上传图片验证
     9：完成几步的验证
-    10：登录邮箱数字验证码验证
-    11: 登录手机短信验证码验证
+    10：登录 邮箱数字验证码验证
+    11: 登录 手机短信验证码验证
     12： 账号密码不正确
     """
     MAP_EXP_PROCESSOR = {
@@ -42,12 +42,12 @@ class FacebookException(BaseException):
         4: {'name': 'download_app', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         5: {'name': 'account_invalid', 'key_words': ['div[class^="mvm uiP fsm"]'], 'account_status': 'invalid'},
         6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_ask'},
-        7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying'},
+        7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying_photo'},
         9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying_step'},
-        10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email'},
-        11: {'name': 'sms_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_sms'},
-        12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_sms'},
+        10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email_code'},
+        11: {'name': 'sms_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_sms_code'},
+        12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
     }
 
     def __init__(self, driver: WebDriver):
@@ -309,10 +309,10 @@ class FacebookException(BaseException):
             logger.info("账号密码不正确")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(12)['key_words'][0]))).click()
+                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(12)['key_words'][0])))
         except:
-            return False, 12
-        return False, 12
+            return False, -1
+        return False, -1
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))

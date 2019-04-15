@@ -83,14 +83,19 @@ def auto_login(driver, account, password, gender=1):
         time.sleep(3)
         password_box.send_keys(Keys.ENTER)
         old_url = driver.current_url
-
         time.sleep(3)
         retry = 0
+        # wrong_password = driver.find_elements_by_css_selector('a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
         while retry < 3:
-            if driver.current_url == old_url:
+            now_url = driver.current_url
+            if now_url == old_url:
                 password_box.send_keys(Keys.ENTER)
-                retry += 1
                 time.sleep(2)
+                wrong_password = driver.find_elements_by_css_selector(
+                    'a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
+                if wrong_password:
+                    break
+                retry += 1
             else:
                 break
 
