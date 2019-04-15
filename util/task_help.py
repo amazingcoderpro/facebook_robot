@@ -126,9 +126,9 @@ class TaskHelper:
             dt_last_verify = datetime.strptime(self.last_verifying_time, "%Y-%m-%d %H:%M:%S")
             if (datetime.now() - dt_last_verify).total_seconds() < self.verify_interval:
                 logger.warning(logger.error('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verifying_time)))
-                return False
+                return True
 
-        return True
+        return False
 
     def get_friend_keys(self, limit=1):
         """
@@ -227,5 +227,7 @@ if __name__ == '__main__':
         }
     }
 
+
     th = TaskHelper(inputs)
     print(th.get_posts(True))
+    th.is_in_verifying()

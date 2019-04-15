@@ -138,8 +138,8 @@ def update_task_status():
 
             task.succeed_counts = succeed_counts
             task.failed_counts = failed_counts
-            logger.info('-----update_task_status task id={} status={}, succeed={}, failed={}'.
-                        format(task.id, task.status, task.succeed_counts, task.failed_counts))
+            logger.info('-----update_task_status task id={} status={}, succeed={}, failed={}, real accounts num={}'.
+                        format(task.id, task.status, task.succeed_counts, task.failed_counts, task.real_accounts_num))
 
             # sch = SchedulerOpt.get_scheduler(task.scheduler)
             sch_mode, sch_end_date = db_session.query(Scheduler.mode, Scheduler.end_date)\
@@ -148,6 +148,7 @@ def update_task_status():
             if sch_mode in [0, 3]:
                 running_jobs = db_session.query(Job.status).filter(
                 and_(Job.task == task.id, Job.status == 'running')).count()
+                logger.info('task id={}, running jobs={}'.format(task.id, running_jobs))
                 if ((task.failed_counts + task.succeed_counts) >= task.real_accounts_num) \
                         or running_jobs == 0 or (task.start_time and task.start_time < datetime.now()-timedelta(days=3)):
                     if task.succeed_counts >= task.limit_counts:
@@ -466,8 +467,9 @@ def start_task(task_id, force=False):
                 db_session.query(Task).filter(Task.id == task_id). \
                     update({Task.status: status_new, Task.aps_id: aps_job.id, Task.last_update: datetime.now()}, synchronize_session=False)
             else:
+                # 千万不能把任务设置成running
                 db_session.query(Task).filter(Task.id == task_id). \
-                    update({Task.aps_id: aps_job.id, Task.status: 'running', Task.start_time: datetime.now(), Task.last_update: datetime.now()}, synchronize_session=False)
+                    update({Task.aps_id: aps_job.id, Task.start_time: datetime.now(), Task.last_update: datetime.now()}, synchronize_session=False)
 
             db_session.commit()
             logger.info('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, status_new))

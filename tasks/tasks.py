@@ -45,10 +45,12 @@ def fb_auto_feed(self, inputs):
             return make_result(err_msg='inputs invalid.')
 
         if not tsk_hlp.is_should_login():
-            return make_result()
+            logger.warning('is_should_login return False, task id={}, account={}'.format(tsk_hlp.task_id, tsk_hlp.account))
+            return make_result(err_msg='is_should_login return False')
 
         if tsk_hlp.is_in_verifying():
-            return make_result()
+            logger.warning('is_in_verifying return True, task id={}, account={}'.format(tsk_hlp.task_id, tsk_hlp.account))
+            return make_result(err_msg='is_in_verifying return True')
 
         # 分步执行任务
         # 启动浏览器
