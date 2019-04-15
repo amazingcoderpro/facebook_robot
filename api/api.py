@@ -225,7 +225,7 @@ def update_account_usage():
                 account_usage[account_id] = 1
 
         for account_id, using in account_usage.items():
-            db_session.query(Account).filter(Account.id == account_id).update({Account.using: using})
+            db_session.query(Account).filter(Account.id == account_id).update({Account.using: using, Account.last_update: datetime.now()})
 
         db_session.commit()
     except Exception as e:
@@ -252,7 +252,7 @@ def update_results():
         # 取出5分钟前启动且没有执行完毕的job, 去redis中查询结果是否已经出来了
         job_start_time = datetime.now()-timedelta(seconds=300)
         need_update_jobs = db_session.query(Job.id, Job.track_id, Job.account).filter(and_(Job.status == 'running', Job.start_time <= job_start_time)).all()
-        logger.error('-------need update jobs num={}'.format(len(need_update_jobs)))
+        logger.info('-------need update jobs num={}'.format(len(need_update_jobs)))
 
         for job_id, track_id, account_id in need_update_jobs:
             key_job = 'celery-task-meta-{}'.format(track_id)
@@ -271,12 +271,13 @@ def update_results():
                     account_status = job_res.get('account_status', '')
                     account_config = job_res.get('account_configure', {})
                     if account_status:
-                        logger.error('update account status={}'.format(account_status))
-                        db_session.query(Account).filter(Account.id == account_id).update({Account.status: account_status})
+                        logger.info('update account status={}'.format(account_status))
+                        db_session.query(Account).filter(Account.id == account_id).update({Account.status: account_status,
+                                                                                           Account.last_update: datetime.now()})
                     if account_config:
-                        logger.error('update account config={}'.format(account_config))
+                        logger.info('update account config={}'.format(account_config))
                         db_session.query(Account).filter(Account.id == account_id).update(
-                            {Account.configure: json.dumps(account_config)})
+                            {Account.configure: json.dumps(account_config), Account.last_update: datetime.now()})
 
                     str_job_res = json.dumps(job_res)
                 else:
@@ -295,7 +296,7 @@ def update_results():
                     failed_jobs_num += 1
 
         db_session.commit()
-        logger.error('-------actually update jobs num={}'.format(updated_jobs_num))
+        logger.info('-------actually update jobs num={}'.format(updated_jobs_num))
     except Exception as e:
         is_exception = True
         logger.exception('--------update_results catch exception e={}'.format(e))
@@ -334,7 +335,7 @@ def update_results():
     # 启动所有新建任务
     start_all_new_tasks()
 
-    logger.error('update results used {} seconds.'.format((datetime.now()-time_it_beg).seconds))
+    logger.info('update results used {} seconds.'.format((datetime.now()-time_it_beg).seconds))
 
 
 def process_updated_tasks():

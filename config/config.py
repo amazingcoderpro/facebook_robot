@@ -22,7 +22,7 @@ with open(facebook_json, encoding='utf-8') as f:
 facebook_cfg = json.loads(fb_json)
 
 cfg = load(content, Loader=FullLoader)
-log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO)
+log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO, backup_count=50)
 logger = logging.getLogger()
 
 
@@ -56,7 +56,7 @@ def get_account_args():
     return cfg.get('account')
 
 
-def get_fb_friend_keys(limit=0):
+def get_fb_friend_keys(limit=1):
     fks = facebook_cfg.get('friend_search_keys')
     if limit <= 0:
         return fks
@@ -64,10 +64,17 @@ def get_fb_friend_keys(limit=0):
         return random.sample(fks, limit)
 
 
+def get_fb_posts(limit=1):
+    posts = facebook_cfg.get('posts')
+    if limit <= 0:
+        return posts
+    else:
+        return random.sample(posts, limit)
 
-def get_fb_posts():
-    facebook_cfg.get('posts')
 
-
-def get_fb_chat_msgs():
-    facebook_cfg.get('chat_msgs')
+def get_fb_chat_msgs(limit=1):
+    msgs = facebook_cfg.get('chat_msgs')
+    if limit <= 0:
+        return msgs
+    else:
+        return random.sample(msgs, limit)

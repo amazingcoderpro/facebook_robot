@@ -738,7 +738,9 @@ def produce_account():
             AccountOpt.save_account(account=user_account,
                             password=user_password, owner=3, category=1,
                             email='', email_pwd=email_password,
-                            gender=gender, birthday='1986-8-4', profile_id='', status='valid', active_browser=(t%6+1), configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
+                            gender=gender, birthday='1986-8-4', profile_id='', status='valid', active_browser=(t%6+1),
+                                    configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'},
+                                                         last_update=datetime.datetime.now()))
 
 
 def produce_tasks():

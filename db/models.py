@@ -140,7 +140,7 @@ class Task(Base):
     configure = Column(String(2048), default='', server_default='')
 
     # 最后一次更新的时间戳
-    last_update = Column(DateTime(6))
+    last_update = Column(DateTime(3), default=None)
 
     def accounts_list(self):
         return [acc.account for acc in self.accounts]
@@ -188,22 +188,6 @@ class Job(Base):
     def __repr__(self):
         return "id:{}, task:{}, account:{}, start_time:{}, status:{}, result:{}. ".format(
             self.id, self.task, self.account, self.start_time, self.status, self.result)
-
-#
-# class Action(Base):
-#     __tablename__ = 'action'
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     name = Column(String(255), default='', server_default='')
-#     depend_on = Column(Integer, ForeignKey('action.id'), default=None)
-#
-#
-# class JobActions(Base):
-#     __tablename__ = 'job_actions'
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     job_id = Column(Integer, ForeignKey('job.id'))
-#     action_id = Column(Integer, ForeignKey('action.id'))
-#     result = Column(String(255), default='', server_default='')
-#
 
 
 class Account(Base):
@@ -260,6 +244,7 @@ class Account(Base):
 
     # 账号的其他非常规配置信息,json串
     configure = Column(String(2048), default='', server_default='')
+    last_update = Column(DateTime(3), default=None)
 
     def __repr__(self):
         return "id:{}, account:{}, password:{}, email={}, email_pwd:{}, gender:{}, birthday:{}, national_id:{}, " \

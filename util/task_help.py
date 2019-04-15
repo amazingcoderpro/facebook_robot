@@ -1,0 +1,214 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Created by charles on 2019-04-15
+# Function:
+
+import time
+import random
+from datetime import datetime
+from config import logger, get_account_args, get_fb_friend_keys, get_fb_posts, get_fb_chat_msgs
+import scripts.facebook as fb
+
+
+def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None, last_farming=None,
+                last_comment=None, last_edit=None, last_verify=None, phone_number='', profile_path='', **kwargs):
+    task_result = {
+        'status': 'failed',  # 'failed', 'succeed'
+        'err_msg': '',
+        'account_status': '',  # valid, invalid, verifying
+        'account_configure': {}
+    }
+
+    if ret:
+        task_result['status'] = 'succeed'
+    else:
+        task_result['status'] = 'failed'
+        account_status = fb.FacebookException.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')    # valid, invalid, verifying
+        task_result['account_status'] = account_status
+        task_result['err_msg'] = err_msg if err_msg else 'err_code={}'.format(err_code)
+
+    task_result['account_configure'] = {
+        'last_login': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_login, datetime) else '',
+        'last_post': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_post, datetime) else '',
+        'last_chat': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_chat, datetime) else '',
+        'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime) else '',
+        'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else '',
+        'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime) else '',
+        'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime) else '',
+        'phone_number': phone_number,
+        'profile_path': profile_path,
+    }
+
+    for k, v in kwargs.items():
+        task_result['account_configure'][k] = v
+
+    return task_result
+
+# inputs = {
+#     'task': {
+#         'task_id': task_id,
+#         'configure': json.loads(task_configure) if task_configure else {},
+#     },
+#     'account': {
+#         'account': account,
+#         'password': password,
+#         'email': email,
+#         'email_pwd': email_pwd,
+#         'gender': gender,
+#         'phone_number': phone_number,
+#         'birthday': birthday,
+#         'national_id': national_id,
+#         'name': name,
+#         'active_area': active_area,
+#         'active_browser': active_browser,
+#         'profile_path': profile_path,
+#         'configure': json.loads(account_configure) if account_configure else {}
+#     }
+# }
+
+class TaskHelper:
+    """
+    任务配置及判断辅助类
+    """
+    def __init__(self, inputs):
+        self.task_info = inputs.get('task', None)
+        self.task_id = self.task_info.get('task_id', -1)
+
+        task_config = self.task_info.get('configure', {})
+        self.is_post = task_config.get('is_post', False)
+        self.post_content = task_config.get('post_content', '')
+        self.is_add_friend = task_config.get('is_add_friend', False)
+        self.friend_keys = task_config.get('friend_key', '')
+        self.is_chat = task_config.get('is_chat', False)
+        self.chat_content = task_config.get('chat_content', '')
+
+        self.account_info = inputs.get('account', None)
+        self.account = self.account_info.get('account')
+        self.password = self.account_info.get('password')
+        self.account_status = self.account_info.get('status')
+        self.active_browser = self.account_info.get("active_browser")
+        self.gender = self.account_info.get('gender', 0)
+        self.email = self.account_info.get('email', '')
+        self.email_pwd = self.account_info.get('email_pwd', '')
+        self.phone_number = self.account_info.get('phone_number', '')
+        self.birthday = self.account_info.get('birthday', '')
+        self.national_id = self.account_info.get('national_id', '')
+        self.name = self.account_info.get('name', '')
+        self.active_area = self.account_info.get('active_area', '')
+        self.profile_path = self.account_info.get('profile_path', '')
+
+        account_configure = self.account_info.get("configure", {})
+        self.last_login_time = account_configure.get('last_login', '')
+        self.last_verifying_time = account_configure.get('last_verify', '')
+
+        self.login_interval = get_account_args().get('login_interval', 3600)
+        self.verify_interval = get_account_args().get('verify_interval', 36000)
+
+    def is_inputs_valid(self):
+        if not (isinstance(self.account_info, dict) and isinstance(self.task_info, dict)):
+            return False
+
+        return True
+
+    def is_should_login(self):
+        """
+        通过判断上次登录时间与当前时间间隔决定是否可以登录
+        :return:
+        """
+        if self.last_login_time:
+            dt_last_login = datetime.strptime(self.last_login_time, "%Y-%m-%d %H:%M:%S")
+            if (datetime.now() - dt_last_login).total_seconds() < self.login_interval:
+                logger.warning('Less than {} seconds before the last login, last login at: {}'.format(self.login_interval, self.last_login_time))
+                return False
+
+        return True
+
+    def is_account_valid(self):
+        """
+        判断账号是否可用
+        :return:
+        """
+        return self.account_status != 'invalid'
+
+    def is_in_verifying(self):
+        """
+        通过判断上次提交验证时间与当前时间间隔决定账号是否还在验证中
+        :return:
+        """
+        if self.last_verifying_time:
+            dt_last_verify = datetime.strptime(self.last_verifying_time, "%Y-%m-%d %H:%M:%S")
+            if (datetime.now() - dt_last_verify).total_seconds() < self.verify_interval:
+                logger.warning(logger.error('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verifying_time)))
+                return False
+
+        return True
+
+    def get_friend_keys(self, limit=1):
+        """
+        获取好友关键字
+        :param limit: 关键字数量
+        :return: list
+        """
+        if self.is_add_friend:
+            fks = self.friend_keys.split(';')
+            if fks:
+                return fks
+            else:
+                return get_fb_friend_keys(limit)
+        else:
+            return []
+
+    def get_posts(self):
+        """
+        获取要发布的状态
+        :return: 字典
+        """
+        if self.is_post:
+            if self.post_content:
+                return {'post': self.post_content, 'img': ''}
+            else:
+                return get_fb_posts(1)
+        else:
+            return {'post': '', 'img': ''}
+
+    def get_chat_msgs(self, limit=1):
+        """
+        获取聊天内容
+        :param limit: 聊天条数
+        :return: list
+        """
+        if self.is_chat:
+            if self.chat_content:
+                return self.chat_content.split(';')
+            else:
+                return get_fb_chat_msgs(limit)
+        else:
+            return []
+
+    def random_sleep(self, lower=3, upper=10):
+        """
+        随机休眠
+        :param lower: 最短休眠时间
+        :param upper: 最长休眠时间
+        :return:
+        """
+        if lower <= 0 or upper <= 0:
+            return False
+
+        if lower == upper:
+            time.sleep(lower)
+            return True
+
+        lower, upper = upper, lower if lower > upper else lower, upper
+        rdn = random.randint(0, 10000)
+        slt = rdn % upper + 1
+        slt = lower if slt < lower else slt
+        time.sleep(slt)
+        return True
+
+    def random_select(self):
+        rdn = random.randint(0, 10000)
+        if rdn % 2 == 0:
+            return True
+
+        return False
