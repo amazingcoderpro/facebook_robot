@@ -7,7 +7,6 @@ import shutil
 import time
 import random
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -45,12 +44,11 @@ class FacebookException(BaseException):
         6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_ask'},
         7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying_photo'},
-        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying_step'},
+        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]', 'div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_step'},
         10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email_code'},
         11: {'name': 'sms_verify', 'key_words': ['input[name="p_c"]'], 'account_status': 'verifying_sms_code'},
         12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
         13: {'name': 'shared_login', 'key_words': ['div[id="mErrorView"]'], 'account_status': 'verifying_shared_login'},
-
     }
 
     def __init__(self, driver: WebDriver):
@@ -302,6 +300,8 @@ class FacebookException(BaseException):
             logger.info("登录短信验证码验证")
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
+            WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'button[name="submit[Back]"]'))).click()
         except:
             return False, 11
         return False, 11
