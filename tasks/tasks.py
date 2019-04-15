@@ -96,14 +96,23 @@ def fb_auto_feed(self, inputs):
         driver = None
         last_login = None
         account_info = inputs.get('account', None)
-        if not isinstance(account_info, dict):
-            logger.error('inputs not valid.')
+        task_info = inputs.get('task', None)
+
+        if not (isinstance(account_info, dict) and isinstance(task_info, dict)):
+            logger.error('inputs not valid, inputs={}'.format(inputs))
             return make_result(err_msg='inputs not valid.')
+
+        task_id = task_info.get('task_id', -1)
+        task_config = task_info.get('configure', {})
+        is_post = task_config.get('is_post', False)
+        post_content = task_config.get('post_content', '')
+        is_add_friend = task_config.get('is_add_friend', False)
+        friend_keys = task_config.get('friend_key', '')
 
         account = account_info.get('account')
         password = account_info.get('password')
         active_browser = account_info.get("active_browser")
-        account_configure = account_info.get("account_configure", {})
+        account_configure = account_info.get("configure", {})
         last_login_time = account_configure.get('last_login', '')
         if last_login_time:
             dt_last_login = datetime.strptime(last_login_time, "%Y-%m-%d %H:%M:%S")
@@ -129,7 +138,7 @@ def fb_auto_feed(self, inputs):
         last_login = datetime.datetime.now()
 
         logger.info('login succeed. account={}, password={}'.format(account, password))
-        random_num = random.randint(0, 100)
+        random_num = random.randint(0, 1000)
         if random_num/2 == 0 or random_num / 3 == 0:
             ret, err_code = fb.user_messages(driver=driver)
             if not ret:
@@ -145,14 +154,16 @@ def fb_auto_feed(self, inputs):
                 return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         time.sleep(random_num % 5)
-        if random_num % 2 == 0:
-            fks = get_fb_friend_keys(random_num % 3+1)
+        if is_add_friend:
+            fks = friend_keys.split(';')
+            if not fks:
+                fks = get_fb_friend_keys(random_num % 3+1)
             ret, err_code = fb.add_friends(driver, search_keys=fks, limit=random_num % 2+1)
             if not ret:
                 err_msg = 'add_friends failed, err_code={}'.format(err_code)
                 return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
-        time.sleep(60)
+        time.sleep(random_num % 100)
         logger.info('task fb_auto_feed succeed. account={}'.format(account))
     except Exception as e:
         err_msg = 'fb_auto_feed catch exception. e={}'.format(str(e))
