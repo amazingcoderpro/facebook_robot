@@ -377,10 +377,14 @@ def start_all_new_tasks(scheduler=None):
         global g_bk_scheduler
         g_bk_scheduler = scheduler
 
-    logger.info('start_all_new_tasks')
-    tasks = TaskOpt.get_all_new_task()
+    # tasks = TaskOpt.get_all_new_task()
+    db_session = ScopedSession()
+    tasks = db_session.query(Task.id, Task.status).filter(Task.status == 'new').all()
+    db_session.commit()
+    ScopedSession.remove()
+    logger.info('start_all_new_tasks, tasks={}'.format(tasks))
     for task_id, status in tasks:
-        logger.info('begin start task id={}, status={}'.format(id, status))
+        logger.info('begin start task id={}, status={}'.format(task_id, status))
         start_task(task_id)
 
 
@@ -393,8 +397,8 @@ def restart_all_tasks(scheduler=None):
         global g_bk_scheduler
         g_bk_scheduler = scheduler
 
-    logger.info('restart_all_tasks')
     need_restart_tasks = TaskOpt.get_all_need_restart_task()
+    logger.info('restart_all_tasks, need_restart_tasks={}'.format(need_restart_tasks))
     for task_id, status in need_restart_tasks:
         logger.info('need restart task id={}, status={}.'.format(task_id, status))
         start_task(task_id, force=True)
@@ -424,30 +428,32 @@ def start_task(task_id, force=False):
         db_session = ScopedSession()
         res = db_session.query(Task.status, Task.aps_id, Task.scheduler).filter(Task.id == task_id).first()
         if not res:
-            logger.error('start_task can not find the task, id={}. '.format(task_id))
+            logger.error('start_task can not find the task id={}. '.format(task_id))
             return Result(res=False, msg='can not find the task')
 
         status, aps_id, scheduler = res
-        # 强制状态下，可以启动所有new, pending, pausing状态的任务
+        # 已经完成或失败的任务不再重新启动
+        if status in ['succeed', 'failed', 'cancelled']:
+            logger.warning("task is finished. task id={}, status={}".format(task_id, status))
+            return Result(res=False, msg='task is finished.')
+
+        # 强制状态下，可以启动所有new, pending, pausing, running状态的任务,
         if force:
-            if status not in ['new', 'pending', 'pausing', 'running']:
-                logger.warning('start_task task have been finished, id={}, status={}. '.format(task_id, status))
-                return Result(res=False, msg='task have been finished, status={}'.format(status))
+            # 如果task已经启动，先移除(用于系统重启）
+            if status in ['pending', 'pausing', 'running']:
+                try:
+                    g_bk_scheduler.remove_job(aps_id)
+                except JobLookupError:
+                    logger.warning('job have been removed.')
+
+                db_session.query(Task).filter(Task.id == task_id). \
+                    update({Task.status: "new", Task.aps_id: '', Task.start_time: None, Task.last_update: datetime.now()}, synchronize_session=False)
+                db_session.commit()
         else:
+            # 非强制状态只能启动new任务
             if status != 'new':
                 logger.warning('start_task task is not a new task, task id={} status={}. '.format(task_id, status))
                 return Result(res=False, msg='is not a new task')
-
-        # 如果task已经启动，先移除(用于系统重启）
-        if status in ['pending', 'pausing', 'running']:
-            try:
-                g_bk_scheduler.remove_job(aps_id)
-            except JobLookupError:
-                logger.warning('job have been removed.')
-
-            db_session.query(Task).filter(Task.id == task_id).\
-                update({Task.status: "new", Task.aps_id: '', Task.start_time: None}, synchronize_session=False)
-            db_session.commit()
 
         # 开始启动任务调度
         aps_job, status_new = scheduler_task(db_session, scheduler, task_id)
@@ -457,17 +463,17 @@ def start_task(task_id, force=False):
             if status_new:
                 # 如果任务调度开始执行了, task状态会被置为running,就不用再改回pending
                 db_session.query(Task).filter(Task.id == task_id). \
-                    update({Task.status: status_new, Task.aps_id: aps_job.id}, synchronize_session=False)
+                    update({Task.status: status_new, Task.aps_id: aps_job.id, Task.last_update: datetime.now()}, synchronize_session=False)
             else:
                 db_session.query(Task).filter(Task.id == task_id). \
-                    update({Task.aps_id: aps_job.id}, synchronize_session=False)
+                    update({Task.aps_id: aps_job.id, Task.status: 'running', Task.start_time: datetime.now(), Task.last_update: datetime.now()}, synchronize_session=False)
 
             db_session.commit()
-            logger.error('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, status_new))
+            logger.info('----start task succeed. task id={}, aps id={}, status={}-----'.format(task_id, aps_job.id, status_new))
 
             # TaskOpt.set_task_status(None, task_id, status='pending', aps_id=aps_job.id)
         else:
-            logger.warning('start task can not scheduler task, task id={}'.format(task_id))
+            logger.error('start task can not scheduler task, task id={}, status={}, scheduler={}'.format(task_id, status, scheduler))
             return Result(res=False, msg='scheduler task failed')
     except Exception as e:
         db_session.rollback()

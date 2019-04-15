@@ -33,7 +33,7 @@ def run(mode='new', update_interval=30):
     :return:
     """
     try:
-        logger.info('----------------Start Task Scheduler System.--------------------')
+        logger.info('----------------Start Task Scheduler System. mode={}, interval={}--------------------'.format(mode, update_interval))
         bk_scheduler = BackgroundScheduler()
         if mode == 'restart':
             # restart模式会将之前所有没有结束的任务重新拉起执行
@@ -61,7 +61,7 @@ def run(mode='new', update_interval=30):
 
 if __name__ == '__main__':
     logger.info('start command={}'.format(sys.argv))
-    mode = 'restart'
+    mode = 'new'        # new/restart
     interval = 60
     if len(sys.argv) > 2:
         mode = sys.argv[1]

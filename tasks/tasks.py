@@ -115,7 +115,7 @@ def fb_auto_feed(self, inputs):
         account_configure = account_info.get("configure", {})
         last_login_time = account_configure.get('last_login', '')
         if last_login_time:
-            dt_last_login = datetime.strptime(last_login_time, "%Y-%m-%d %H:%M:%S")
+            dt_last_login = datetime.datetime.strptime(last_login_time, "%Y-%m-%d %H:%M:%S")
             if (datetime.datetime.now() - dt_last_login).total_seconds() < get_account_args().get('login_interval', 3600):
                 err_msg = 'Less than an hour before the last login, last login={}'.format(last_login_time)
                 logger.error(err_msg)
