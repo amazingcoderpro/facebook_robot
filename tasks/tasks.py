@@ -103,16 +103,16 @@ def fb_auto_feed(self, inputs):
     return make_result(True, last_login=last_login)
 
 
-@app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)
+@app.task(base=BaseTask, bind=True, max_retries=3, time_limit=300)
 def switch_vps_ip(self, inputs):
-    logger.info('switch_vps_ip')
+    logger.info('--------switch_vps_ip')
     try:
         subprocess.call("pppoe-stop", shell=True)
         # subprocess.Popen('pppoe-stop', shell=True, stdout=subprocess.PIPE, encoding='utf8')
         time.sleep(3)
         subprocess.call('pppoe-start', shell=True)
         time.sleep(3)
-        pppoe_restart = subprocess.call('pppoe-status', shell=True)
+        pppoe_restart = subprocess.call('pppoe-status', shell=True, stdout=subprocess.PIPE)
         pppoe_restart.wait()
         pppoe_log = pppoe_restart.communicate()[0]
         adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
