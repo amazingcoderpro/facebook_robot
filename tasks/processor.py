@@ -182,7 +182,7 @@ def send_task_2_worker(task_id):
         # task实际可用的账号数目, 会根据每次轮循时account状态的不同而变化
         db_scoped_session.query(Task).filter(and_(Task.id == task_id, Task.status.in_(['new', 'pending'])))\
             .update({Task.status: "running", Task.start_time: datetime.datetime.now(),
-                     Task.real_accounts_num: real_accounts_num}, synchronize_session=False)
+                     Task.real_accounts_num: real_accounts_num, Task.last_update: datetime.datetime.now()}, synchronize_session=False)
 
         if jobs:
             db_scoped_session.add_all(jobs)
