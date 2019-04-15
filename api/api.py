@@ -380,6 +380,7 @@ def start_all_new_tasks(scheduler=None):
     logger.info('start_all_new_tasks')
     tasks = TaskOpt.get_all_new_task()
     for task_id, status in tasks:
+        logger.info('begin start task id={}, status={}'.format(id, status))
         start_task(task_id)
 
 

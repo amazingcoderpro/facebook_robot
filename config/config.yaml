@@ -1,5 +1,5 @@
 redis:
-    host: 10.252.252.67
+    host: 47.112.113.252 #10.252.252.67
     port: 6379
     password: 'charles'
     broker: 5                    # broker for celery
@@ -7,7 +7,7 @@ redis:
     cache: 1
 
 db:
-    host: 10.252.252.67
+    host: 47.112.113.252 # 10.252.252.67
     port: 3306
     user: charles
     password: charles@orderplus
