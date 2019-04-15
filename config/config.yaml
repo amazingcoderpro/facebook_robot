@@ -19,3 +19,9 @@ account:
     verify_interval: 3600        # 账号验证的时长
     local_photo_path: resource/photos/    # 账号图象的本地存储位置
     remote_photo_path: ftp://xxx.xx.xx/ab/cc    # 账号图象的服务器存储位置
+
+task:
+    job_timeout: 86400               # job的超时时间3600×24秒,即1天
+    job_update_period: 180          # job每次更新的时间段默认为180秒
+    one_time_task_timeout: 25920    # 一次性任务的超时时间为3天, 3600*24*3秒
+    cycle_task_timeout: 10368000    # 周期任务的超时时间为120天

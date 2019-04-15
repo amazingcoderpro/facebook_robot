@@ -16,7 +16,7 @@ import json
 from apscheduler.schedulers.base import JobLookupError
 from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt, AccountOpt, Job, Task, Scheduler, Agent, Account
 from tasks.processor import send_task_2_worker
-from config import logger
+from config import logger, get_task_args
 from util import RedisOpt
 from db.basic import ScopedSession
 from sqlalchemy import and_
@@ -149,8 +149,9 @@ def update_task_status():
                 running_jobs = db_session.query(Job.status).filter(
                 and_(Job.task == task.id, Job.status == 'running')).count()
                 logger.info('task id={}, running jobs={}'.format(task.id, running_jobs))
+                one_time_task_timeout = get_task_args()['one_time_task_timeout']
                 if ((task.failed_counts + task.succeed_counts) >= task.real_accounts_num) \
-                        or running_jobs == 0 or (task.start_time and task.start_time < datetime.now()-timedelta(days=3)):
+                        or running_jobs == 0 or (task.start_time and task.start_time < datetime.now()-timedelta(seconds=one_time_task_timeout)):
                     if task.succeed_counts >= task.limit_counts:
                         task.status = 'succeed'
                     else:
@@ -164,7 +165,8 @@ def update_task_status():
                     task.status = 'failed'
                 else:
                     # 周期性任务的最长期限上限为120天, 超过120天自动关闭
-                    if task.start_time < datetime.now()-timedelta(days=120):
+                    cycle_task_timeout = get_task_args()['cycle_task_timeout']
+                    if task.start_time < datetime.now()-timedelta(seconds=cycle_task_timeout):
                         task.status = 'failed'
 
             if task.status in ['succeed', 'failed']:
@@ -251,11 +253,12 @@ def update_results():
         succeed_jobs_num = 0
         db_session = ScopedSession()
         # 取出5分钟前启动且没有执行完毕的job, 去redis中查询结果是否已经出来了
-        job_start_time = datetime.now()-timedelta(seconds=300)
-        need_update_jobs = db_session.query(Job.id, Job.track_id, Job.account).filter(and_(Job.status == 'running', Job.start_time <= job_start_time)).all()
+        job_update_period = get_task_args()['job_update_period']
+        job_start_time_limit = datetime.now()-timedelta(seconds=job_update_period)
+        need_update_jobs = db_session.query(Job.id, Job.track_id, Job.account, Job.start_time).filter(and_(Job.status == 'running', Job.start_time <= job_start_time_limit)).all()
         logger.info('-------need update jobs num={}'.format(len(need_update_jobs)))
 
-        for job_id, track_id, account_id in need_update_jobs:
+        for job_id, track_id, account_id, start_time in need_update_jobs:
             key_job = 'celery-task-meta-{}'.format(track_id)
             result = RedisOpt.read_backend(key=key_job)
             if result:
@@ -294,6 +297,15 @@ def update_results():
                 if status == 'succeed':
                     succeed_jobs_num += 1
                 else:
+                    failed_jobs_num += 1
+            elif start_time:
+                job_timeout = get_task_args()['job_timeout']
+                if start_time < datetime.now()-timedelta(seconds=job_timeout):
+                    logger.warning('job is timeout, job id={}, start time={}'.format(job_id, start_time))
+                    db_session.query(Job).filter(Job.id == job_id).update(
+                        {Job.status: 'failed', Job.result: json.dumps({'status': 'failed', 'err_msg': 'job timeout'}), Job.traceback: '',
+                         Job.end_time: datetime.now()},
+                        synchronize_session=False)
                     failed_jobs_num += 1
 
         db_session.commit()

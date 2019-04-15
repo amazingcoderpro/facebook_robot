@@ -56,6 +56,10 @@ def get_account_args():
     return cfg.get('account')
 
 
+def get_task_args():
+    return cfg.get('task')
+
+
 def get_fb_friend_keys(limit=1):
     fks = facebook_cfg.get('friend_search_keys')
     if limit <= 0:
@@ -78,3 +82,4 @@ def get_fb_chat_msgs(limit=1):
         return msgs
     else:
         return random.sample(msgs, limit)
+
