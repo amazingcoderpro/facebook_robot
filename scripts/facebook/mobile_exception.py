@@ -19,19 +19,20 @@ class FacebookException(BaseException):
     :MAP_EXP_PROCESSOR:
     异常分类--
     -1: 未知异常
-    0：是否首页
-    1：是否记住密码提示
-    2：是否输入电话号码提示
-    3：是否上传头像提示,
-    4：是否下载app提示
-    5：账号被停用提示
-    6：上次登录机器&好友识别身份验证
-    7：手机短信验证
-    8：上传上传图片验证
-    9：完成几步的验证
-    10：登录 邮箱数字验证码验证
-    11: 登录 手机短信验证码验证
+    0： 是否首页
+    1： 是否记住密码提示
+    2： 是否输入电话号码提示
+    3： 是否上传头像提示,
+    4： 是否下载app提示
+    5： 账号被停用提示
+    6： 上次登录机器&好友识别身份验证
+    7： 手机短信验证
+    8： 上传上传图片验证
+    9： 完成提示步骤验证
+    10： 登录 邮箱数字验证码验证
+    11:  登录 手机短信验证码验证
     12： 账号密码不正确
+    13： 移动端共享登录验证
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -46,8 +47,10 @@ class FacebookException(BaseException):
         8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying_photo'},
         9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying_step'},
         10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email_code'},
-        11: {'name': 'sms_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_sms_code'},
+        11: {'name': 'sms_verify', 'key_words': ['input[name="p_c"]'], 'account_status': 'verifying_sms_code'},
         12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
+        13: {'name': 'shared_login', 'key_words': ['div[id="mErrorView"]'], 'account_status': 'verifying_shared_login'},
+
     }
 
     def __init__(self, driver: WebDriver):
@@ -297,9 +300,8 @@ class FacebookException(BaseException):
     def process_sms_verify(self, **kwargs):
         try:
             logger.info("登录短信验证码验证")
-            WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0]))).click()
+            WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
         except:
             return False, 11
         return False, 11
@@ -313,6 +315,21 @@ class FacebookException(BaseException):
         except:
             return False, -1
         return False, -1
+
+    def process_shared_login(self, **kwargs):
+        """
+        移动端手机共享登录验证
+        :return: 成功返回 True, 失败返回 False
+        """
+        try:
+            logger.info("移动端共享登录验证")
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(13)['key_words'][0])))
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'a[data-sigil="MBackNavBarClick"]'))).click()
+        except:
+            return False, 13
+        return False, 13
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
