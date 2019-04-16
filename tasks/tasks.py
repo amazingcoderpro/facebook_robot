@@ -12,7 +12,7 @@ from celery import Task
 from .workers import app
 from config import logger, get_account_args, get_fb_friend_keys
 import scripts.facebook as fb
-from util.task_help import make_result, TaskHelper
+from utils.task_help import make_result, TaskHelper
 
 
 class BaseTask(Task):
@@ -93,7 +93,7 @@ def fb_auto_feed(self, inputs):
                 return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
         tsk_hlp.random_sleep(20, 100)
-        logger.info('task fb_auto_feed succeed. account={}'.format(account))
+        logger.info('-----task fb_auto_feed succeed. account={}'.format(account))
     except Exception as e:
         err_msg = 'fb_auto_feed catch exception. e={}'.format(str(e))
         logger.exception(err_msg)
@@ -110,15 +110,14 @@ def switch_vps_ip(self, inputs):
     logger.info('--------switch_vps_ip')
     try:
         subprocess.call("pppoe-stop", shell=True)
-        # subprocess.Popen('pppoe-stop', shell=True, stdout=subprocess.PIPE, encoding='utf8')
         time.sleep(3)
         subprocess.call('pppoe-start', shell=True)
         time.sleep(3)
-        pppoe_restart = subprocess.Popen('pppoe-status', shell=True, stdout=subprocess.PIPE)
+        pppoe_restart = subprocess.Popen('pppoe-status', shell=True, stdout=subprocess.PIPE, encoding='utf-8')
         pppoe_restart.wait(timeout=5)
         pppoe_log = str(pppoe_restart.communicate()[0])
         adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
-        logger.info('switch_vps_ip succeed. New ip address : {}'.format(adsl_ip))
+        logger.info('switch_vps_ip succeed. new ip address : {}'.format(adsl_ip))
     except Exception as e:
         err_msg = 'switch_vps_ip catch exception={}'.format(str(e))
         logger.exception(err_msg)

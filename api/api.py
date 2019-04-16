@@ -14,10 +14,10 @@ from datetime import timedelta, datetime
 from collections import namedtuple
 import json
 from apscheduler.schedulers.base import JobLookupError
-from db import TaskOpt, SchedulerOpt, JobOpt, AgentOpt, AccountOpt, Job, Task, Scheduler, Agent, Account
+from db import TaskOpt, JobOpt, Job, Task, Scheduler, Agent, Account
 from tasks.processor import send_task_2_worker
 from config import logger, get_task_args
-from util import RedisOpt
+from utils.redis_opt import RedisOpt
 from db.basic import ScopedSession
 from sqlalchemy import and_
 
@@ -387,10 +387,8 @@ def start_all_new_tasks(scheduler=None):
     检测新建任务, 并加入执行
     :return:
     """
-    if scheduler:
-        global g_bk_scheduler
-        g_bk_scheduler = scheduler
-
+    global g_bk_scheduler
+    g_bk_scheduler = scheduler if not g_bk_scheduler and scheduler else g_bk_scheduler
     # tasks = TaskOpt.get_all_new_task()
     db_session = ScopedSession()
     tasks = db_session.query(Task.id, Task.status).filter(Task.status == 'new').all()
@@ -407,10 +405,8 @@ def restart_all_tasks(scheduler=None):
     重新启动所有需要重新运行的任务, 可用于系统宕机后的重启
     :return:
     """
-    if scheduler:
-        global g_bk_scheduler
-        g_bk_scheduler = scheduler
-
+    global g_bk_scheduler
+    g_bk_scheduler = scheduler if not g_bk_scheduler and scheduler else g_bk_scheduler
     need_restart_tasks = TaskOpt.get_all_need_restart_task()
     logger.info('restart_all_tasks, need_restart_tasks={}'.format(need_restart_tasks))
     for task_id, status in need_restart_tasks:

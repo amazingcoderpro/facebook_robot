@@ -101,7 +101,7 @@ def auto_login(driver, account, password, gender=1):
 
         WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
-        logger.info("login success！username={}, passwork={}".format(account, password))
+        logger.info("login success！username={}, password={}".format(account, password))
         return True, 0
     except Exception as e:
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))

@@ -83,7 +83,8 @@ class FacebookException(BaseException):
 
             # 如果无法处理，不用再重试
             if not ret:
-                logger.error('auto process failed, return: {}, exception code: {}'.format(ret, status))
+                logger.error('auto process failed, return: {}, exception code: {}, name={}, account status={}'
+                             .format(ret, status, self.MAP_EXP_PROCESSOR[status]['name'], self.MAP_EXP_PROCESSOR[status].get('account_status', '')))
                 return ret, status
             retry -= 1
             time.sleep(wait)
@@ -255,6 +256,7 @@ class FacebookException(BaseException):
                 elif k == 'gender':
                     gender = v
             photo_path = self.get_photo(account, gender)
+            logger.info('process_photo_verify photo path={}'.format(photo))
             # photo_path = 'E:\\IMG_3563.JPG'
             # 上传图片
             photo_upload.send_keys(photo_path)
@@ -262,10 +264,10 @@ class FacebookException(BaseException):
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]'))).click()
             # 重新检查页面
-            photo_but = WebDriverWait(self.driver, 6).until(
+            photo_btn = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
-            if photo_but:
-                logger.info("image uploaded successfully!")
+            if photo_btn:
+                logger.info("photo uploaded successfully!")
                 account_photo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(photo_path))), "{}.jpg".format(account))
                 shutil.move(photo_path, account_photo_path)
                 logger.info("process photo verify succeed, photo path={}".format(account_photo_path))

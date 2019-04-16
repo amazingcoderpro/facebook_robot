@@ -189,7 +189,7 @@ class TaskHelper:
             time.sleep(lower)
             return True
 
-        lower, upper = upper, lower if lower > upper else lower, upper
+        lower, upper = upper, lower if lower > upper else (lower, upper)
         rdn = random.randint(0, 10000)
         slt = rdn % upper + 1
         slt = lower if slt < lower else slt

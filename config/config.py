@@ -11,19 +11,35 @@ import random
 from yaml import load, FullLoader
 from log_config import log_config
 
-
-config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
-with open(config_path, encoding='utf-8') as f:
-    content = f.read()
-
-facebook_json = os.path.join(os.path.dirname(__file__), 'facebook.json')
-with open(facebook_json, encoding='utf-8') as f:
-    fb_json = f.read()
-facebook_cfg = json.loads(fb_json)
-
-cfg = load(content, Loader=FullLoader)
+cfg = None
+facebook_cfg = None
 log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO, backup_count=50)
 logger = logging.getLogger()
+
+
+def load_config(env='pro'):
+    try:
+        if env == 'test':
+            config_file = 'config_test.yaml'
+        else:
+            config_file = 'config.yaml'
+
+        config_path = os.path.join(os.path.dirname(__file__), config_file)
+        with open(config_path, encoding='utf-8') as f:
+            content = f.read()
+
+        global cfg, facebook_cfg
+        cfg = load(content, Loader=FullLoader)
+
+        facebook_json = os.path.join(os.path.dirname(__file__), 'facebook.json')
+        with open(facebook_json, encoding='utf-8') as f:
+            fb_json = f.read()
+        facebook_cfg = json.loads(fb_json)
+    except Exception as e:
+        logger.exception('load config catch exception, e={}'.format(e))
+        return False
+
+    return True
 
 
 def get_redis_args():
