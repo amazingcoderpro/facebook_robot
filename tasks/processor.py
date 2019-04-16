@@ -5,7 +5,7 @@
 import json
 import datetime
 from .workers import app
-from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler, FingerPrint
+from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler, FingerPrint, Area
 from config import logger
 from db.basic import ScopedSession
 from sqlalchemy import and_
@@ -34,11 +34,11 @@ def find_optimal_agent(area, agents=None):
     """
     if not agents:
         db_scoped_session = ScopedSession()
-        agents = db_scoped_session.query(Agent.id, Agent.queue_name, Agent.active_area).filter(Agent.status != -1).order_by(Agent.status).all()
+        agents = db_scoped_session.query(Agent.id, Agent.active_area).filter(Agent.status != -1).order_by(Agent.status).all()
 
-    for agent_id, agent_queue_name, agent_area in agents:
+    for agent_id, agent_area in agents:
         if area == agent_area:
-            return agent_id, agent_queue_name, agent_area
+            return agent_id, agent_area
     return None
 
 
@@ -101,7 +101,7 @@ def send_task_2_worker(task_id):
                                            Account.profile_path, Account.configure).filter(
             Account.id.in_(account_ids)).all()
 
-        agents = db_scoped_session.query(Agent.id, Agent.queue_name, Agent.area).filter(Agent.status != -1).order_by(Agent.status).all()
+        agents = db_scoped_session.query(Agent.id, Agent.active_area).filter(Agent.status != -1).order_by(Agent.status).all()
 
         # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
         real_accounts_num = 0
@@ -114,15 +114,17 @@ def send_task_2_worker(task_id):
                 continue
 
             agent = find_optimal_agent(area=active_area, agents=agents)
+            agent_queue_name = 'default'
+            agent_id = None
             if agent:
-                agent_id, agent_queue_name, agent_area = agent
-                if not agent_queue_name:
-                    agent_queue_name = agent_area.replace(' ', '_')
+                agent_id, agent_area = agent
+                if agent_area:
+                    area_name = db_scoped_session.query(Area.name).filter(Area.id == agent_area).first()
+                    if area_name:
+                        agent_queue_name = area_name[0].replace(' ', '_')
             else:
                 logger.warning('There have no optimal agent for task, task id={}, account id={}, account_area={}'
                                .format(task_id, acc_id, active_area))
-                agent_id = None
-                agent_queue_name = 'default'
 
             active_browser = db_scoped_session.query(FingerPrint.value).filter(FingerPrint.id == active_browser_id).first()
 

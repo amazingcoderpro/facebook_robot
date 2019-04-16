@@ -498,13 +498,6 @@ class AgentOpt:
         db_session.commit()
         return agent
 
-    @classmethod
-    def get_agent_queue(cls, agent_id):
-        res = db_session.query(Agent.queue).filter(Agent.id == agent_id).first()
-        if res:
-            return res[0]
-        else:
-            return None
 
     @classmethod
     def get_enable_agents(cls, session, status_order=True):
