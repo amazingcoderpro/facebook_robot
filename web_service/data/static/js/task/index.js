@@ -100,7 +100,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             var req={};
 //            Object.assign(req, item);
             $.each($('#detail input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
-            if(canEditEndDate)
+            if(canEditEndDate && req.schedulerEndDate && req.schedulerEndTime)
                 req.scheduler={end_date: $('#detail input[name="schedulerEndDate"]').val() + ' ' + $('#detail input[name="schedulerEndTime"]').val()}//+'+08:00'}
             if(req.name=='')global.showTip('请输入任务名称');
             else $.ajax({
