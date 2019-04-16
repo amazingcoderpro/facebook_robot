@@ -270,12 +270,13 @@ class Agent(Base):
     __tablename__ = 'agent'
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # 该agent绑定的任务队列, job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
-    queue_name = Column(String(255), default='', server_default='')
+    # # 该agent绑定的任务队列, job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
+    # queue_name = Column(String(255), default='', server_default='')
 
     # 0-idle, 1-normal, 2-busy, 3-disable
     # -1--disable, 大于零代表其忙碌值（即当前待处理的任务量）
-    status = Column(String(20), default=0, server_default='0')
+    # status = Column(String(20), default=0, server_default='0')
+    status = Column(Integer, default=0, server_default=0)
 
     # 该agent所属区域
     area = Column(String(255), default='', server_default='')
