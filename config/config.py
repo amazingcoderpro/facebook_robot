@@ -18,6 +18,10 @@ logger = logging.getLogger()
 
 
 def load_config(env='pro'):
+    global cfg, facebook_cfg
+    if cfg:
+        return True
+
     try:
         if env == 'test':
             config_file = 'config_test.yaml'
@@ -25,10 +29,10 @@ def load_config(env='pro'):
             config_file = 'config.yaml'
 
         config_path = os.path.join(os.path.dirname(__file__), config_file)
+        logger.info("load config: {}".format(config_path))
         with open(config_path, encoding='utf-8') as f:
             content = f.read()
 
-        global cfg, facebook_cfg
         cfg = load(content, Loader=FullLoader)
 
         facebook_json = os.path.join(os.path.dirname(__file__), 'facebook.json')
