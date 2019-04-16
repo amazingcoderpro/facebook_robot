@@ -32,6 +32,7 @@ class FacebookException(BaseException):
     11:  登录 手机短信验证码验证
     12： 账号密码不正确
     13： 移动端共享登录验证
+    14:  条款和使用政策验证
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -48,7 +49,8 @@ class FacebookException(BaseException):
         10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email_code'},
         11: {'name': 'sms_verify', 'key_words': ['input[name="p_c"]'], 'account_status': 'verifying_sms_code'},
         12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
-        13: {'name': 'shared_login', 'key_words': ['div[id="mErrorView"]'], 'account_status': 'verifying_shared_login'},
+        13: {'name': 'shared_login', 'key_words': ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]'], 'account_status': 'verifying_shared_login'},
+        14: {'name': 'policy_clause', 'key_words': ['button[value="J’accepte"]'], 'account_status': 'verifying_policy_clause'},
     }
 
     def __init__(self, driver: WebDriver):
@@ -330,6 +332,23 @@ class FacebookException(BaseException):
         except:
             return False, 13
         return False, 13
+
+    def process_policy_clause(self, **kwargs):
+        """
+        条款和使用政策验证
+        :return: 成功返回 True, 失败返回 False
+        """
+        try:
+            logger.info("条款和使用政策验证")
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(14)['key_words'][0])))
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="J’accepte"]'))).click()
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="Revenir au fil d’actualité"]'))).click()
+        except:
+            return False, 14
+        return False, 14
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
