@@ -35,7 +35,6 @@ def run(task_start_mode='new', update_interval=30):
     try:
         logger.info('----------------Start Task Scheduler System. task_start_mode={}, interval={}--------------------'.format(task_start_mode, update_interval))
         bk_scheduler = BackgroundScheduler()
-        print(id(bk_scheduler))
         if task_start_mode == 'restart':
             # restart模式会将之前所有没有结束的任务重新拉起执行
             restart_all_tasks(scheduler=bk_scheduler)

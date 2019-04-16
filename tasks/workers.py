@@ -5,13 +5,23 @@
 
 
 import os
+import sys
 from datetime import timedelta
 from celery import Celery, platforms
 from kombu import Exchange, Queue
 from config import load_config, get_broker_and_backend
 
 # platforms.C_FORCE_ROOT = True
-load_config(env='test')
+
+env = 'pro'
+for idx, arg in enumerate(sys.argv):
+    if arg == '-env':
+        env = sys.argv[idx+1]
+        sys.argv.pop(idx)
+        sys.argv.pop(idx)
+        break
+
+load_config(env=env)
 
 tasks = [
     'tasks.tasks'
@@ -50,4 +60,4 @@ app.conf.update(
 #         'options': {'queue': 'feed_account_queue', 'routing_key': 'for_feed_account'}
 #     }
 # }
-#celery -A tasks.workers -Q default,China,North_American,Japan worker -l info -c 4 -Ofair -f logs/celery.log
+#celery -A tasks.workers -Q default,China,North_American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env pro
