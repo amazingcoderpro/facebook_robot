@@ -1,5 +1,5 @@
 redis:
-    host: 47.112.113.252 #10.252.252.67
+    host: 10.252.252.67 #10.252.252.67
     port: 6379
     password: 'charles'
     broker: 5                    # broker for celery
@@ -7,7 +7,7 @@ redis:
     cache: 1
 
 db:
-    host: 47.112.113.252 # 10.252.252.67
+    host: 10.252.252.67 # 10.252.252.67
     port: 3306
     user: charles
     password: charles@orderplus
@@ -21,8 +21,8 @@ account:
     remote_photo_path: ftp://xxx.xx.xx/ab/cc    # 账号图象的服务器存储位置
 
 task:
-    job_timeout: 86400               # job的超时时间3600×24秒,即1天
+    job_timeout: 3600               # job的超时时间3600秒,即1小时
     job_update_period: 180          # job每次更新的时间段默认为180秒
-    one_time_task_timeout: 25920    # 一次性任务的超时时间为3天, 3600*24*3秒
-    cycle_task_timeout: 10368000    # 周期任务的超时时间为120天
-    update_interval: 60             # 任务的更新周期，默认为一分钟
+    one_time_task_timeout: 3600    # 一次性任务的超时时间为1小时天, 3600秒
+    cycle_task_timeout: 86400    # 周期任务的超时时间为1天
+    update_interval: 30         # 测试环境，任务的更新周期，默认为30秒

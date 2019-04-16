@@ -108,7 +108,7 @@ class Task(Base):
     # 任务状态, -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing, new-新建,还没处理, cancelled--取消了
     # status = Column(Integer, default=-1, server_default='-1')
     # 任务状态改用字符串是为了直观, 避免前后端转换的麻烦
-    status = Column(String(20), default='new', server_default='new')
+    status = Column(String(100), default='new', server_default='new')
 
     # 该任务最大执行次数（即成功的job次数）,比如刷分,可以指定最大刷多少次
     limit_counts = Column(Integer, default=1, server_default='1')
@@ -167,7 +167,7 @@ class Job(Base):
 
     # -1-pending, 0-failed, 1-succeed, 2-running
     # status = Column(Integer, default=-1, server_default='-1')
-    status = Column(String(20), default='pending', server_default='pending')
+    status = Column(String(100), default='pending', server_default='pending')
 
     # 这个job执行时被分配的id,用以在结果队列中跟踪job执行情况
     track_id = Column(String(255), default='', server_default='', unique=True)
@@ -216,7 +216,7 @@ class Account(Base):
     profile_id = Column(String(100), default='', server_default='')
 
     # 0-valid, 1-invalid, 2-verifying, 3-other
-    status = Column(String(20), default='valid', server_default='valid')
+    status = Column(String(100), default='valid', server_default='valid')
 
     # 是否正在被某任务使用 0-未使用, 大于1代表正在被使用,数字代表并发使用数
     using = Column(Integer, default=0, server_default='0')

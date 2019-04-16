@@ -44,36 +44,27 @@ def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=N
 
     return task_result
 
-# inputs = {
-#     'task': {
-#         'task_id': task_id,
-#         'configure': json.loads(task_configure) if task_configure else {},
-#     },
-#     'account': {
-#         'account': account,
-#         'password': password,
-#         'email': email,
-#         'email_pwd': email_pwd,
-#         'gender': gender,
-#         'phone_number': phone_number,
-#         'birthday': birthday,
-#         'national_id': national_id,
-#         'name': name,
-#         'active_area': active_area,
-#         'active_browser': active_browser,
-#         'profile_path': profile_path,
-#         'configure': json.loads(account_configure) if account_configure else {}
-#     }
-# }
 
 class TaskHelper:
     """
     任务配置及判断辅助类
     """
     def __init__(self, inputs):
+        self.is_valid = True
+        if not isinstance(inputs, dict):
+            self.is_valid = False
+            return
         self.task_info = inputs.get('task', None)
-        self.task_id = self.task_info.get('task_id', -1)
+        if not self.task_info:
+            self.is_valid = False
+            return
 
+        self.account_info = inputs.get('account', None)
+        if not self.account_info:
+            self.is_valid = False
+            return
+
+        self.task_id = self.task_info.get('task_id', -1)
         task_config = self.task_info.get('configure', {})
         self.is_post = task_config.get('is_post', False)
         self.post_content = task_config.get('post_content', '')
@@ -82,7 +73,6 @@ class TaskHelper:
         self.is_chat = task_config.get('is_chat', False)
         self.chat_content = task_config.get('chat_content', '')
 
-        self.account_info = inputs.get('account', None)
         self.account = self.account_info.get('account')
         self.password = self.account_info.get('password')
         self.account_status = self.account_info.get('status')
@@ -105,10 +95,7 @@ class TaskHelper:
         self.verify_interval = get_account_args().get('verify_interval', 36000)
 
     def is_inputs_valid(self):
-        if not (isinstance(self.account_info, dict) and isinstance(self.task_info, dict)):
-            return False
-
-        return True
+        return self.is_valid
 
     def is_should_login(self):
         """
@@ -139,9 +126,9 @@ class TaskHelper:
             dt_last_verify = datetime.strptime(self.last_verifying_time, "%Y-%m-%d %H:%M:%S")
             if (datetime.now() - dt_last_verify).total_seconds() < self.verify_interval:
                 logger.warning(logger.error('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verifying_time)))
-                return False
+                return True
 
-        return True
+        return False
 
     def get_friend_keys(self, limit=1):
         """
@@ -158,18 +145,21 @@ class TaskHelper:
         else:
             return []
 
-    def get_posts(self):
+    def get_posts(self, force=False):
         """
         获取要发布的状态
         :return: 字典
         """
+        if force:
+            return get_fb_posts(1)
+
         if self.is_post:
             if self.post_content:
-                return {'post': self.post_content, 'img': ''}
+                return {'post': self.post_content, 'img': []}
             else:
                 return get_fb_posts(1)
         else:
-            return {'post': '', 'img': ''}
+            return {'post': '', 'img': []}
 
     def get_chat_msgs(self, limit=1):
         """
@@ -199,7 +189,11 @@ class TaskHelper:
             time.sleep(lower)
             return True
 
-        lower, upper = upper, lower if lower > upper else lower, upper
+        if lower > upper:
+            tmp = lower
+            lower = upper
+            upper = tmp
+
         rdn = random.randint(0, 10000)
         slt = rdn % upper + 1
         slt = lower if slt < lower else slt
@@ -212,3 +206,32 @@ class TaskHelper:
             return True
 
         return False
+
+
+if __name__ == '__main__':
+    inputs = {
+        'task': {
+            'task_id': 1234,
+            'configure': {},
+        },
+        'account': {
+            'account': "abc@gmail.com",
+            'password': "password",
+            'email': '',
+            'email_pwd': '',
+            'gender': 0,
+            'phone_number': "13991623651",
+            'birthday': "1999-03-15",
+            'national_id': '',
+            'name': '',
+            'active_area': 'China',
+            'active_browser': {'device': 'iPhone 6'},
+            'profile_path': '',
+            'configure': {'last_login': '2019-04-20 19:20:20', 'last_verify': '2019-04-20 19:20:20'}
+        }
+    }
+
+
+    th = TaskHelper(inputs)
+    print(th.get_posts(True))
+    th.is_in_verifying()
