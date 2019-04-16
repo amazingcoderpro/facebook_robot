@@ -276,7 +276,7 @@ class Agent(Base):
     # 0-idle, 1-normal, 2-busy, 3-disable
     # -1--disable, 大于零代表其忙碌值（即当前待处理的任务量）
     # status = Column(String(20), default=0, server_default='0')
-    status = Column(Integer, default=0, server_default=0)
+    status = Column(Integer, default=0, server_default='0')
 
     # 该agent所属区域
     area = Column(String(255), default='', server_default='')
