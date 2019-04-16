@@ -108,7 +108,7 @@ class Task(Base):
     # 任务状态, -1-pending, 0-failed, 1-succeed, 2-running, 3-pausing, new-新建,还没处理, cancelled--取消了
     # status = Column(Integer, default=-1, server_default='-1')
     # 任务状态改用字符串是为了直观, 避免前后端转换的麻烦
-    status = Column(String(20), default='new', server_default='new')
+    status = Column(String(100), default='new', server_default='new')
 
     # 该任务最大执行次数（即成功的job次数）,比如刷分,可以指定最大刷多少次
     limit_counts = Column(Integer, default=1, server_default='1')
@@ -140,7 +140,7 @@ class Task(Base):
     configure = Column(String(2048), default='', server_default='')
 
     # 最后一次更新的时间戳
-    last_update = Column(DateTime(6))
+    last_update = Column(DateTime(3), default=None)
 
     def accounts_list(self):
         return [acc.account for acc in self.accounts]
@@ -167,7 +167,7 @@ class Job(Base):
 
     # -1-pending, 0-failed, 1-succeed, 2-running
     # status = Column(Integer, default=-1, server_default='-1')
-    status = Column(String(20), default='pending', server_default='pending')
+    status = Column(String(100), default='pending', server_default='pending')
 
     # 这个job执行时被分配的id,用以在结果队列中跟踪job执行情况
     track_id = Column(String(255), default='', server_default='', unique=True)
@@ -188,22 +188,6 @@ class Job(Base):
     def __repr__(self):
         return "id:{}, task:{}, account:{}, start_time:{}, status:{}, result:{}. ".format(
             self.id, self.task, self.account, self.start_time, self.status, self.result)
-
-#
-# class Action(Base):
-#     __tablename__ = 'action'
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     name = Column(String(255), default='', server_default='')
-#     depend_on = Column(Integer, ForeignKey('action.id'), default=None)
-#
-#
-# class JobActions(Base):
-#     __tablename__ = 'job_actions'
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     job_id = Column(Integer, ForeignKey('job.id'))
-#     action_id = Column(Integer, ForeignKey('action.id'))
-#     result = Column(String(255), default='', server_default='')
-#
 
 
 class Account(Base):
@@ -232,7 +216,7 @@ class Account(Base):
     profile_id = Column(String(100), default='', server_default='')
 
     # 0-valid, 1-invalid, 2-verifying, 3-other
-    status = Column(String(20), default='valid', server_default='valid')
+    status = Column(String(100), default='valid', server_default='valid')
 
     # 是否正在被某任务使用 0-未使用, 大于1代表正在被使用,数字代表并发使用数
     using = Column(Integer, default=0, server_default='0')
@@ -260,6 +244,7 @@ class Account(Base):
 
     # 账号的其他非常规配置信息,json串
     configure = Column(String(2048), default='', server_default='')
+    last_update = Column(DateTime(3), default=None)
 
     def __repr__(self):
         return "id:{}, account:{}, password:{}, email={}, email_pwd:{}, gender:{}, birthday:{}, national_id:{}, " \

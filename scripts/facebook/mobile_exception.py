@@ -7,7 +7,6 @@ import shutil
 import time
 import random
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -33,6 +32,7 @@ class FacebookException(BaseException):
     11:  登录 手机短信验证码验证
     12： 账号密码不正确
     13： 移动端共享登录验证
+    14:  条款和使用政策验证
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -45,12 +45,12 @@ class FacebookException(BaseException):
         6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_ask'},
         7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying_photo'},
-        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]'], 'account_status': 'verifying_step'},
+        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]', 'div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_step'},
         10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email_code'},
         11: {'name': 'sms_verify', 'key_words': ['input[name="p_c"]'], 'account_status': 'verifying_sms_code'},
         12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
-        13: {'name': 'shared_login', 'key_words': ['div[id="mErrorView"]'], 'account_status': 'verifying_shared_login'},
-
+        13: {'name': 'shared_login', 'key_words': ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]'], 'account_status': 'verifying_shared_login'},
+        14: {'name': 'policy_clause', 'key_words': ['button[value="J’accepte"]'], 'account_status': 'verifying_policy_clause'},
     }
 
     def __init__(self, driver: WebDriver):
@@ -85,7 +85,8 @@ class FacebookException(BaseException):
 
             # 如果无法处理，不用再重试
             if not ret:
-                logger.error('auto process failed, return: {}, exception code: {}'.format(ret, status))
+                logger.error('auto process failed, return: {}, exception code: {}, name={}, account status={}'
+                             .format(ret, status, self.MAP_EXP_PROCESSOR[status]['name'], self.MAP_EXP_PROCESSOR[status].get('account_status', '')))
                 return ret, status
             retry -= 1
             time.sleep(wait)
@@ -257,6 +258,7 @@ class FacebookException(BaseException):
                 elif k == 'gender':
                     gender = v
             photo_path = self.get_photo(account, gender)
+            logger.info('process_photo_verify photo path={}'.format(photo))
             # photo_path = 'E:\\IMG_3563.JPG'
             # 上传图片
             photo_upload.send_keys(photo_path)
@@ -264,10 +266,10 @@ class FacebookException(BaseException):
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]'))).click()
             # 重新检查页面
-            photo_but = WebDriverWait(self.driver, 6).until(
+            photo_btn = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
-            if photo_but:
-                logger.info("image uploaded successfully!")
+            if photo_btn:
+                logger.info("photo uploaded successfully!")
                 account_photo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(photo_path))), "{}.jpg".format(account))
                 shutil.move(photo_path, account_photo_path)
                 logger.info("process photo verify succeed, photo path={}".format(account_photo_path))
@@ -302,6 +304,8 @@ class FacebookException(BaseException):
             logger.info("登录短信验证码验证")
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
+            WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'button[name="submit[Back]"]'))).click()
         except:
             return False, 11
         return False, 11
@@ -330,6 +334,23 @@ class FacebookException(BaseException):
         except:
             return False, 13
         return False, 13
+
+    def process_policy_clause(self, **kwargs):
+        """
+        条款和使用政策验证
+        :return: 成功返回 True, 失败返回 False
+        """
+        try:
+            logger.info("条款和使用政策验证")
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(14)['key_words'][0])))
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="J’accepte"]'))).click()
+            WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="Revenir au fil d’actualité"]'))).click()
+        except:
+            return False, 14
+        return False, 14
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))

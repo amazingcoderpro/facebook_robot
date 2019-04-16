@@ -11,19 +11,35 @@ import random
 from yaml import load, FullLoader
 from log_config import log_config
 
-
-config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
-with open(config_path, encoding='utf-8') as f:
-    content = f.read()
-
-facebook_json = os.path.join(os.path.dirname(__file__), 'facebook.json')
-with open(facebook_json, encoding='utf-8') as f:
-    fb_json = f.read()
-facebook_cfg = json.loads(fb_json)
-
-cfg = load(content, Loader=FullLoader)
-log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO)
+cfg = None
+facebook_cfg = None
+log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO, backup_count=50)
 logger = logging.getLogger()
+
+
+def load_config(env='pro'):
+    try:
+        if env == 'test':
+            config_file = 'config_test.yaml'
+        else:
+            config_file = 'config.yaml'
+
+        config_path = os.path.join(os.path.dirname(__file__), config_file)
+        with open(config_path, encoding='utf-8') as f:
+            content = f.read()
+
+        global cfg, facebook_cfg
+        cfg = load(content, Loader=FullLoader)
+
+        facebook_json = os.path.join(os.path.dirname(__file__), 'facebook.json')
+        with open(facebook_json, encoding='utf-8') as f:
+            fb_json = f.read()
+        facebook_cfg = json.loads(fb_json)
+    except Exception as e:
+        logger.exception('load config catch exception, e={}'.format(e))
+        return False
+
+    return True
 
 
 def get_redis_args():
@@ -56,7 +72,11 @@ def get_account_args():
     return cfg.get('account')
 
 
-def get_fb_friend_keys(limit=0):
+def get_task_args():
+    return cfg.get('task')
+
+
+def get_fb_friend_keys(limit=1):
     fks = facebook_cfg.get('friend_search_keys')
     if limit <= 0:
         return fks
@@ -64,10 +84,18 @@ def get_fb_friend_keys(limit=0):
         return random.sample(fks, limit)
 
 
+def get_fb_posts(limit=1):
+    posts = facebook_cfg.get('posts')
+    if limit <= 0:
+        return posts
+    else:
+        return random.sample(posts, limit)
 
-def get_fb_posts():
-    facebook_cfg.get('posts')
 
+def get_fb_chat_msgs(limit=1):
+    msgs = facebook_cfg.get('chat_msgs')
+    if limit <= 0:
+        return msgs
+    else:
+        return random.sample(msgs, limit)
 
-def get_fb_chat_msgs():
-    facebook_cfg.get('chat_msgs')

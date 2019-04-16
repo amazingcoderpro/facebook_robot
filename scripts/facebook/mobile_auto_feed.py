@@ -29,7 +29,6 @@ def start_chrome(finger_print, headless=True):
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--disable-gpu')
-
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
         chrome_options.add_argument('--user-agent=iphone')
@@ -101,7 +100,7 @@ def auto_login(driver, account, password, gender=1):
 
         WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
-        logger.info("login success！username={}, passwork={}".format(account, password))
+        logger.info("login success！username={}, password={}".format(account, password))
         return True, 0
     except Exception as e:
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
@@ -192,7 +191,7 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
             page_url = "https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend)
             driver.get(page_url)
 
-            # # 判断是否进入了加好友页面
+            # 判断是否进入了加好友页面
             search_inputs = WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "input[id='main-search-input'")))
 
@@ -256,11 +255,18 @@ def send_messages(driver):
         # 1.检查该账号是否存在好友
         # 2.向好友发送消息
         time.sleep(3)
-        driver.get("https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format("xiaoning"))
-        time.sleep(1000)
-        add_search_fridens = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, '#u_1e_z > div > div')))
-        add_search_fridens.cliick()
+        message_url = "https://m.facebook.com/friends/center/friends/?mff_nav=1"
+        driver.get(message_url)
+        # 检查是否进入好友列表页面
+        list_fridens = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-sigil="touchable are-friends-popup"]')))
+        if not list_fridens:
+            logger.warning('can not find any friend avatar. friend keyword={}'.format(list_fridens))
+            return False
+        else:
+            WebDriverWait(driver, 4).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-sigil="touchable are-friends-popup"]')))
+            'img profpic'
+
         add__fridens = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
         add__fridens.click()
@@ -315,7 +321,7 @@ if __name__ == '__main__':
             # user_messages(driver)
             # local_surface(driver)
             time.sleep(6)
-            # driver.quit()
+            driver.quit()
 
 
 

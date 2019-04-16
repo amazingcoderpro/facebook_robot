@@ -12,6 +12,7 @@ from celery import Task
 from .workers import app
 from config import logger, get_account_args, get_fb_friend_keys
 import scripts.facebook as fb
+from utils.task_help import make_result, TaskHelper
 
 
 class BaseTask(Task):
@@ -31,105 +32,37 @@ class BaseTask(Task):
 #                   queue='feed_account', routing_key='for_feed_account')
 
 
-# inputs = {
-#     'task': {
-#         'task_id': task_id,
-#         'configure': json.loads(task_configure) if task_configure else {},
-#     },
-#     'account': {
-#         'account': account,
-#         'password': password,
-#         'email': email,
-#         'email_pwd': email_pwd,
-#         'gender': gender,
-#         'phone_number': phone_number,
-#         'birthday': birthday,
-#         'national_id': national_id,
-#         'name': name,
-#         'active_area': active_area,
-#         'active_browser': active_browser,
-#         'profile_path': profile_path,
-#         'configure': json.loads(account_configure) if account_configure else {}
-#     }
-# }
-
-
-def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None, last_farming=None,
-                last_comment=None, last_edit=None, last_verify=None, phone_number='', profile_path='', **kwargs):
-    task_result = {
-        'status': 'failed',  # 'failed', 'succeed'
-        'err_msg': '',
-        'account_status': '',  # valid, invalid, verifying
-        'account_configure': {}
-    }
-
-    if ret:
-        task_result['status'] = 'succeed'
-    else:
-        task_result['status'] = 'failed'
-        account_status = fb.FacebookException.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')    # valid, invalid, verifying
-        task_result['account_status'] = account_status
-        task_result['err_msg'] = err_msg if err_msg else 'err_code={}'.format(err_code)
-
-    task_result['account_configure'] = {
-        'last_login': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_login, datetime.datetime) else '',
-        'last_post': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_post, datetime.datetime) else '',
-        'last_chat': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_chat, datetime.datetime) else '',
-        'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime.datetime) else '',
-        'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime.datetime) else '',
-        'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime.datetime) else '',
-        'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime.datetime) else '',
-        'phone_number': phone_number,
-        'profile_path': profile_path,
-    }
-
-    for k, v in kwargs.items():
-        task_result['account_configure'][k] = v
-
-    return task_result
-
-
 @app.task(base=BaseTask, bind=True, max_retries=1, time_limit=1200)
 def fb_auto_feed(self, inputs):
     logger.info('----------fb_auto_feed task running, inputs=\r\n{}'.format(inputs))
     try:
         driver = None
         last_login = None
-        account_info = inputs.get('account', None)
-        task_info = inputs.get('task', None)
+        tsk_hlp = TaskHelper(inputs)
 
-        if not (isinstance(account_info, dict) and isinstance(task_info, dict)):
+        if not tsk_hlp.is_inputs_valid():
             logger.error('inputs not valid, inputs={}'.format(inputs))
-            return make_result(err_msg='inputs not valid.')
+            return make_result(err_msg='inputs invalid.')
 
-        task_id = task_info.get('task_id', -1)
-        task_config = task_info.get('configure', {})
-        is_post = task_config.get('is_post', False)
-        post_content = task_config.get('post_content', '')
-        is_add_friend = task_config.get('is_add_friend', False)
-        friend_keys = task_config.get('friend_key', '')
+        if not tsk_hlp.is_should_login():
+            logger.warning('is_should_login return False, task id={}, account={}'.format(tsk_hlp.task_id, tsk_hlp.account))
+            return make_result(err_msg='is_should_login return False')
 
-        account = account_info.get('account')
-        password = account_info.get('password')
-        active_browser = account_info.get("active_browser")
-        account_configure = account_info.get("configure", {})
-        last_login_time = account_configure.get('last_login', '')
-        if last_login_time:
-            dt_last_login = datetime.datetime.strptime(last_login_time, "%Y-%m-%d %H:%M:%S")
-            if (datetime.datetime.now() - dt_last_login).total_seconds() < get_account_args().get('login_interval', 3600):
-                err_msg = 'Less than an hour before the last login, last login={}'.format(last_login_time)
-                logger.error(err_msg)
-                return make_result(err_msg=err_msg)
+        if tsk_hlp.is_in_verifying():
+            logger.warning('is_in_verifying return True, task id={}, account={}'.format(tsk_hlp.task_id, tsk_hlp.account))
+            return make_result(err_msg='is_in_verifying return True')
 
         # 分步执行任务
         # 启动浏览器
-        driver, err_msg = fb.start_chrome(finger_print=active_browser, headless=True)
+        driver, err_msg = fb.start_chrome(finger_print=tsk_hlp.active_browser, headless=True)
         if not driver:
             msg = 'start chrome failed. err_msg={}'.format(err_msg)
             logger.error(msg)
             return make_result(err_msg=err_msg)
 
-        ret, err_code = fb.auto_login(driver=driver, account=account, password=password, gender=account_info.get('gender', 1))
+        account = tsk_hlp.account
+        password = tsk_hlp.password
+        ret, err_code = fb.auto_login(driver=driver, account=account, password=password, gender=tsk_hlp.gender)
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)
@@ -138,33 +71,29 @@ def fb_auto_feed(self, inputs):
         last_login = datetime.datetime.now()
 
         logger.info('login succeed. account={}, password={}'.format(account, password))
-        random_num = random.randint(0, 1000)
-        if random_num/2 == 0 or random_num / 3 == 0:
-            ret, err_code = fb.user_messages(driver=driver)
-            if not ret:
-                msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
-                logger.error(msg)
-                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
+        ret, err_code = fb.user_messages(driver=driver)
+        if not ret:
+            msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
+            logger.error(msg)
+            return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
-        time.sleep(random_num % 5)
-        if random_num / 2 != 0 or random_num / 3 == 0:
+        tsk_hlp.random_sleep()
+        if tsk_hlp.random_select():
             ret, err_code = fb.local_surface(driver=driver)
             if not ret:
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
                 return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
-        time.sleep(random_num % 5)
-        if is_add_friend:
-            fks = friend_keys.split(';')
-            if not fks:
-                fks = get_fb_friend_keys(random_num % 3+1)
-            ret, err_code = fb.add_friends(driver, search_keys=fks, limit=random_num % 2+1)
+        tsk_hlp.random_sleep()
+        fks = tsk_hlp.get_friend_keys(1)
+        if fks:
+            ret, err_code = fb.add_friends(driver, search_keys=fks, limit=random.randint(1, 3))
             if not ret:
                 err_msg = 'add_friends failed, err_code={}'.format(err_code)
                 return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
 
-        time.sleep(random_num % 100)
-        logger.info('task fb_auto_feed succeed. account={}'.format(account))
+        tsk_hlp.random_sleep(20, 100)
+        logger.info('-----task fb_auto_feed succeed. account={}'.format(account))
     except Exception as e:
         err_msg = 'fb_auto_feed catch exception. e={}'.format(str(e))
         logger.exception(err_msg)
@@ -176,23 +105,22 @@ def fb_auto_feed(self, inputs):
     return make_result(True, last_login=last_login)
 
 
-@app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)
+@app.task(base=BaseTask, bind=True, max_retries=3, time_limit=300)
 def switch_vps_ip(self, inputs):
-    logger.info('switch_vps_ip')
+    logger.info('--------switch_vps_ip')
     try:
         subprocess.call("pppoe-stop", shell=True)
-        # subprocess.Popen('pppoe-stop', shell=True, stdout=subprocess.PIPE, encoding='utf8')
         time.sleep(3)
         subprocess.call('pppoe-start', shell=True)
         time.sleep(3)
-        pppoe_restart = subprocess.call('pppoe-status', shell=True)
-        pppoe_restart.wait()
-        pppoe_log = pppoe_restart.communicate()[0]
+        pppoe_restart = subprocess.Popen('pppoe-status', shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+        pppoe_restart.wait(timeout=5)
+        pppoe_log = str(pppoe_restart.communicate()[0])
         adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
-        logger.info('switch_vps_ip succeed. New ip address : {}'.format(adsl_ip))
+        logger.info('switch_vps_ip succeed. new ip address : {}'.format(adsl_ip))
     except Exception as e:
         err_msg = 'switch_vps_ip catch exception={}'.format(str(e))
-        logger.error(err_msg)
+        logger.exception(err_msg)
         return make_result(err_msg=err_msg)
 
     logger.info('')

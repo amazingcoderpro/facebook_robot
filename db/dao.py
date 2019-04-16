@@ -738,7 +738,9 @@ def produce_account():
             AccountOpt.save_account(account=user_account,
                             password=user_password, owner=3, category=1,
                             email='', email_pwd=email_password,
-                            gender=gender, birthday='1986-8-4', profile_id='', status='valid', active_browser=(t%6+1), configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
+                            gender=gender, birthday='1986-8-4', profile_id='', status='valid', active_browser=(t%6+1),
+                                    configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'},
+                                                         last_update=datetime.datetime.now()))
 
 
 def produce_tasks():
@@ -770,18 +772,27 @@ def generate_fb_json():
     with open('name.txt', 'r', encoding='utf-8') as f:
         lines = f.readlines()
         names = []
-        limit = 0
         for line in lines:
-            if limit >=1000:
-                break
             name = line.strip()
             names.append(name)
-            limit+=1
+
+    with open('posts.txt', 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        posts = []
+        for line in lines:
+            ss = line.split('","')
+            post_content = ss[0].split('"')[1]
+            img = ss[1].split('")')[0]
+            print(post_content)
+            print(img)
+            posts.append({'post': post_content, 'images': [img]})
+
     dict_cfg = {"friend_search_keys": names,
                 "chat_msgs": [],
-                "posts": []
+                "posts": posts
                 }
 
+    print(dict_cfg)
     import json
     str_cfg = json.dumps(dict_cfg)
     with open('facebook.json', 'w', encoding='utf-8') as f:
@@ -794,7 +805,7 @@ if __name__ == '__main__':
     # init_db_data()
     # show_test_data()
     # test_db()
-    produce_account()
+    # produce_account()
     # print(11)
     # produce_tasks()
     generate_fb_json()

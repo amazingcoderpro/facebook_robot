@@ -77,6 +77,7 @@ def send_task_2_worker(task_id):
                 # 一个任务正在运行job积压过多时, 暂时停止产生新的jobs
                 if task_running_jobs >= 10000:
                     logger.error('task({}) jobs num={} has reached jobs limit 10000'.format(task_id, task_running_jobs))
+                    return True
 
         # 根据task的类别，找到task对应的处理函数
         tcg = db_scoped_session.query(TaskCategory.processor).filter(TaskCategory.category == category).first()
@@ -108,8 +109,8 @@ def send_task_2_worker(task_id):
             acc_id, status, account, password, email, email_pwd, gender, phone_number, birthday, national_id, name, \
             active_area, active_browser_id, profile_path, account_configure = acc
 
-            if status != 'valid':
-                logger.warning('account can not be used. task id={}, account id={}'.format(task_id, acc_id))
+            if status == 'invalid':
+                logger.warning('account status in invalid. task id={}, account id={}'.format(task_id, acc_id))
                 continue
 
             agent = find_optimal_agent(area=active_area, agents=agents)
@@ -134,6 +135,7 @@ def send_task_2_worker(task_id):
                 'account': {
                     'account': account,
                     'password': password,
+                    'status': status,
                     'email': email,
                     'email_pwd': email_pwd,
                     'gender': gender,
@@ -175,7 +177,7 @@ def send_task_2_worker(task_id):
                 # 如果已经在运行的jobs,加上当前产生的jobs数量超过用户需求数量,则break, 停止生产jobs, 下个调度周期重新检测再试
                 total_running_jobs = task_running_jobs + real_accounts_num
                 if (limit_counts and total_running_jobs >= int(limit_counts*1.2)) or total_running_jobs >= 10000:
-                    logger.error('task({}) total running jobs num({}) is already more than limit counts({})*1.2'.format(task_id, total_running_jobs, limit_counts))
+                    logger.warning('task({}) total running jobs num({}) is already more than limit counts({})*1.2'.format(task_id, total_running_jobs, limit_counts))
                     break
 
         # 更新任务状态为running
@@ -189,7 +191,7 @@ def send_task_2_worker(task_id):
 
         db_scoped_session.commit()
 
-        logger.error('----send_task_2_worker send task {}, produce jobs={}, used {} seconds. '.format(task_id, real_accounts_num, (
+        logger.info('----send_task_2_worker send task {}, produce jobs={}, used {} seconds. '.format(task_id, real_accounts_num, (
                 datetime.datetime.now() - time_it_beg).seconds))
     except BaseException as e:
         logger.exception('send_task_2_worker exception task id={}, e={}'.format(task_id, e))
