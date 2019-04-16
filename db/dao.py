@@ -801,7 +801,7 @@ def generate_fb_json():
 
 
 if __name__ == '__main__':
-    init_db_data()
+    # init_db_data()
     # show_test_data()
     # test_db()
     # produce_account()
