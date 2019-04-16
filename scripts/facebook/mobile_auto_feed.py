@@ -249,7 +249,14 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
         return fbexcept.auto_process(3)
 
 
-def send_messages(driver):
+def send_messages(driver:WebDriver, keywords, limit=2):
+    """
+
+    :param driver:
+    :param keywords:
+    :param limit:
+    :return:
+    """
     # 跟朋友聊天
     try:
         # 1.检查该账号是否存在好友
@@ -260,17 +267,21 @@ def send_messages(driver):
         # 检查是否进入好友列表页面
         list_fridens = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-sigil="touchable are-friends-popup"]')))
         if not list_fridens:
-            logger.warning('can not find any friend avatar. friend keyword={}'.format(list_fridens))
-            return False
+            logger.warning('can not find any friend')
+            return
         else:
-            WebDriverWait(driver, 4).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-sigil="touchable are-friends-popup"]')))
-            'img profpic'
+            # 点击进入好友主页
+            send_messages_fridens = WebDriverWait(driver, 4).until(
+                EC.presence_of_element_located((By.CLASS_NAME, '#img#profpic')))
+            for index_fre in send_messages_fridens:
+                idx = index_fre[limit]
+                idx.click()
 
-        add__fridens = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
-        add__fridens.click()
-        return True, 0
+            # 进入聊天页面
+            send_messages_fridens = WebDriverWait(driver, 4).until(
+                EC.presence_of_element_located((By.CLASS_NAME, '#img#profpic')))
+            send_messages_fridens.click()
+
     except:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
