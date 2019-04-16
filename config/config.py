@@ -47,6 +47,8 @@ def load_config(env='pro'):
 
 
 def get_redis_args():
+    if not cfg:
+        load_config()
     return cfg.get('redis')
 
 
@@ -69,6 +71,8 @@ def get_broker_and_backend():
 
 
 def get_db_args():
+    if not cfg:
+        load_config()
     return cfg.get('db')
 
 

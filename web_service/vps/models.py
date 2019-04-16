@@ -19,10 +19,10 @@ class Agent(models.Model):
 
     # 0-idle, 1-normal, 2-busy, 3-disable
     # -1--disable, 大于零代表其忙碌值（即当前待处理的任务量）
-    status = models.CharField(max_length=20, default='0')
+    status = models.IntegerField(default=0)
 
     # 该agent所属区域
-    active_area = models.CharField(max_length=255, default='')
+    active_area = models.ForeignKey(Area, db_column='active_area', on_delete=models.CASCADE)
 
     # 该agent的配置信息
     configure = models.CharField(max_length=2048, default='')
