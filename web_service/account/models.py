@@ -6,6 +6,7 @@ from datetime import datetime
 from django.db import models
 
 from users.models import User
+from vps.models import Area
 
 
 class AccountCategory(models.Model):
@@ -68,7 +69,7 @@ class Account(models.Model):
 
     # active_ip = Column(String(255), default='', server_default='')
     # 活跃地域
-    active_area = models.CharField(max_length=255, default='')
+    active_area = models.ForeignKey(Area, db_column='active_area', on_delete=models.CASCADE)
     # 常用浏览器指纹
     # active_browser = models.CharField(max_length=2048, default='')
     # 账号的其他非常规配置信息
