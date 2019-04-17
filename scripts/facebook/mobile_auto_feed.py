@@ -62,8 +62,6 @@ def auto_login(driver, account, password, gender=1):
     # 登录FB
     # driver.delete_all_cookies()
     driver.get('https://www.facebook.com/')
-    time.sleep(3)
-    logger.info('auto_login:{},{}'.format(account, password))
     try:
         # FB登录
         email_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
@@ -109,6 +107,7 @@ def auto_login(driver, account, password, gender=1):
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
         fb_exp = FacebookException(driver)
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
+
 
 
 def browse_page(driver, browse_times=10, distance=0, interval=0):

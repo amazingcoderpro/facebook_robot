@@ -10,9 +10,9 @@ import subprocess
 import re
 from celery import Task
 from .workers import app
-from config import logger, get_account_args, get_fb_friend_keys
+from config import logger
 import scripts.facebook as fb
-from utils.task_help import make_result, TaskHelper
+from utils.task_help import TaskHelper
 
 
 class BaseTask(Task):
@@ -42,15 +42,15 @@ def fb_auto_feed(self, inputs):
 
         if not tsk_hlp.is_inputs_valid():
             logger.error('inputs not valid, inputs={}'.format(inputs))
-            return make_result(err_msg='inputs invalid.')
+            return tsk_hlp.make_result(err_msg='inputs invalid.')
 
         if not tsk_hlp.is_should_login():
             logger.warning('is_should_login return False, task id={}, account={}'.format(tsk_hlp.task_id, tsk_hlp.account))
-            return make_result(err_msg='is_should_login return False')
+            return tsk_hlp.make_result(err_msg='is_should_login return False')
 
         if tsk_hlp.is_in_verifying():
             logger.warning('is_in_verifying return True, task id={}, account={}'.format(tsk_hlp.task_id, tsk_hlp.account))
-            return make_result(err_msg='is_in_verifying return True')
+            return tsk_hlp.make_result(err_msg='is_in_verifying return True')
 
         # 分步执行任务
         # 启动浏览器
@@ -58,7 +58,7 @@ def fb_auto_feed(self, inputs):
         if not driver:
             msg = 'start chrome failed. err_msg={}'.format(err_msg)
             logger.error(msg)
-            return make_result(err_msg=err_msg)
+            return tsk_hlp.make_result(err_msg=err_msg)
 
         account = tsk_hlp.account
         password = tsk_hlp.password
@@ -66,7 +66,8 @@ def fb_auto_feed(self, inputs):
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)
-            return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
+            tsk_hlp.screenshots(driver, err_code=err_code, force=True)
+            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         last_login = datetime.datetime.now()
 
@@ -75,14 +76,16 @@ def fb_auto_feed(self, inputs):
         if not ret:
             msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
             logger.error(msg)
-            return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
+            tsk_hlp.screenshots(driver, err_code=err_code)
+            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         tsk_hlp.random_sleep()
         if tsk_hlp.random_select():
             ret, err_code = fb.local_surface(driver=driver)
             if not ret:
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
-                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
+                tsk_hlp.screenshots(driver, err_code=err_code)
+                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         tsk_hlp.random_sleep()
         fks = tsk_hlp.get_friend_keys(1)
@@ -90,7 +93,8 @@ def fb_auto_feed(self, inputs):
             ret, err_code = fb.add_friends(driver, search_keys=fks, limit=random.randint(1, 3))
             if not ret:
                 err_msg = 'add_friends failed, err_code={}'.format(err_code)
-                return make_result(err_code=err_code, err_msg=err_msg, last_verify=datetime.datetime.now())
+                tsk_hlp.screenshots(driver, err_code=err_code)
+                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         tsk_hlp.random_sleep(20, 100)
         logger.info('-----task fb_auto_feed succeed. account={}'.format(account))
@@ -98,17 +102,19 @@ def fb_auto_feed(self, inputs):
         err_msg = 'fb_auto_feed catch exception. e={}'.format(str(e))
         logger.exception(err_msg)
         # self.retry(countdown=10 ** self.request.retries)
-        return make_result(err_msg=err_msg)
+        return tsk_hlp.make_result(err_msg=err_msg)
     finally:
         if driver:
             driver.quit()
-    return make_result(True, last_login=last_login)
+    return tsk_hlp.make_result(True, last_login=last_login)
 
 
 @app.task(base=BaseTask, bind=True, max_retries=3, time_limit=300)
 def switch_vps_ip(self, inputs):
     logger.info('--------switch_vps_ip')
     try:
+        tsk_hlp = TaskHelper(inputs)
+
         subprocess.call("pppoe-stop", shell=True)
         time.sleep(3)
         subprocess.call('pppoe-start', shell=True)
@@ -121,16 +127,16 @@ def switch_vps_ip(self, inputs):
     except Exception as e:
         err_msg = 'switch_vps_ip catch exception={}'.format(str(e))
         logger.exception(err_msg)
-        return make_result(err_msg=err_msg)
+        return tsk_hlp.make_result(err_msg=err_msg)
 
     logger.info('')
-    return make_result(ret=True)
+    return tsk_hlp.make_result(ret=True)
 
 
 @app.task(base=BaseTask, bind=True, max_retries=1, time_limit=300)
 def fb_click_farming(self, inputs):
     logger.info('fb_click_farming task running')
-
+    tsk_hlp = TaskHelper(inputs)
     # time.sleep(3)
     # 更新任务状态为running
     # self.update_state(state="running")
@@ -146,7 +152,7 @@ def fb_click_farming(self, inputs):
         logger.exception('fb_auto_feed')
         a = a/0
 
-    return make_result(ret=True)
+    return tsk_hlp.make_result(ret=True)
 
 
 # from celery import chain, signature
