@@ -15,6 +15,7 @@ cfg = None
 facebook_cfg = None
 log_config.init_log_config(file_prefix='facebook_auto', console_level=logging.INFO, backup_count=50)
 logger = logging.getLogger()
+environment = 'pro'
 
 
 def load_config(env='pro'):
@@ -25,6 +26,8 @@ def load_config(env='pro'):
     try:
         if env == 'test':
             config_file = 'config_test.yaml'
+            global environment
+            environment = 'test'
         else:
             config_file = 'config.yaml'
 
@@ -107,3 +110,7 @@ def get_fb_chat_msgs(limit=1):
     else:
         return random.sample(msgs, limit)
 
+
+def get_environment():
+    global environment
+    return environment

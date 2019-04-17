@@ -6,7 +6,7 @@ import json
 import datetime
 from .workers import app
 from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler, FingerPrint, Area
-from config import logger
+from config import logger, get_environment
 from db.basic import ScopedSession
 from sqlalchemy import and_
 
@@ -130,6 +130,9 @@ def send_task_2_worker(task_id):
 
             # 构建任务执行必备参数
             inputs = {
+                'system': {
+                    'headless': True if get_environment() == 'pro' else False
+                },
                 'task': {
                     'task_id': task_id,
                     'configure': json.loads(task_configure) if task_configure else {},

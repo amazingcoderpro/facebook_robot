@@ -2,9 +2,9 @@ redis:
     host: 47.112.113.252 #10.252.252.67
     port: 6379
     password: 'charles'
-    broker: 5                    # broker for celery
-    backend: 6                   # backed for celery
-    cache: 1
+    broker: 1                    # broker for celery
+    backend: 2                   # backed for celery
+    cache: 3
 
 db:
     host: 47.112.113.252 # 10.252.252.67
