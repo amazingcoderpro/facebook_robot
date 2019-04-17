@@ -328,14 +328,14 @@ if __name__ == '__main__':
             user_password = str(str_info[1])
             driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
             res, statu = auto_login(driver, user_account, user_password)
-            # if not res:
-            #     continue
+            if not res:
+                continue
             # add_friends(driver, ["xiaoning"], 2)
             # send_messages(driver)
             # user_messages(driver)
             # local_surface(driver)
             time.sleep(6)
-            driver.quit()
+            # driver.quit()
 
 
 
