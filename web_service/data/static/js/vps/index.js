@@ -7,7 +7,18 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     var categories=[], url='/api/agent/', detailHtml='',
     newAccount=function(){
         var req={};
-        $.each(['input', 'select'], function(k, el){$.each($('#modal-new '+el), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()})});
+        $.each(['input', 'select','textarea'],
+            function(k, el){
+                $.each($('#modal-new '+el),
+                    function(i, item){
+                        item=$(item);
+                        // req[item.attr('name')]=item.val().trim()
+                          req[item.attr('name')]=item.val().trim()
+                    })
+        });
+        req["status"]=parseInt(req["status"]);
+        req["configure"]=req["save_configure"];
+        req["active_area"]=parseInt($('select[name="save_area"]').find("option:selected").attr("id"));
         $.ajax({
             url: global.getAPI(url),
             contentType: "application/json",
@@ -25,10 +36,19 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         $('#detail').removeClass('none').html(detailHtml),
         $('#info .box-title').text(item.queue_name+'基本信息'),
         $.each(item, function(propName, value){$('#info input[name="'+propName+'"]').val(value),$('#info select[name="'+propName+'"]').val(value)});
+        $('select[name="edit_area"] option').each(function () {
+            if($(this).val() == item.area_name) {
+                $(this).attr("selected","selected");
+            }
+        });
+        $("textarea[name='edit_configure']").val(item.configure);
         $('#info .save').on('click',function(){
             var req={};
             Object.assign(req, item);
             $.each(['input', 'select'], function(k, el){$.each($('#detail '+el), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()})});
+            req.active_area=parseInt($('select[name="edit_area"]').find("option:selected").attr("id"));
+            req.status=parseInt(req.status);
+            req.configure=$("textarea[name='edit_configure']").val();
             $.ajax({
                 url: global.getAPI(url+item.id+'/'),
                 contentType: "application/json",
@@ -41,7 +61,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 error: function(){global.showTip('Agent 信息更新失败，请稍后再试')}
             });
         })
-    },
+    };
     dataTable=table.initTable('#dataTable', {
             ajax: {url: global.getAPI(url)},
             columns: [
@@ -51,7 +71,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 },
                 {
                     title: '区域',
-                    data: 'active_area'
+                    data: 'area_name'
                 },
                 {
                     title: '忙闲状态',
@@ -97,12 +117,14 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             method: 'get',
             success: function(data){
                 categories = data.data;
-                var el=$('select[name="acvive_area"]');
+                var el=$('select[name="save_area"]');
+                var edit_area=$('select[name="edit_area"]');
                 $.each(categories, function(i, item){
-                    el.append('<option value="'+item.name+'">'+item.name+'</option>')
+                    el.append('<option id="'+item.id+'" value="'+item.name+'">'+item.name+'</option>');
+                    edit_area.append('<option id="'+item.id+'" value="'+item.name+'">'+item.name+'</option>');
                 }),
                 detailHtml=$('#detail').html(),
                 $('#detail').html('')
             }
         })
-})
+});

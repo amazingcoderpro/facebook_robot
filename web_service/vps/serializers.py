@@ -20,12 +20,18 @@ class AreaSerializer(serializers.HyperlinkedModelSerializer):
         extra_kwargs = {'description': {'allow_blank': True}}
 
 
-class AgentSerializer(serializers.HyperlinkedModelSerializer):
+class AgentSerializer(serializers.ModelSerializer):
+    area_name = serializers.CharField(source="active_area.name", read_only=True)
 
     class Meta:
         model = Agent
-        fields = ('url', 'id', 'status', 'active_area', 'configure')
-        extra_kwargs = {'queue_name': {'allow_blank': True},
-                        'configure': {'allow_blank': True}}
+        fields = ('id', 'status', 'active_area', 'configure', 'area_name')
+
+        write_only_fields = (
+            "status",
+            "active_area",
+            "configure"
+        )
+
 
 

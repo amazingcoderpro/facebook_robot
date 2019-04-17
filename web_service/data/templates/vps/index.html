@@ -41,14 +41,9 @@
                 <div class="box-body">
                     <div class="form-group">
                       <label>地区</label>
-                      <input type="text" class="form-control" name="area" placeholder="请输入区域名称" />
-                      <!--<select class="form-control" name="area">-->
-                          <!--&lt;!&ndash;0-idle, 1-normal, 2-busy, 3-disable&ndash;&gt;-->
-                          <!--<option value="Spanish">Spanish</option>-->
-                          <!--<option value="China">China</option>-->
-                          <!--<option value="Japan">Japan</option>-->
-                          <!--<option value="North American">North American</option>-->
-                      <!--</select>-->
+                      <select type="text" class="form-control" name="edit_area">
+
+                      </select>
                     </div>
                     <div class="form-group">
                       <label>状态</label>
@@ -63,7 +58,7 @@
                     </div>
                     <div class="form-group">
                         <label>配置</label>
-                        <textarea name="configure" rows="5"></textarea>
+                        <textarea name="edit_configure" rows="5"></textarea>
                     </div>
                 </div>
             </form>
@@ -79,27 +74,25 @@
         <h4 class="modal-title">添加 Agent</h4>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-            <label>列队名</label>
-            <input type="text" class="form-control" name="queue_name" placeholder="请输入列队名称" />
-        </div>
+<!--        <div class="form-group">-->
+<!--            <label>列队名</label>-->
+<!--            <input type="text" class="form-control" name="queue_name" placeholder="请输入列队名称" />-->
+<!--        </div>-->
         <div class="form-group">
           <label>状态</label>
           <select class="form-control" name="status">
               <!--0-idle, 1-normal, 2-busy, 3-disable-->
-              <option value="0">idle</option>
-              <option value="1">normal</option>
-              <option value="2">busy</option>
-              <option value="3">disable</option>
+              <option value=1>normal</option>
+              <option value=-1>disable</option>
           </select>
         </div>
         <div class="form-group">
           <label>地区</label>
-          <select class="form-control" name="area"></select>
+          <select class="form-control" name="save_area"></select>
         </div>
         <div class="form-group">
             <label>配置</label>
-            <textarea name="configure" rows="5"></textarea>
+            <textarea name="save_configure" rows="5"></textarea>
         </div>
       </div>
       <div class="modal-footer">
