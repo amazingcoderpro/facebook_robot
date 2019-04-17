@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from django.views import View
+from django.shortcuts import HttpResponse
 from rest_framework import viewsets
-from rest_framework.response import Response
 from utils.request_utils import AdminPermission, search, handle_order
-from vps.serializers import AgentSerializer,AreaSerializer
+from vps.serializers import AgentSerializer,AreaSerializer,AreaAccountCountSerializer
 from vps.models import Agent,Area
+import json
 
 
 # ViewSets define the view behavior.
@@ -44,3 +46,12 @@ class AreaViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+class AreaAccountCount(View):
+
+    def get(self, request):
+        queryset = Area.objects.all()
+        ser = AreaAccountCountSerializer(instance=queryset, many=True)
+        # result = list(map(lambda item:{item["name"]:item["count"]},ser.data))
+        # result = {item["name"]:item["count"] for item in ser.data}
+        ret = json.dumps(ser.data,ensure_ascii=False)
+        return HttpResponse(ret)

@@ -327,5 +327,21 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         $('button.new').on('click', function(){
             $('#modal-new').modal('show'),
             onCategoryChange(), onModeChange()
+        }),
+        $.ajax({
+            url: global.getAPI('/api/areaAccountCount/'),
+            contentType: "application/json",
+            method: 'get',
+            success: function(data){
+                console.log(data);
+                categories=JSON.parse(data);
+                var el=$('#modal-new .modal-body select[name="area_account_count"]');
+                $.each(categories, function(i,item){
+                    v = item.name + " (" +item.count + ")";
+                    el.append('<option id="'+item.id+'" value="'+ v +'">'+ v +'</option>');
+                })
+                // detailHtml=$('#detail').html(),
+                // $('#detail').html('')
+            }
         })
 })

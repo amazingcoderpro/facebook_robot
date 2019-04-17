@@ -69,12 +69,13 @@ class Account(models.Model):
 
     # active_ip = Column(String(255), default='', server_default='')
     # 活跃地域
-    active_area = models.ForeignKey(Area, db_column='active_area', on_delete=models.CASCADE)
+    active_area = models.ForeignKey(Area, db_column='active_area', related_name='Account_Area', on_delete=models.CASCADE)
     # 常用浏览器指纹
     # active_browser = models.CharField(max_length=2048, default='')
     # 账号的其他非常规配置信息
     configure = models.CharField(max_length=2048, default='')
 
     class Meta:
+        managed = False
         db_table = 'account'
         ordering = ('-id',)

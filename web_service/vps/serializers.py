@@ -34,4 +34,16 @@ class AgentSerializer(serializers.ModelSerializer):
         )
 
 
+# 区域账号数量序列化
+class AreaAccountCountSerializer(serializers.ModelSerializer):
+    count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Area
+        fields = ('id','name','count',)
+
+    @staticmethod
+    def get_count(row):
+        return row.Account_Area.all().count()
+
 
