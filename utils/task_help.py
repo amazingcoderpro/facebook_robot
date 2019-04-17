@@ -7,7 +7,7 @@ import os
 import time
 import random
 from datetime import datetime, timedelta
-from config import logger, get_account_args, get_fb_friend_keys, get_fb_posts, get_fb_chat_msgs
+from config import logger, get_account_args, get_fb_friend_keys, get_fb_posts, get_fb_chat_msgs, get_system_args
 import scripts.facebook as fb
 
 
@@ -179,13 +179,13 @@ class TaskHelper:
     def screenshots(self, driver, err_code=-1, force=False):
         if self.headless or force:
             try:
-                screenshots_dir = 'screenshots'
+                screenshots_dir = get_system_args()['screenshots_dir']
                 if not os.path.isdir(screenshots_dir):
                     os.mkdir(screenshots_dir)
 
                 # 先删除5天前的截图，以免服务器磁盘超负荷
                 photos = os.listdir(screenshots_dir)
-                time_limit = (datetime.now() - timedelta(seconds=50)).strftime("%Y-%m-%d_%H_%M_%S")
+                time_limit = (datetime.now() - timedelta(days=get_system_args()['screenshots_keep'])).strftime("%Y-%m-%d_%H_%M_%S")
                 for ph in photos:
                     if ph[0:19] < time_limit:
                         os.remove("{}//{}".format(screenshots_dir, ph))

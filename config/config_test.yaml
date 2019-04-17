@@ -26,3 +26,7 @@ task:
     one_time_task_timeout: 3600    # 一次性任务的超时时间为1小时天, 3600秒
     cycle_task_timeout: 86400    # 周期任务的超时时间为1天
     update_interval: 30         # 测试环境，任务的更新周期，默认为30秒
+
+system:
+    screenshots_dir: screenshots    # 截图保存目录
+    screenshots_keep: 15             # 默认保存最近15天的截图

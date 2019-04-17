@@ -87,6 +87,10 @@ def get_task_args():
     return cfg.get('task')
 
 
+def get_system_args():
+    return cfg.get('system')
+
+
 def get_fb_friend_keys(limit=1):
     fks = facebook_cfg.get('friend_search_keys')
     if limit <= 0:
