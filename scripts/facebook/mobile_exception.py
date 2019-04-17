@@ -115,7 +115,7 @@ class FacebookException(BaseException):
         else:
             self.exception_type = -1
 
-        logger.info('auto_check get exception type={}, name={}'.format(self.exception_type, name))
+        logger.info('auto_check get exception type={}, name={}'.format(self.exception_type, self.MAP_EXP_PROCESSOR[self.exception_type]['name']))
         return self.exception_type
 
     def check_func(self, key_words, wait=2):

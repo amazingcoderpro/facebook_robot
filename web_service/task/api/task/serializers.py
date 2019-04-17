@@ -51,7 +51,7 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             # 分配账号
             from django.db.models import Q
             accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
-                                              Q(status='invalid') | Q(status__icontains='verify')).order_by('using')[:account_count]
+                                              Q(status='valid') | Q(status__icontains='verify')).order_by('using')[:account_count]
             for account in accounts:
                 TaskAccountRelationship.objects.create(account_id=account.id, task_id=instance.id)
             self.update_timestamp(instance)
