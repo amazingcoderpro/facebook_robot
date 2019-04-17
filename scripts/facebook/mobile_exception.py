@@ -24,7 +24,7 @@ class FacebookException(BaseException):
     3： 是否上传头像提示,
     4： 是否下载app提示
     5： 账号被停用提示
-    6： 机器&好友识别身份验证
+    6： 处理在另一台机器上登录验证前的继续按钮
     7： 手机短信验证
     8： 上传上传图片验证
     9： 完成提示步骤验证
@@ -239,7 +239,7 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info('处理身份验证问题')
+            logger.info('处理在另一台机器上登录验证前的继续按钮')
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_words'][0])))
         except:
@@ -413,7 +413,7 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("邮箱验证前的登录按钮处理")
+            logger.info("邮箱验证前的继续按钮处理")
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(15)['key_words'][0])))
         except:
