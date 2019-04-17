@@ -489,23 +489,15 @@ class TaskCategoryOpt:
 
 class AgentOpt:
     @classmethod
-    def save_agent(cls, area, queue_name='', status=0, config=''):
+    def save_agent(cls, area, status=0, config=''):
         agent = Agent()
         agent.status = status
-        agent.area = area
-        agent.queue_name = queue_name
+        agent.active_area = area
         agent.config = config
         db_session.add(agent)
         db_session.commit()
         return agent
 
-    @classmethod
-    def get_agent_queue(cls, agent_id):
-        res = db_session.query(Agent.queue).filter(Agent.id == agent_id).first()
-        if res:
-            return res[0]
-        else:
-            return None
 
     @classmethod
     def get_enable_agents(cls, session, status_order=True):
@@ -568,15 +560,15 @@ def init_db_data():
 
     # 增加任务计划
     # category: 0-立即执行（只执行一次）, 1-间隔执行并不立即开始（间隔一定时间后开始执行,并按设定的间隔周期执行下去） 2-间隔执行,但立即开始, 3-定时执行,指定时间执行
-    SchedulerOpt.save_scheduler(mode=0)
-    SchedulerOpt.save_scheduler(mode=1, interval=300, start_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
-    SchedulerOpt.save_scheduler(mode=1, interval=65,
-                                end_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
-    SchedulerOpt.save_scheduler(mode=2, interval=60)
-    SchedulerOpt.save_scheduler(mode=2, interval=70, end_date=datetime.datetime.now()+datetime.timedelta(hours=1))
-    SchedulerOpt.save_scheduler(mode=3, start_date=datetime.datetime.now()+datetime.timedelta(hours=5))
-    SchedulerOpt.save_scheduler(mode=2, start_date=datetime.datetime.now() + datetime.timedelta(hours=1),
-                                end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
+    # SchedulerOpt.save_scheduler(mode=0)
+    # SchedulerOpt.save_scheduler(mode=1, interval=300, start_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
+    # SchedulerOpt.save_scheduler(mode=1, interval=65,
+    #                             end_date=datetime.datetime.now() + datetime.timedelta(minutes=20))
+    # SchedulerOpt.save_scheduler(mode=2, interval=60)
+    # SchedulerOpt.save_scheduler(mode=2, interval=70, end_date=datetime.datetime.now()+datetime.timedelta(hours=1))
+    # SchedulerOpt.save_scheduler(mode=3, start_date=datetime.datetime.now()+datetime.timedelta(hours=5))
+    # SchedulerOpt.save_scheduler(mode=2, start_date=datetime.datetime.now() + datetime.timedelta(hours=1),
+    #                             end_date=datetime.datetime.now() + datetime.timedelta(hours=20))
 
 
     # FingerPrintOpt.save_finger_print('iPhone 6', value=json.dumps({'device': 'iPhone 6'}))
@@ -590,7 +582,7 @@ def init_db_data():
     FingerPrintOpt.save_finger_print('Galaxy Note 3', value=json.dumps({'device': 'Galaxy Note 3'}))
 
     # 添加账号
-    produce_account()
+    # produce_account()
     # AccountOpt.save_account(account='codynr4nzxh@outlook.com',
     #                         password='qVhgldHmgp', owner=1, category=1,
     #                         email='codynr4nzxh@outlook.com', email_pwd='UfMSt4aiZ8',
@@ -623,24 +615,24 @@ def init_db_data():
     #                         active_browser=1, configure=json.dumps({'last_login': '2019-2-2 18:36:20', 'last_post': '2018-8-2 18:36:20'}))
 
     # 创建任务
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3, 5], name=u'养个号', limit_counts=10)
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 6, 2], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=20)
-    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1, 8], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=100)
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4, 7], name=u'养个号11', limit_counts=10)
-    TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[6], name=u'thumb', limit_counts=102)
+    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 2, 3, 5], name=u'养个号', limit_counts=10)
+    # TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=2, account_ids=[3, 4, 6, 2], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=20)
+    # TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=4, account_ids=[4, 5, 1, 8], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=100)
+    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[1, 2, 4, 7], name=u'养个号11', limit_counts=10)
+    # TaskOpt.save_task(category_id=2, creator_id=1, scheduler_id=3, account_ids=[6], name=u'thumb', limit_counts=102)
+    #
+    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[1, 2, 3], name=u'养个号', limit_counts=100)
+    # TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 5], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=30)
+    # TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[4, 5, 1, 3], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=10)
+    # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 7, 4], name=u'养个号11', limit_counts=40)
+    # TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4, 9], name=u'thumb', limit_counts=5)
+    #
 
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=5, account_ids=[1, 2, 3], name=u'养个号', limit_counts=100)
-    TaskOpt.save_task(category_id=2, creator_id=2, scheduler_id=6, account_ids=[3, 4, 2, 5], name=u'刷个好评', configure=json.dumps({'ads_code':'orderplus888'}), limit_counts=30)
-    TaskOpt.save_task(category_id=1, creator_id=3, scheduler_id=7, account_ids=[4, 5, 1, 3], name=u'登录浏览就行了', configure=json.dumps({'keep_time': 900}), limit_counts=10)
-    TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=1, account_ids=[1, 7, 4], name=u'养个号11', limit_counts=40)
-    TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4, 9], name=u'thumb', limit_counts=5)
 
-
-
-    AgentOpt.save_agent('Spanish', status=-1)
-    AgentOpt.save_agent('China', status=0)
-    AgentOpt.save_agent('Japan', status=2)
-    AgentOpt.save_agent('North American', status=2)
+    AgentOpt.save_agent(1, status=-1)
+    AgentOpt.save_agent(2, status=0)
+    AgentOpt.save_agent(3, status=2)
+    AgentOpt.save_agent(2, status=2)
 
 
 def show_test_data():
@@ -808,7 +800,7 @@ if __name__ == '__main__':
     # produce_account()
     # print(11)
     # produce_tasks()
-    generate_fb_json()
+    # generate_fb_json()
     # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
     ALTER_SQL = '''

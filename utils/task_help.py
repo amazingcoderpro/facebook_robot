@@ -64,6 +64,8 @@ class TaskHelper:
             self.is_valid = False
             return
 
+        self.system = inputs.get('system', {})
+        self.headless = self.system.get('headless', True)
         self.task_id = self.task_info.get('task_id', -1)
         task_config = self.task_info.get('configure', {})
         self.is_post = task_config.get('is_post', False)

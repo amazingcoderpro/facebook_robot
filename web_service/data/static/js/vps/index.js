@@ -51,7 +51,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 },
                 {
                     title: '区域',
-                    data: 'area'
+                    data: 'active_area'
                 },
                 {
                     title: '忙闲状态',
@@ -97,7 +97,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             method: 'get',
             success: function(data){
                 categories = data.data;
-                var el=$('select[name="area"]');
+                var el=$('select[name="acvive_area"]');
                 $.each(categories, function(i, item){
                     el.append('<option value="'+item.name+'">'+item.name+'</option>')
                 }),

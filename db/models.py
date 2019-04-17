@@ -236,7 +236,8 @@ class Account(Base):
 
     # active_ip = Column(String(255), default='', server_default='')
     # 活跃地域
-    active_area = Column(String(255), default='', server_default='')
+    # active_area = Column(String(255), default='', server_default='')
+    active_area = Column(Integer, ForeignKey('area.id'), default=None)
     # 常用浏览器指纹
     active_browser = Column(Integer, ForeignKey('finger_print.id'), default=None)
     # 一个账号有可能同是被多个任务占用,逻辑上是可以的, 但实际操作上应该尽量避免此种情况,以规避多IP同时登录带来的封号风险
@@ -270,15 +271,16 @@ class Agent(Base):
     __tablename__ = 'agent'
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    # 该agent绑定的任务队列, job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
-    queue_name = Column(String(255), default='', server_default='')
+    # # 该agent绑定的任务队列, job将根据与其最亲近的agent的queue名来被分发, 通常队列名与area相同
+    # queue_name = Column(String(255), default='', server_default='')
 
     # 0-idle, 1-normal, 2-busy, 3-disable
     # -1--disable, 大于零代表其忙碌值（即当前待处理的任务量）
-    status = Column(String(20), default=0, server_default='0')
+    # status = Column(String(20), default=0, server_default='0')
+    status = Column(Integer, default=0, server_default='0')
 
     # 该agent所属区域
-    area = Column(String(255), default='', server_default='')
+    active_area = Column(Integer, ForeignKey('area.id'), default=None)
 
     # 该agent的配置信息
     configure = Column(String(2048), default='', server_default='')
@@ -290,6 +292,12 @@ class FingerPrint(Base):
     name = Column(String(255), default='', server_default='')
     value = Column(String(2048), default='', server_default='')
 
+
+class Area(Base):
+    __tablename__ = 'area'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255), unique=True, nullable=False)
+    description = Column(String(2048), default='', server_default='')
 
 
 if __name__ == '__main__':

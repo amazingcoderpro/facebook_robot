@@ -60,4 +60,4 @@ app.conf.update(
 #         'options': {'queue': 'feed_account_queue', 'routing_key': 'for_feed_account'}
 #     }
 # }
-#celery -A tasks.workers -Q default,China,North_American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env pro
+#celery -A tasks.workers -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env pro

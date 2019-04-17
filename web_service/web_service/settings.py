@@ -27,7 +27,7 @@ SECRET_KEY = '(2r2%=o7^74dwla0%+bx)0@)w8-yx0k!%o6dz+#vzwftb4+50&'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -92,7 +92,14 @@ WSGI_APPLICATION = 'web_service.wsgi.application'
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
 # load db config
-config_path = os.path.join(os.path.join(os.path.dirname(BASE_DIR), 'config'), 'config.yaml')
+import os
+env = os.getenv('env', 'pro')
+if env == 'pro':
+    config_path = os.path.join(os.path.join(os.path.dirname(BASE_DIR), 'config'), 'config.yaml')
+else:
+    config_path = os.path.join(os.path.join(os.path.dirname(BASE_DIR), 'config'), 'config_test.yaml')
+
+print(config_path)
 with open(config_path, encoding='utf-8') as f:
     content = f.read()
 
@@ -106,7 +113,7 @@ DATABASES = {
         'USER': db_cfg.get('user', ''),
         'PASSWORD': str(db_cfg.get('password', '')),
         'HOST': db_cfg.get('host', ''),
-        'PORT': str(db_cfg.get('port', 3306))
+        'PORT': str(db_cfg.get('port', 3306)),
     }
 }
 

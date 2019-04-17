@@ -54,7 +54,7 @@ def fb_auto_feed(self, inputs):
 
         # 分步执行任务
         # 启动浏览器
-        driver, err_msg = fb.start_chrome(finger_print=tsk_hlp.active_browser, headless=True)
+        driver, err_msg = fb.start_chrome(finger_print=tsk_hlp.active_browser, headless=tsk_hlp.headless)
         if not driver:
             msg = 'start chrome failed. err_msg={}'.format(err_msg)
             logger.error(msg)

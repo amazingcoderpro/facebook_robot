@@ -11,8 +11,7 @@ from task.api.task.account.views import TaskAccountViewSet
 from task.api.task.views import TaskViewSet, TaskSumView
 from users.api.category.views import UserCategoryViewSet
 from users.api.user.views import UserViewSet
-from vps.api.area.views import AreaViewSet
-from vps.api.views import AgentViewSet
+from vps.view import AreaViewSet, AgentViewSet
 from web_service.views import render_page
 
 # Routers provide an easy way of automatically determining the URL conf.

@@ -1,17 +1,17 @@
 redis:
-    host: 10.252.252.67 #10.252.252.67
+    host: 47.112.113.252 #10.252.252.67
     port: 6379
     password: 'charles'
-    broker: 5                    # broker for celery
-    backend: 6                   # backed for celery
-    cache: 1
+    broker: 4                    # broker for celery
+    backend: 5                   # backed for celery
+    cache: 6
 
 db:
-    host: 10.252.252.67 # 10.252.252.67
+    host: 47.112.113.252 # 10.252.252.67
     port: 3306
     user: charles
     password: charles@orderplus
-    db_name: facebook
+    db_name: facebook_test
     db_type: mysql
 
 account:
