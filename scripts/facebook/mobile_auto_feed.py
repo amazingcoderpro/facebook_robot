@@ -34,17 +34,20 @@ def start_chrome(finger_print, headless=True):
         chrome_options.add_argument('--user-agent=iphone')
         chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
         chrome_options.add_argument('lang=en_US')
+
         # 移动设备仿真
         mobile_emulation = {
             'deviceName': finger_print.get("device"),
             # "deviceMetrics": {"width": 600, "height":800, "pixelRatio": 4.0},
             # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9)"
         }
-        chrome_options = Options()
+
         chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
+        logger.info('chrome options={}'.format(chrome_options.arguments))
+
         driver = webdriver.Chrome(chrome_options=chrome_options)
-        # time.sleep(5)
-        # driver.delete_all_cookies()
+        time.sleep(1)
+        driver.delete_all_cookies()
         # driver.get_screenshot_as_file("")
         return driver, ''
     except Exception as e:
