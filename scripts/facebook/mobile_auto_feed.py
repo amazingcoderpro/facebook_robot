@@ -10,7 +10,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
 from scripts.facebook.mobile_exception import FacebookException
 from config import logger
 from scripts.utils import super_click
@@ -62,8 +61,6 @@ def auto_login(driver, account, password, gender=1):
     # 登录FB
     # driver.delete_all_cookies()
     driver.get('https://www.facebook.com/')
-    time.sleep(3)
-    logger.info('auto_login:{},{}'.format(account, password))
     try:
         # FB登录
         email_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
@@ -109,6 +106,7 @@ def auto_login(driver, account, password, gender=1):
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
         fb_exp = FacebookException(driver)
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
+
 
 
 def browse_page(driver, browse_times=10, distance=0, interval=0):
@@ -328,14 +326,14 @@ if __name__ == '__main__':
             user_password = str(str_info[1])
             driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
             res, statu = auto_login(driver, user_account, user_password)
-            # if not res:
-            #     continue
+            if not res:
+                continue
             # add_friends(driver, ["xiaoning"], 2)
             # send_messages(driver)
             # user_messages(driver)
             # local_surface(driver)
             time.sleep(6)
-            driver.quit()
+            # driver.quit()
 
 
 

@@ -3,46 +3,13 @@
 # Created by charles on 2019-04-15
 # Function:
 
+import os
 import time
 import random
-from datetime import datetime
-from config import logger, get_account_args, get_fb_friend_keys, get_fb_posts, get_fb_chat_msgs
+from datetime import datetime, timedelta
+from config import logger, get_account_args, get_fb_friend_keys, get_fb_posts, get_fb_chat_msgs, get_system_args
 import scripts.facebook as fb
 
-
-def make_result(ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None, last_farming=None,
-                last_comment=None, last_edit=None, last_verify=None, phone_number='', profile_path='', **kwargs):
-    task_result = {
-        'status': 'failed',  # 'failed', 'succeed'
-        'err_msg': '',
-        'account_status': '',  # valid, invalid, verifying
-        'account_configure': {}
-    }
-
-    if ret:
-        task_result['status'] = 'succeed'
-    else:
-        task_result['status'] = 'failed'
-        account_status = fb.FacebookException.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')    # valid, invalid, verifying
-        task_result['account_status'] = account_status
-        task_result['err_msg'] = err_msg if err_msg else 'err_code={}'.format(err_code)
-
-    task_result['account_configure'] = {
-        'last_login': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_login, datetime) else '',
-        'last_post': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_post, datetime) else '',
-        'last_chat': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_chat, datetime) else '',
-        'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime) else '',
-        'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else '',
-        'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime) else '',
-        'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime) else '',
-        'phone_number': phone_number,
-        'profile_path': profile_path,
-    }
-
-    for k, v in kwargs.items():
-        task_result['account_configure'][k] = v
-
-    return task_result
 
 
 class TaskHelper:
@@ -209,6 +176,62 @@ class TaskHelper:
 
         return False
 
+    def screenshots(self, driver, err_code=-1, force=False):
+        if self.headless or force:
+            try:
+                screenshots_dir = get_system_args()['screenshots_dir']
+                if not os.path.isdir(screenshots_dir):
+                    os.mkdir(screenshots_dir)
+
+                # 先删除5天前的截图，以免服务器磁盘超负荷
+                photos = os.listdir(screenshots_dir)
+                time_limit = (datetime.now() - timedelta(days=get_system_args()['screenshots_keep'])).strftime("%Y-%m-%d_%H_%M_%S")
+                for ph in photos:
+                    if ph[0:19] < time_limit:
+                        os.remove("{}//{}".format(screenshots_dir, ph))
+
+                path = "{}//{}_{}_{}_{}.png".format(screenshots_dir, datetime.now().strftime("%Y-%m-%d_%H_%M_%S"), self.account, self.password, err_code)
+                logger.info("save screenshots, path={}".format(path))
+                driver.get_screenshot_as_file(path)
+            except Exception as e:
+                logger.exception('screenshots exception={}'.format(e))
+
+    def make_result(self, ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None,
+                    last_farming=None, last_comment=None, last_edit=None, last_verify=None, phone_number='', profile_path='', **kwargs):
+        task_result = {
+            'status': 'failed',  # 'failed', 'succeed'
+            'err_msg': '',
+            'account_status': '',  # valid, invalid, verifying
+            'account_configure': {}
+        }
+
+        if ret:
+            task_result['status'] = 'succeed'
+        else:
+            task_result['status'] = 'failed'
+            account_status = fb.FacebookException.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')  # valid, invalid, verifying
+            task_result['account_status'] = account_status
+            if 'verifying' in account_status and not last_verify:
+                last_verify = datetime.now()
+
+            task_result['err_msg'] = err_msg if err_msg else 'err_code={}'.format(err_code)
+
+        task_result['account_configure'] = {
+            'last_login': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_login, datetime) else '',
+            'last_post': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_post, datetime) else '',
+            'last_chat': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_chat, datetime) else '',
+            'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime) else '',
+            'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else '',
+            'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime) else '',
+            'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime) else '',
+            'phone_number': phone_number,
+            'profile_path': profile_path,
+        }
+
+        for k, v in kwargs.items():
+            task_result['account_configure'][k] = v
+
+        return task_result
 
 if __name__ == '__main__':
     inputs = {
