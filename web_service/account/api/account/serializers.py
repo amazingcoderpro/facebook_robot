@@ -16,6 +16,7 @@ class AccountSerializer(serializers.HyperlinkedModelSerializer):
     # category = serializers.PrimaryKeyRelatedField(queryset=AccountCategory.objects.all())
     category = CategorySerializer()
     owner = UserSerializer(read_only=True)
+    area_name = serializers.SerializerMethodField(read_only=True)
 
     # 创建账户
     def create(self, validated_data):
@@ -47,7 +48,7 @@ class AccountSerializer(serializers.HyperlinkedModelSerializer):
         model = Account
         fields = ('url', 'id', 'owner', 'category', 'account', 'password', 'email', 'email_pwd', 'phone_number',
                   'gender', 'birthday', 'national_id', 'register_time', 'name', 'profile_id', 'status',
-                  'enable_tasks',)  # 'last_login', 'last_post', 'last_chat', 'last_farming', 'last_comment', 'last_edit')
+                  'enable_tasks','area_name',)  # 'last_login', 'last_post', 'last_chat', 'last_farming', 'last_comment', 'last_edit')
         extra_kwargs = {'phone_number': {'allow_blank': True},
                         'national_id': {'allow_blank': True},
                         'enable_tasks': {'allow_blank': True},
@@ -58,6 +59,12 @@ class AccountSerializer(serializers.HyperlinkedModelSerializer):
                         # 'last_comment': {'read_only': True},
                         # 'last_edit': {'read_only': True}
                         }
+
+    def get_area_name(self,row):
+        print(row)
+        if row.active_area:
+            return row.active_area.name
+
 
 
 # 导出账号序列化类
