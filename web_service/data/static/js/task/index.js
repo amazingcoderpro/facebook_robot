@@ -6,13 +6,21 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
     });
     var categories=[], url='/api/task/', detailHtml='',
     newTask=function(){
-        var req={accounts: [], category: null, configure: {}, scheduler: null}, intervalUnit=parseInt($('#modal-new select[name="intervalUnit"]').val());
+        var req={accounts: [], category: null, configure: {}, scheduler: null,area_account_count:null }, intervalUnit=parseInt($('#modal-new select[name="intervalUnit"]').val());
         $.each($('#modal-new').find('input,textarea,select'), function(i, item){
             item=$(item);
             var name=item.attr('name');
             if(name.substr(0, 10) == 'configure_')req.configure[name.substr(10)] = item.attr('type')=='checkbox'?item.prop('checked'):item.val().trim();
-            else req[name]=item.attr('type')=='checkbox'?item.prop('checked'):item.val().trim()});
+            else if(item.attr('type') == 'checkbox'){
+                req[name] = item.prop('checked')
+            }else {
+                if(name != "area_account_count"){
+                    req[name] =item.val().trim()
+                }
+            }
+        });
         req.category = categories[parseInt($('#modal-new select[name="category"]').val())];
+        req.area_account_count = $("select[name=area_account_count]").find("option:selected").attr("index")*1;
         req.scheduler = {
             mode: parseInt($('#modal-new select[name="scheduler"]').val()),
             interval: parseInt($('#modal-new input[name="interval"]').val()),
@@ -259,6 +267,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         },
         // 验证自定义配置是否有效
         isValidConfig=function(configure, cfg){
+            console.log(cfg)
             for(var i=0;i<cfg.length;i++){
                 var field = cfg[i];
                 if(typeof configure[field.name] == 'undefined')configure[field.name]=field.defaultValue;
@@ -327,5 +336,20 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         $('button.new').on('click', function(){
             $('#modal-new').modal('show'),
             onCategoryChange(), onModeChange()
+        }),
+        $.ajax({
+            url: global.getAPI('/api/areaAccountCount/'),
+            contentType: "application/json",
+            method: 'get',
+            success: function(data){
+                var area=JSON.parse(data);
+                var el=$('#modal-new .modal-body select[name="area_account_count"]');
+                $.each(area, function(i,item){
+                    var v = item.name + " (" +item.count + ")";
+                    el.append('<option index="'+item.id+'" value="'+ v +'">'+ v +'</option>');
+                })
+                // detailHtml=$('#detail').html(),
+                // $('#detail').html('')
+            }
         })
 })

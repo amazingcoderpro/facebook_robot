@@ -54,17 +54,16 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             ajax: {url: global.getAPI(url)},
             columns: [
                 {
-                    title: '所有者',
-                    data: 'owner.fullname',
-                    visible: global.user.category.isAdmin
+                    title: 'ID',
+                    data: 'id'
+                },
+                {
+                    title: '区域',
+                    data: 'area_name'
                 },
                 {
                     title: '类型',
                     data: 'category.name'
-                },
-                {
-                    title: '姓名',
-                    data: 'name'
                 },
                 {
                     title: '账号',
@@ -77,6 +76,11 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 {
                     title: '状态',
                     data: 'status'
+                },
+                {
+                    title: '所有者',
+                    data: 'owner.fullname',
+                    visible: global.user.category.isAdmin
                 }
             ],
             onSingleRowClick: function(item){

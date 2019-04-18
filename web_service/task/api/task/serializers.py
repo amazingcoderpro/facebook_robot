@@ -28,6 +28,7 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
         instance.save()
 
     def create(self, validated_data):
+        area_id = self.context["request"].data["area_account_count"]
         validated_data['category'] = CategorySerializer().create(validated_data.pop('category'))
         has_accounts = 'accounts' in validated_data
         if has_accounts:
@@ -49,9 +50,12 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             #             pass
             #     instance.save()
             # 分配账号
-            from django.db.models import Q
-            accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
-                                              Q(status='valid') | Q(status__icontains='verify')).order_by('using')[:account_count]
+
+            # from django.db.models import Q
+            # accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
+            #                                   Q(status='valid') | Q(status__icontains='verify')).order_by('using')[:account_count]
+
+            accounts = Account.objects.filter(**{"active_area_id": area_id}).order_by('using')[:account_count]
             for account in accounts:
                 TaskAccountRelationship.objects.create(account_id=account.id, task_id=instance.id)
             self.update_timestamp(instance)
