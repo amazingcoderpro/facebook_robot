@@ -24,10 +24,10 @@ class FacebookException(BaseException):
     3： 是否上传头像提示,
     4： 是否下载app提示
     5： 账号被停用提示
-    6： 处理在另一台机器上登录验证前的继续按钮
+    6： 身份验证类型二，跳转按钮
     7： 手机短信验证
     8： 上传上传图片验证
-    9： 完成提示步骤验证
+    9： 身份验证类型一，跳转按钮
     10： 登录 邮箱数字验证码验证
     11:  登录 手机短信验证码验证
     12： 账号密码不正确
@@ -43,16 +43,15 @@ class FacebookException(BaseException):
         3: {'name': 'upload_photo', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         4: {'name': 'download_app', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         5: {'name': 'account_invalid', 'key_words': ['div[class^="mvm uiP fsm"]'], 'account_status': 'invalid'},
-        6: {'name': 'ask_question', 'key_words': ['div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_ask'},
+        6: {'name': 'auth_button_two_verify', 'key_words': ['button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_auth_button_two'},
         7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying_photo'},
-        9: {'name': 'step_verify', 'key_words': ['button[id="id[logout-button-with-confirm]"]', 'div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_step'},
+        9: {'name': 'auth_button_one_verify', 'key_words': ['button[name="submit[Secure Account]"]'], 'account_status': 'verifying_auth_button_one'},
         10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email_code'},
         11: {'name': 'sms_verify', 'key_words': ['input[name="p_c"]'], 'account_status': 'verifying_sms_code'},
         12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
         13: {'name': 'shared_login', 'key_words': ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]'], 'account_status': 'verifying_shared_login'},
         14: {'name': 'policy_clause', 'key_words': ['button[value="J’accepte"]'], 'account_status': 'verifying_policy_clause'},
-        15: {'name': 'step_email_verify', 'key_words': ['button[name="submit[Secure Account]"]'], 'account_status': 'verifying_step_email'},
     }
 
     def __init__(self, driver: WebDriver):
@@ -232,14 +231,14 @@ class FacebookException(BaseException):
             return False, 5
         return False, 5
 
-    def process_ask_question(self, **kwargs):
+    def process_auth_button_two_verify(self, **kwargs):
         """
-         # 身份验证
+        身份验证类型二，跳转按钮
         :param kwargs:
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info('处理在另一台机器上登录验证前的继续按钮')
+            logger.info('身份验证类型二，跳转按钮')
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_words'][0])))
         except:
@@ -316,14 +315,14 @@ class FacebookException(BaseException):
             return False, 8
         return False, 8
 
-    def process_step_verify(self, **kwargs):
+    def process_auth_button_one_verify(self, **kwargs):
         """
-        处理完成步骤验证
+        身份验证类型一，跳转按钮
         :param kwargs:
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("处理 下一步 步骤页面")
+            logger.info("身份验证类型一，跳转按钮")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0]))).click()
         except:
@@ -409,7 +408,7 @@ class FacebookException(BaseException):
 
     def process_step_email_verify(self, **kwargs):
         """
-        :action:  邮箱验证前的登录按钮处理
+        :action:  邮箱验证前的登录按钮处理  暂时没有做点击处理
         :return: 成功返回 True, 失败返回 False
         """
         try:
