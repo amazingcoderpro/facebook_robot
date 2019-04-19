@@ -17,7 +17,9 @@ from scripts.utils import super_click
 
 def start_chrome(finger_print, headless=True):
     """
-    :action: 启动浏览器
+    启动 配置浏览器
+    :param finger_print: 指定浏览器的devices
+    :param headless: 是否指定浏览为无头浏览器
     :return:
     """
     try:
@@ -56,7 +58,12 @@ def start_chrome(finger_print, headless=True):
 
 def auto_login(driver, account, password, gender=1):
     """
-    : 登录FB平台校验
+     登录facebook平台
+    :param driver:  浏览器驱动
+    :param account: FB账号
+    :param password: FB密码
+    :param gender: 账号性别
+    :return:
     """
     # 登录FB
     # driver.delete_all_cookies()
@@ -108,7 +115,6 @@ def auto_login(driver, account, password, gender=1):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
-
 def browse_page(driver, browse_times=10, distance=0, interval=0):
     """
     浏览页面
@@ -143,7 +149,11 @@ def browse_page(driver, browse_times=10, distance=0, interval=0):
 
 
 def user_messages(driver):
-    # 查看FB最新动态
+    """
+    查看FB最新动态
+    :param driver: 浏览器驱动
+    :return:
+    """
     try:
         logger.info('user_messages start.')
         time.sleep(3)
@@ -161,7 +171,11 @@ def user_messages(driver):
 
 
 def local_surface(driver):
-    # 浏览本地新闻
+    """
+    浏览本地新闻
+    :param driver:
+    :return: 浏览器驱动
+    """
     try:
         logger.info('local_surface start.')
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
@@ -252,37 +266,41 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
 
 def send_messages(driver:WebDriver, keywords, limit=2):
     """
-
+    跟好友聊天功能
     :param driver:
-    :param keywords:
-    :param limit:
+    :param keywords: ；聊天内容
+    :param limit: 一共跟好友聊多少条
     :return:
     """
-    # 跟朋友聊天
     try:
         # 1.检查该账号是否存在好友
         # 2.向好友发送消息
-        time.sleep(3)
-        message_url = "https://m.facebook.com/friends/center/friends/?mff_nav=1"
+        message_url = "https://m.facebook.com/friends/center/friends"
         driver.get(message_url)
         # 检查是否进入好友列表页面
-        list_fridens = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-sigil="touchable are-friends-popup"]')))
-        if not list_fridens:
-            logger.warning('can not find any friend')
-            return
+        fridens_page = WebDriverWait(driver, 4).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="friends_center_main"]')))
+        if fridens_page:
+            # 查找所有相关好友的属性
+            list_fridens = driver.find_elements_by_css_selector('i[class="img profpic"]')
+            if not list_fridens:
+                logger.warning('can not find any friend avatar')
+            list_fridens[1].click()
+            # 打开聊天
+            # 打开聊天 注意：这里内容加载较慢需要时间等待
+            time.sleep(3)
+            message_page = driver.find_element_by_partial_link_text("Message")
+            time.sleep(6)
+            message_page.click()
+
+            # 输入聊天内容
+            message_info = driver.find_element_by_css_selector('textarea[data-sigil="m-textarea-input"]')
+            message_info.send_keys("hello")
+            # 发送聊天内容
+            send_info = driver.find_element_by_css_selector('button[name="Send"]')
+            send_info.click()
         else:
-            # 点击进入好友主页
-            send_messages_fridens = WebDriverWait(driver, 4).until(
-                EC.presence_of_element_located((By.CLASS_NAME, '#img#profpic')))
-            for index_fre in send_messages_fridens:
-                idx = index_fre[limit]
-                idx.click()
-
-            # 进入聊天页面
-            send_messages_fridens = WebDriverWait(driver, 4).until(
-                EC.presence_of_element_located((By.CLASS_NAME, '#img#profpic')))
-            send_messages_fridens.click()
-
+            logger.warning('can not find any friend')
     except:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
@@ -329,10 +347,11 @@ if __name__ == '__main__':
             if not res:
                 continue
             # add_friends(driver, ["xiaoning"], 2)
+            send_messages(driver, "xiaoning", 1)
             # send_messages(driver)
             # user_messages(driver)
             # local_surface(driver)
-            time.sleep(6)
+            time.sleep(100)
             # driver.quit()
 
 
