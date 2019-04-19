@@ -70,7 +70,7 @@ def auto_login(driver, account, password, gender=1):
     driver.get('https://www.facebook.com/')
     try:
         # FB登录
-        email_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'email')))
+        email_box = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
         email_box.send_keys(account)
         time.sleep(3)
 
@@ -105,6 +105,7 @@ def auto_login(driver, account, password, gender=1):
             else:
                 break
 
+        # 检查是否在首页
         WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
         logger.info("login success！username={}, password={}".format(account, password))
@@ -140,7 +141,7 @@ def browse_page(driver, browse_times=10, distance=0, interval=0):
             else:
                 time.sleep(interval)
 
-        driver.execute_script("window.scrollTo(1800,0)")
+        driver.execute_script("window.scrollTo(0,0)")
         return True
     except Exception as e:
         logger.exception('browse_page exception. e={}'.format(e))
@@ -277,6 +278,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
         # 2.向好友发送消息
         message_url = "https://m.facebook.com/friends/center/friends"
         driver.get(message_url)
+
         # 检查是否进入好友列表页面
         fridens_page = WebDriverWait(driver, 4).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="friends_center_main"]')))
@@ -285,8 +287,9 @@ def send_messages(driver:WebDriver, keywords, limit=2):
             list_fridens = driver.find_elements_by_css_selector('i[class="img profpic"]')
             if not list_fridens:
                 logger.warning('can not find any friend avatar')
+                return
+
             list_fridens[1].click()
-            # 打开聊天
             # 打开聊天 注意：这里内容加载较慢需要时间等待
             time.sleep(3)
             message_page = driver.find_element_by_partial_link_text("Message")
@@ -306,8 +309,46 @@ def send_messages(driver:WebDriver, keywords, limit=2):
         return fbexcept.auto_process(3)
 
 
+def send_facebook_state(driver:WebDriver):
+    """
+    发送facebook状态
+    :param driver:
+    :return:
+    """
+    try:
+        # 1.检查该账号是否存在好友
+        # 2.向好友发送消息
+        message_url = "https://m.facebook.com/home.php?sk=h_chr&ref=bookmarks"
+        driver.get(message_url)
+        # 检查发送状态的页面存在
+        send_state = WebDriverWait(driver, 3).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
+        if not send_state:
+            logger.warning('can not find send state page')
+        # 查找输入框
+        time.sleep(6)
+        send_state_page = driver.find_element_by_css_selector('div[role="textbox"]')
+        send_state_page.click()
+        # 输入需要发送的文本
+        time.sleep(10)
+        send_info_state = driver.find_element_by_css_selector('div[data-sigil="js_placeholder"]')
+        print(send_info_state)
+        send_info_state.send_keys("HELLO WORLD")
+        time.sleep(10)
+        release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
+        print(release_state_button)
+        release_state_button.click()
+    except:
+        fbexcept = FacebookException(driver)
+        return fbexcept.auto_process(3)
+
+
 def user_home(driver):
+    """
     # 用户中心浏览
+    :param driver:
+    :return:
+    """
     try:
         time.sleep(3)
         driver.get("https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format("xiaoning"))
@@ -315,9 +356,9 @@ def user_home(driver):
         add_search_fridens = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, '#u_1e_z > div > div')))
         add_search_fridens.cliick()
-        add__fridens = WebDriverWait(driver, 10).until(
+        add_fridens = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
-        add__fridens.click()
+        add_fridens.click()
         return True, 0
     except:
         fbexcept = FacebookException(driver)
@@ -347,7 +388,8 @@ if __name__ == '__main__':
             if not res:
                 continue
             # add_friends(driver, ["xiaoning"], 2)
-            send_messages(driver, "xiaoning", 1)
+            send_facebook_state(driver)
+            # send_messages(driver, "xiaoning", 1)
             # send_messages(driver)
             # user_messages(driver)
             # local_surface(driver)

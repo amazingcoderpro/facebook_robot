@@ -33,7 +33,6 @@ class FacebookException(BaseException):
     12： 账号密码不正确
     13： 移动端共享登录验证
     14:  条款和使用政策验证
-    15： 邮箱验证前的继续按钮
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},

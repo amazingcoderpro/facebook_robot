@@ -11,7 +11,6 @@ from config import logger, get_account_args, get_fb_friend_keys, get_fb_posts, g
 import scripts.facebook as fb
 
 
-
 class TaskHelper:
     """
     任务配置及判断辅助类
@@ -233,6 +232,7 @@ class TaskHelper:
 
         return task_result
 
+
 if __name__ == '__main__':
     inputs = {
         'task': {
@@ -255,7 +255,6 @@ if __name__ == '__main__':
             'configure': {'last_login': '2019-04-20 19:20:20', 'last_verify': '2019-04-20 19:20:20'}
         }
     }
-
 
     th = TaskHelper(inputs)
     print(th.get_posts(True))
