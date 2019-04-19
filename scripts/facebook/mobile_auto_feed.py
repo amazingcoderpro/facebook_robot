@@ -287,7 +287,10 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                 logger.warning('can not find any friend avatar')
             list_fridens[1].click()
             # 打开聊天
-            message_page = driver.find_element_by_css_selector('a[href="#"]')
+            # 打开聊天 注意：这里内容加载较慢需要时间等待
+            time.sleep(3)
+            message_page = driver.find_element_by_partial_link_text("Message")
+            time.sleep(6)
             message_page.click()
 
             # 输入聊天内容
@@ -348,7 +351,7 @@ if __name__ == '__main__':
             # send_messages(driver)
             # user_messages(driver)
             # local_surface(driver)
-            time.sleep(6)
+            time.sleep(100)
             # driver.quit()
 
 
