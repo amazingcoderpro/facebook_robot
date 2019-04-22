@@ -95,7 +95,7 @@ class Task(models.Model):
     # aps_id = models.CharField(max_length=100, default='')
 
     last_update = models.DateTimeField(auto_now_add=True)
-    task_account = models.ManyToManyField("Account", through="TaskAccountRelationship", through_fields=("task", "account",))
+    # task_account = models.ManyToManyField(Account, through="TaskAccountRelationship", through_fields=("account", "task",))
 
     # def accounts_list(self):
     #     return [acc.account for acc in self.taskaccountrelationship_set.all()]
