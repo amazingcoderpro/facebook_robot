@@ -96,6 +96,10 @@ def fb_auto_feed(self, inputs):
                 tsk_hlp.screenshots(driver, err_code=err_code)
                 return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
+        msgs = tsk_hlp.get_chat_msgs()
+        if msgs:
+            fb.send_messages(driver, keywords=msgs, limit=random.randint(1, 3))
+
         tsk_hlp.random_sleep(20, 100)
         logger.info('-----task fb_auto_feed succeed. account={}'.format(account))
     except Exception as e:
