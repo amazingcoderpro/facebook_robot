@@ -5,6 +5,7 @@
 import time
 import random
 from selenium import webdriver
+# from appium import webdriver as appwebdriver
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -294,9 +295,12 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                 list_fridens[idx_fridens].click()
                 # 打开聊天 注意：这里内容加载较慢需要时间等待
                 time.sleep(3)
-                message_page = driver.find_element_by_partial_link_text("Message")
-                message_page.click()
-
+                ''
+                message_page = driver.find_elements_by_css_selector('div[data-sigil="hq-profile-logging-action-bar-button"]')
+                # message_page = driver.find_elements_by_css_selector('span[data-sigil^="m-profile-action-button-label"]')
+                print(message_page[3])
+                time.sleep(6)
+                message_page[3].click()
                 # 出现下载Messenager 选择关闭
                 try:
                     install_messenger = driver.find_element_by_css_selector('div[data-sigil="m-promo-interstitial"]')
@@ -310,6 +314,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                         # 输入聊天内容
                         time.sleep(1)
                         message_info = driver.find_element_by_css_selector('textarea[data-sigil^="m-textarea-input"]')
+                        print(message_info)
                         message_info.send_keys(keys)
                         time.sleep(1)
 
