@@ -334,6 +334,10 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
         $('#modal-new select[name="category"]').on('change', onCategoryChange);
         $('#modal-new select[name="scheduler"]').on('change', onModeChange);
         $('button.new').on('click', function(){
+            let $areaAccountCount = $("select[name=area_account_count]");
+            let options =  $areaAccountCount.find("option");
+            let randomNum = Math.round(Math.random() * options.length);
+            $areaAccountCount.find("option").eq(randomNum).prop("selected",true);
             $('#modal-new').modal('show'),
             onCategoryChange(), onModeChange()
         }),
@@ -346,10 +350,8 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 var el=$('#modal-new .modal-body select[name="area_account_count"]');
                 $.each(area, function(i,item){
                     var v = item.name + " (" +item.count + ")";
-                    el.append('<option index="'+item.id+'" value="'+ v +'">'+ v +'</option>');
+                    el.append('<option index="'+item.id+'" value="'+ v +'" selected>' + v +'</option>');
                 })
-                // detailHtml=$('#detail').html(),
-                // $('#detail').html('')
             }
         })
 })
