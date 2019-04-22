@@ -36,6 +36,7 @@ def find_optimal_agent(area, agents=None):
         db_scoped_session = ScopedSession()
         agents = db_scoped_session.query(Agent.id, Agent.active_area).filter(Agent.status != -1).order_by(Agent.status).all()
 
+
     for agent_id, agent_area in agents:
         if area == agent_area:
             return agent_id, agent_area
@@ -101,7 +102,7 @@ def send_task_2_worker(task_id):
                                            Account.profile_path, Account.configure).filter(
             Account.id.in_(account_ids)).all()
 
-        agents = db_scoped_session.query(Agent.id, Agent.active_area).filter(Agent.status != -1).order_by(Agent.status).all()
+        # agents = db_scoped_session.query(Agent.id, Agent.active_area).filter(Agent.status != -1).order_by(Agent.status).all()
 
         # 一个任务会有多个账号， 按照账号对任务进行第一次拆分
         real_accounts_num = 0
@@ -113,15 +114,11 @@ def send_task_2_worker(task_id):
                 logger.warning('account status in invalid. task id={}, account id={}'.format(task_id, acc_id))
                 continue
 
-            agent = find_optimal_agent(area=active_area, agents=agents)
-            agent_queue_name = 'default'
-            agent_id = None
-            if agent:
-                agent_id, agent_area = agent
-                if agent_area:
-                    area_name = db_scoped_session.query(Area.name).filter(Area.id == agent_area).first()
-                    if area_name:
-                        agent_queue_name = area_name[0].replace(' ', '_')
+            area = db_scoped_session.query(Area).filter(Area.name == active_area).first()
+            queue_name = 'default'
+            area_id = None
+            if area:
+                area_id, agent_area = area.id, active_area
             else:
                 logger.warning('There have no optimal agent for task, task id={}, account id={}, account_area={}'
                                .format(task_id, acc_id, active_area))
@@ -161,18 +158,18 @@ def send_task_2_worker(task_id):
             track = app.send_task(
                 celery_task_name,
                 args=(inputs, ),
-                queue=agent_queue_name,
-                routing_key=agent_queue_name
+                queue=queue_name,
+                routing_key=queue_name
             )
 
             logger.info('-----send sub task to worker, celery task name={}, queue={}, '
-                        'task id={}, account id={}, track id={}'.format(celery_task_name, agent_queue_name, task_id, acc_id, track.id))
+                        'task id={}, account id={}, track id={}'.format(celery_task_name, queue_name, task_id, acc_id, track.id))
 
             job = Job()
             job.task = task_id
             job.task = task_id
             job.account = acc_id
-            job.agent = agent_id
+            job.area = area_id
             job.status = 'running'
             job.track_id = track.id
             job.start_time = datetime.datetime.now()
