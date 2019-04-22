@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import serializers
 
 from account.models import Account
@@ -55,7 +56,10 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             # accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
             #                                   Q(status='valid') | Q(status__icontains='verify')).order_by('using')[:account_count]
 
-            accounts = Account.objects.filter(**{"active_area_id": area_id}).order_by('using')[:account_count]
+            # accounts = Account.objects.filter(**{"active_area_id": area_id}).order_by('using')[:account_count]
+            accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
+                                               Q(status='valid') | Q(status__icontains='verify'),
+                                               active_area_id=area_id).order_by('using')[:account_count]
             for account in accounts:
                 TaskAccountRelationship.objects.create(account_id=account.id, task_id=instance.id)
             self.update_timestamp(instance)
