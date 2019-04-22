@@ -287,7 +287,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
             list_fridens = driver.find_elements_by_css_selector('i[class="img profpic"]')
             if not list_fridens:
                 logger.warning('can not find any friend avatar')
-                return
+                return False,
 
             list_fridens[1].click()
             # 打开聊天 注意：这里内容加载较慢需要时间等待
@@ -302,6 +302,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
             # 发送聊天内容
             send_info = driver.find_element_by_css_selector('button[name="Send"]')
             send_info.click()
+            return True, 0
         else:
             logger.warning('can not find any friend')
     except:
@@ -309,10 +310,11 @@ def send_messages(driver:WebDriver, keywords, limit=2):
         return fbexcept.auto_process(3)
 
 
-def send_facebook_state(driver:WebDriver):
+def send_facebook_state(driver:WebDriver, keywords):
     """
     发送facebook状态
     :param driver:
+    :keyword 发送的内容
     :return:
     """
     try:
@@ -331,13 +333,13 @@ def send_facebook_state(driver:WebDriver):
         send_state_page.click()
         # 输入需要发送的文本
         time.sleep(10)
-        send_info_state = driver.find_element_by_css_selector('div[data-sigil="js_placeholder"]')
+        send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
         print(send_info_state)
         send_info_state.send_keys("HELLO WORLD")
         time.sleep(10)
         release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
-        print(release_state_button)
         release_state_button.click()
+        return True, 0
     except:
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
@@ -388,7 +390,7 @@ if __name__ == '__main__':
             if not res:
                 continue
             # add_friends(driver, ["xiaoning"], 2)
-            send_facebook_state(driver)
+            send_facebook_state(driver, "xiaoning")
             # send_messages(driver, "xiaoning", 1)
             # send_messages(driver)
             # user_messages(driver)
