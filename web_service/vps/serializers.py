@@ -5,7 +5,7 @@ from rest_framework import serializers
 from vps.models import Area,Agent
 
 
-class AreaSerializer(serializers.HyperlinkedModelSerializer):
+class AreaSerializer(serializers.ModelSerializer):
 
     # 检查社交账户类型是否存在，存在则不创建
     def create(self, validated_data):
@@ -16,8 +16,11 @@ class AreaSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Area
-        fields = ('url', 'id', 'name', 'description')
-        extra_kwargs = {'description': {'allow_blank': True}}
+        fields = ('id', 'name', 'running_tasks', 'description')
+        extra_kwargs = {
+            'description': {'allow_blank': True},
+            'running_tasks': {'read_only': True}
+        }
 
 
 class AgentSerializer(serializers.ModelSerializer):
