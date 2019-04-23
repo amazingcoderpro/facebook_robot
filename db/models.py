@@ -162,8 +162,8 @@ class Job(Base):
     task = Column(Integer, ForeignKey('task.id'))
     account = Column(Integer, ForeignKey('account.id'))
 
-    # 这个任务被分配到了哪个agent上,用以计算agent的负载
-    agent = Column(Integer, ForeignKey('agent.id'), default=None)
+    # 这个任务被分配到了哪个地域上（即队列上）,用以计算地域的负载
+    area = Column(Integer, ForeignKey('area.id'), default=None, comment=u'这个任务被分配到了哪个地域上（即队列上）,用以计算地域的负载')
 
     # -1-pending, 0-failed, 1-succeed, 2-running
     # status = Column(Integer, default=-1, server_default='-1')
@@ -249,12 +249,9 @@ class Account(Base):
 
     def __repr__(self):
         return "id:{}, account:{}, password:{}, email={}, email_pwd:{}, gender:{}, birthday:{}, national_id:{}, " \
-               "register_time:{}, name:{}, profile_id:{}, status:{}, owner:{}, last_login:{}, last_post:{}, " \
-               "las_chat:{}, last_comment:{}, last_farming:{}, last_edit:{}, profile_path:{}. ".format(
+               "register_time:{}, name:{}, profile_id:{}, status:{}, owner:{}, profile_path:{}. configure={}".format(
                    self.id, self.account, self.password, self.email, self.email_pwd, self.gender, self.birthday,
-                   self.national_id, self.register_time, self.name, self.profile_id, self.status, self.owner,
-                   self.last_login, self.last_post, self.last_chat, self.last_comment, self.last_farming,
-                   self.last_edit, self.profile_path)
+                   self.national_id, self.register_time, self.name, self.profile_id, self.status, self.owner, self.profile_path, self.configure)
 
 
 class AccountCategory(Base):
@@ -277,7 +274,7 @@ class Agent(Base):
     # 0-idle, 1-normal, 2-busy, 3-disable
     # -1--disable, 大于零代表其忙碌值（即当前待处理的任务量）
     # status = Column(String(20), default=0, server_default='0')
-    status = Column(Integer, default=0, server_default='0')
+    # status = Column(Integer, default=0, server_default='0')   # 一个地域上可能有多个agent，无法确定每个agent上的任务数
 
     # 该agent所属区域
     active_area = Column(Integer, ForeignKey('area.id'), default=None)
@@ -297,6 +294,7 @@ class Area(Base):
     __tablename__ = 'area'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), unique=True, nullable=False)
+    running_tasks = Column(Integer, default=0, server_default='0', comment=u'该地域正在运行的任务个数')  # 该地域正在运行的任务数
     description = Column(String(2048), default='', server_default='')
 
 

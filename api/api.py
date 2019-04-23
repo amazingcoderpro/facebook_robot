@@ -14,7 +14,7 @@ from datetime import timedelta, datetime
 from collections import namedtuple
 import json
 from apscheduler.schedulers.base import JobLookupError
-from db import TaskOpt, JobOpt, Job, Task, Scheduler, Agent, Account
+from db import TaskOpt, JobOpt, Job, Task, Scheduler, Area, Account
 from tasks.processor import send_task_2_worker
 from config import logger, get_task_args
 from utils.redis_opt import RedisOpt
@@ -188,21 +188,21 @@ def update_task_status():
         ScopedSession.remove()
 
 
-def update_agent_status():
+def update_area_status():
     """
     根据运行结果实时更新agent的忙碌程度
     :return:
     """
     try:
         db_session = ScopedSession()
-        agent_ids = db_session.query(Agent.id).filter(Agent.status != -1).all()
-        for agent in agent_ids:
-            agent_id = agent[0]
-            running_jobs_num = db_session.query(Job).filter(Job.agent == agent_id, Job.status == 'running').count()
-            db_session.query(Agent).filter(Agent.id == agent_id).update({Agent.status: running_jobs_num}, synchronize_session=False)
-            logger.info('update_agent_status Agent id={}, status={}'.format(agent_id, running_jobs_num))
+        area_ids = db_session.query(Area.id).filter().all()
+        for area in area_ids:
+            area_id = area[0]
+            running_jobs_num = db_session.query(Job).filter(Job.area == area_id, Job.status == 'running').count()
+            db_session.query(Area).filter(Area.id == area_id).update({Area.running_tasks: running_jobs_num}, synchronize_session=False)
+            logger.info('update_area_status Area id={}, status={}'.format(area_id, running_jobs_num))
     except Exception as e:
-        logger.exception('update_agent_status catch exception agent e={}'.format(e))
+        logger.exception('update_area_status catch exception, e={}'.format(e))
         db_session.rollback()
     finally:
         ScopedSession.remove()
@@ -337,7 +337,7 @@ def update_results():
     update_task_status()
 
     # 根据运行结果实时更新agent的忙碌程度
-    update_agent_status()
+    update_area_status()
 
     # 根據運行結果實時更新account的使用狀態
     update_account_usage()

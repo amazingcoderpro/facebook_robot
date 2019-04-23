@@ -5,6 +5,7 @@
 import time
 import random
 from selenium import webdriver
+# from appium import webdriver as appwebdriver
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -116,13 +117,14 @@ def auto_login(driver, account, password, gender=1):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
-def browse_page(driver, browse_times=10, distance=0, interval=0):
+def browse_page(driver, browse_times=10, distance=0, interval=0, back_top=True):
     """
     浏览页面
     :param driver: 浏览器驱动
     :param browse_times: 浏览次数
     :param distance: 每次间隔距离，默认为零，代表使用随机距离
     :param interval: 间隔时间， 单位秒, 默认为零，代表使用随机停顿时间
+    :param back_top: 是否回到顶点
     :return:
     """
     # 浏览页面js
@@ -140,8 +142,9 @@ def browse_page(driver, browse_times=10, distance=0, interval=0):
                 time.sleep(random.randint(2, 10))
             else:
                 time.sleep(interval)
+        if back_top:
+            driver.execute_script("window.scrollTo(0,0)")
 
-        driver.execute_script("window.scrollTo(0,0)")
         return True
     except Exception as e:
         logger.exception('browse_page exception. e={}'.format(e))
@@ -276,36 +279,64 @@ def send_messages(driver:WebDriver, keywords, limit=2):
     try:
         # 1.检查该账号是否存在好友
         # 2.向好友发送消息
-        message_url = "https://m.facebook.com/friends/center/friends"
-        driver.get(message_url)
+        for i in range(1, limit + 1):
+            message_url = "https://m.facebook.com/friends/center/friends"
+            driver.get(message_url)
 
-        # 检查是否进入好友列表页面
-        fridens_page = WebDriverWait(driver, 4).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="friends_center_main"]')))
-        if fridens_page:
-            # 查找所有相关好友的属性
-            list_fridens = driver.find_elements_by_css_selector('i[class="img profpic"]')
-            if not list_fridens:
-                logger.warning('can not find any friend avatar')
-                return False,
+            # 检查是否进入好友列表页面
+            fridens_page = WebDriverWait(driver, 4).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="friends_center_main"]')))
+            if fridens_page:
+                logger.info('enter friends list page.')
+                # 查找所有相关好友的属性
+                list_fridens = driver.find_elements_by_css_selector('i[class="img profpic"]')
+                if not list_fridens:
+                    logger.warning('can not find any friend')
+                    continue
 
-            list_fridens[1].click()
-            # 打开聊天 注意：这里内容加载较慢需要时间等待
-            time.sleep(3)
-            message_page = driver.find_element_by_partial_link_text("Message")
-            time.sleep(6)
-            message_page.click()
+                idx_friends = random.randint(0, len(list_fridens)-1)
+                list_fridens[idx_friends].click()
+                # 打开聊天 注意：这里内容加载较慢需要时间等待
+                time.sleep(3)
+                message_page = driver.find_elements_by_css_selector("span[data-sigil='m-profile-action-button-label']")[2]
+                super_click(message_page, driver)
+                time.sleep(3)
+                # 出现下载Messenager 选择关闭
+                try:
+                    install_messenger = driver.find_element_by_css_selector('div[data-sigil="m-promo-interstitial"]')
+                    if install_messenger:
+                        close_btn = driver.find_element_by_css_selector('img[data-nt^="NT:IMAGE"]')
+                        super_click(close_btn, driver)
+                except:
+                    pass
 
-            # 输入聊天内容
-            message_info = driver.find_element_by_css_selector('textarea[data-sigil="m-textarea-input"]')
-            message_info.send_keys("hello")
-            # 发送聊天内容
-            send_info = driver.find_element_by_css_selector('button[name="Send"]')
-            send_info.click()
+                logger.info('start chat.')
+                for keys in keywords:
+                    # 输入聊天内容
+                    browse_page(driver, 3, distance=50, interval=2, back_top=False)
+                    time.sleep(1)
+                    message_info = driver.find_element_by_css_selector('textarea[data-sigil^="m-textarea-input"]')
+                    message_info.send_keys(keys)
+                    time.sleep(2)
+
+                    # 发送聊天内容
+                    send_info = driver.find_element_by_css_selector('button[name$="end"]')
+
+                    super_click(send_info, driver, double=True)
+                    time.sleep(3)
+
+                    try:
+                        install_messenger = driver.find_element_by_css_selector(
+                            'div[data-sigil="m-promo-interstitial"]')
+                        if install_messenger:
+                            close_btn = driver.find_element_by_css_selector('img[data-nt^="NT:IMAGE"]')
+                            super_click(close_btn, driver)
+                    except Exception as e:
+                        pass
+            driver.get('https://m.facebook.com')
             return True, 0
-        else:
-            logger.warning('can not find any friend')
-    except:
+    except Exception as e:
+        print(e)
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -334,11 +365,12 @@ def send_facebook_state(driver:WebDriver, keywords):
         # 输入需要发送的文本
         time.sleep(10)
         send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
-        print(send_info_state)
-        send_info_state.send_keys("HELLO WORLD")
+
+        send_info_state.send_keys(keywords.get('post'))
         time.sleep(10)
         release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
         release_state_button.click()
+        driver.get('https://m.facebook.com')
         return True, 0
     except:
         fbexcept = FacebookException(driver)
@@ -352,15 +384,8 @@ def user_home(driver):
     :return:
     """
     try:
-        time.sleep(3)
-        driver.get("https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format("xiaoning"))
-        time.sleep(1000)
-        add_search_fridens = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, '#u_1e_z > div > div')))
-        add_search_fridens.cliick()
-        add_fridens = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, 'a[data-sigil="touchable ajaxify"]')))
-        add_fridens.click()
+        driver.get("https://m.facebook.com/bertoualocal.miners?ref=bookmarks")
+        browse_page(driver)
         return True, 0
     except:
         fbexcept = FacebookException(driver)
@@ -378,7 +403,7 @@ def post_status(driver):
 
 
 if __name__ == '__main__':
-    filename = 'E:/accont_info.txt'
+    filename = '../../resource/facebook_account.txt'
     with open(filename, 'r') as line:
         all_readline = line.readlines()
         for date in all_readline:
@@ -390,12 +415,12 @@ if __name__ == '__main__':
             if not res:
                 continue
             # add_friends(driver, ["xiaoning"], 2)
-            send_facebook_state(driver, "xiaoning")
-            # send_messages(driver, "xiaoning", 1)
+            send_facebook_state(driver, {"post":"xiaoning"})
+            send_messages(driver, ["hello?", "how are you!"], 2)
             # send_messages(driver)
             # user_messages(driver)
             # local_surface(driver)
-            time.sleep(100)
+            time.sleep(6)
             # driver.quit()
 
 

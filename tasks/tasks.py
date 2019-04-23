@@ -38,6 +38,8 @@ def fb_auto_feed(self, inputs):
     try:
         driver = None
         last_login = None
+        last_chat = None
+        last_post = None
         tsk_hlp = TaskHelper(inputs)
 
         if not tsk_hlp.is_inputs_valid():
@@ -96,6 +98,27 @@ def fb_auto_feed(self, inputs):
                 tsk_hlp.screenshots(driver, err_code=err_code)
                 return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
+        tsk_hlp.random_sleep()
+        msgs = tsk_hlp.get_chat_msgs()
+        if msgs:
+            ret, err_code = fb.send_messages(driver, keywords=msgs, limit=random.randint(1, 3))
+            if not ret:
+                err_code = "send_message failed, err_code={}".format(err_code)
+                tsk_hlp.screenshots(driver, err_code=err_code)
+                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+
+            last_chat = datetime.datetime.now()
+
+        tsk_hlp.random_sleep()
+        send_state = tsk_hlp.get_posts()
+        if send_state:
+            ret, err_code = fb.send_facebook_state(driver, keywords=send_state)
+            if not ret:
+                err_code = "send_facebook_state failed, err_code={}".format(err_code)
+                tsk_hlp.screenshots(driver, err_code=err_code)
+                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+            last_post = datetime.datetime.now()
+
         tsk_hlp.random_sleep(20, 100)
         logger.info('-----task fb_auto_feed succeed. account={}'.format(account))
     except Exception as e:
@@ -106,7 +129,7 @@ def fb_auto_feed(self, inputs):
     finally:
         if driver:
             driver.quit()
-    return tsk_hlp.make_result(True, last_login=last_login)
+    return tsk_hlp.make_result(True, last_login=last_login, last_chat=last_chat, last_post=last_post)
 
 
 @app.task(base=BaseTask, bind=True, max_retries=3, time_limit=300)
