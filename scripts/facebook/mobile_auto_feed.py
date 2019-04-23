@@ -295,12 +295,10 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                 list_fridens[idx_fridens].click()
                 # 打开聊天 注意：这里内容加载较慢需要时间等待
                 time.sleep(3)
-                ''
-                message_page = driver.find_elements_by_css_selector('div[data-sigil="hq-profile-logging-action-bar-button"]')
-                # message_page = driver.find_elements_by_css_selector('span[data-sigil^="m-profile-action-button-label"]')
-                print(message_page[3])
-                time.sleep(6)
-                message_page[3].click()
+
+                message_page1 = driver.find_elements_by_css_selector('div[data-sigil^="hq-profile-logging-action-bar-button"]')
+                message_page1[1].click()
+
                 # 出现下载Messenager 选择关闭
                 try:
                     install_messenger = driver.find_element_by_css_selector('div[data-sigil="m-promo-interstitial"]')
@@ -335,7 +333,8 @@ def send_messages(driver:WebDriver, keywords, limit=2):
         else:
             logger.warning('can not find any friend')
             return False, -1
-    except:
+    except Exception as e:
+        print(e)
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -364,8 +363,8 @@ def send_facebook_state(driver:WebDriver, keywords):
         # 输入需要发送的文本
         time.sleep(10)
         send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
-        print(send_info_state)
-        send_info_state.send_keys("HELLO WORLD")
+
+        send_info_state.send_keys(keywords.get('post'))
         time.sleep(10)
         release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
         release_state_button.click()
@@ -413,7 +412,7 @@ if __name__ == '__main__':
             if not res:
                 continue
             # add_friends(driver, ["xiaoning"], 2)
-            # send_facebook_state(driver, "xiaoning")
+            send_facebook_state(driver, {"post":"xiaoning"})
             send_messages(driver, ["hello?", "how are you!"], 2)
             # send_messages(driver)
             # user_messages(driver)
