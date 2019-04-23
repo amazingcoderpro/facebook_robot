@@ -25,10 +25,9 @@ class AgentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Agent
-        fields = ('id', 'status', 'active_area', 'configure', 'area_name')
+        fields = ('id', 'active_area', 'configure', 'area_name')
 
         write_only_fields = (
-            "status",
             "active_area",
             "configure"
         )
@@ -40,7 +39,7 @@ class AreaAccountCountSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Area
-        fields = ('id','name','count',)
+        fields = ('id', 'name','count',)
 
     @staticmethod
     def get_count(row):

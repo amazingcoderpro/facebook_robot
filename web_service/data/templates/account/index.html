@@ -42,15 +42,31 @@
                 <div class="box-body">
                     <div class="form-group">
                         <label>社交账户类型</label>
-                        <p class="category"></p>
+<!--                        <p class="category"></p>-->
+                        <input type="text" class="form-control" name="category" readonly="readonly"  />
                     </div>
                     <div class="form-group">
                         <label>社交账户名</label>
-                        <input type="text" class="form-control" name="account" placeholder="请输入社交账户名" />
+                        <input type="text" class="form-control" name="account" readonly="readonly" />
                     </div>
                     <div class="form-group">
                         <label>账户密码</label>
                         <input type="text" class="form-control" name="password" placeholder="请输入初始密码" />
+                    </div>
+                    <div class="form-group">
+                      <label>区域</label>
+                      <select class="form-control" name="edit_active_name">
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>状态</label>
+                      <select class="form-control" name="status">
+                          <!--0-valid, 1-invalid, 2-verify, 3-other-->
+                          <option value="valid">valid</option>
+                          <option value="invalid">invalid</option>
+                          <option value="verify">verify</option>
+                          <option value="other">other</option>
+                      </select>
                     </div>
                     <div class="form-group">
                         <label>姓名</label>
@@ -95,16 +111,6 @@
                         <label>可执行任务</label>
                         <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
                     </div>
-                    <div class="form-group">
-                      <label>状态</label>
-                      <select class="form-control" name="status">
-                          <!--0-valid, 1-invalid, 2-verify, 3-other-->
-                          <option value="valid">valid</option>
-                          <option value="invalid">invalid</option>
-                          <option value="verify">verify</option>
-                          <option value="other">other</option>
-                      </select>
-                    </div>
                     <!--<div class="form-group">-->
                         <!--<label>最后登陆</label>-->
                         <!--<p class="last_login"></p>-->
@@ -148,15 +154,30 @@
           <select class="form-control" name="category"></select>
         </div>
         <div class="form-group">
-            <label>社交账户名</label>
+            <label>账户</label>
             <input type="text" class="form-control" name="account" placeholder="请输入社交账户名" />
         </div>
         <div class="form-group">
-            <label>账户密码</label>
+            <label>密码</label>
             <input type="text" class="form-control" name="password" placeholder="请输入初始密码" />
         </div>
         <div class="form-group">
-            <label>姓名</label>
+          <label>区域</label>
+          <select class="form-control" name="save_active_name">
+          </select>
+        </div>
+        <div class="form-group">
+          <label>状态</label>
+          <select class="form-control" name="status">
+              <!--0-valid, 1-invalid, 2-verify, 3-other-->
+              <option value="valid">valid</option>
+              <option value="invalid">invalid</option>
+              <option value="verify">verify</option>
+              <option value="other">other</option>
+          </select>
+        </div>
+        <div class="form-group">
+            <label>昵称</label>
             <input type="text" class="form-control" name="name" placeholder="请输入姓名" />
         </div>
         <div class="form-group">
@@ -197,16 +218,6 @@
         <div class="form-group">
             <label>可执行任务</label>
             <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
-        </div>
-        <div class="form-group">
-          <label>状态</label>
-          <select class="form-control" name="status">
-              <!--0-valid, 1-invalid, 2-verify, 3-other-->
-              <option value="valid">valid</option>
-              <option value="invalid">invalid</option>
-              <option value="verify">verify</option>
-              <option value="other">other</option>
-          </select>
         </div>
       </div>
       <div class="modal-footer">
