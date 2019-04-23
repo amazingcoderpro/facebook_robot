@@ -33,7 +33,7 @@ def start_chrome(finger_print, headless=True):
             chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
-        chrome_options.add_argument('--user-agent=iphone')
+        # chrome_options.add_argument('--user-agent=iphone')
         chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
         chrome_options.add_argument('lang=en_US')
 
