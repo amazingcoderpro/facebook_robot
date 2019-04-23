@@ -333,7 +333,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                             super_click(close_btn, driver)
                     except Exception as e:
                         pass
-
+            driver.get('https://m.facebook.com')
             return True, 0
     except Exception as e:
         print(e)
@@ -370,6 +370,7 @@ def send_facebook_state(driver:WebDriver, keywords):
         time.sleep(10)
         release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
         release_state_button.click()
+        driver.get('https://m.facebook.com')
         return True, 0
     except:
         fbexcept = FacebookException(driver)
