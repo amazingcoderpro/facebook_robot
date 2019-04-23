@@ -53,6 +53,10 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                     data: 'name'
                 },
                 {
+                    title: '正在执行的任务数',
+                    data: 'running_tasks'
+                },
+                {
                     title: '描述',
                     data: 'description'
                 }

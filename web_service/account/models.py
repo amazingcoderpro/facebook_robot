@@ -33,10 +33,11 @@ class Account(models.Model):
     owner = models.ForeignKey(User, db_column='owner', on_delete=models.CASCADE)
     account = models.CharField(max_length=255, default='')
     password = models.CharField(max_length=255, default='')
+    active_area = models.ForeignKey(Area, db_column='active_area', related_name='Account_Area', on_delete=models.CASCADE)
     # -----------------以上是必填项----------------
 
-    email = models.CharField(max_length=255, default='')
-    email_pwd = models.CharField(max_length=255, default='')
+    email = models.CharField(max_length=255, default='', blank=True)
+    email_pwd = models.CharField(max_length=255, default='',)
     phone_number = models.CharField(max_length=100, default='')
 
     # 0-女，1-男
@@ -60,16 +61,7 @@ class Account(models.Model):
     # 存放用户profile文件
     profile_path = models.CharField(max_length=255, default='')
 
-    # last_login = models.DateTimeField(default=datetime.min)
-    # last_post = models.DateTimeField(default=datetime.min)
-    # last_chat = models.DateTimeField(default=datetime.min)
-    # last_farming = models.DateTimeField(default=datetime.min)
-    # last_comment = models.DateTimeField(default=datetime.min)
-    # last_edit = models.DateTimeField(default=datetime.min)
-
     # active_ip = Column(String(255), default='', server_default='')
-    # 活跃地域
-    active_area = models.ForeignKey(Area, db_column='active_area', related_name='Account_Area', on_delete=models.CASCADE)
     # 常用浏览器指纹
     # active_browser = models.CharField(max_length=2048, default='')
     # 账号的其他非常规配置信息

@@ -18,7 +18,7 @@ class AuthUserSerializer(serializers.ModelSerializer):
         fields = ('username', 'last_name', 'email')
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     # category = serializers.PrimaryKeyRelatedField(queryset=UserCategory.objects.all())
     category = CategorySerializer()
 
