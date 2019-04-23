@@ -26,14 +26,14 @@ def start_chrome(finger_print, headless=True):
     try:
         # 定制浏览器启动项
         chrome_options = webdriver.ChromeOptions()
-        if headless:
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-gpu')
+        # if headless:
+        #     chrome_options.add_argument('--headless')
+        #     chrome_options.add_argument('--no-sandbox')
+        #     chrome_options.add_argument('--disable-extensions')
+        #     chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
-        chrome_options.add_argument('--user-agent=iphone')
+        # chrome_options.add_argument('--user-agent=iphone')
         chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
         chrome_options.add_argument('lang=en_US')
 
@@ -117,7 +117,7 @@ def auto_login(driver, account, password, gender=1):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
-def browse_page(driver, browse_times=10, distance=0, interval=0, back_top=True):
+def browse_page(driver, browse_times=20, distance=0, interval=0, back_top=True):
     """
     浏览页面
     :param driver: 浏览器驱动
@@ -135,11 +135,11 @@ def browse_page(driver, browse_times=10, distance=0, interval=0, back_top=True):
             if distance > 0:
                 y_dis += distance
             else:
-                y_dis += random.randint(50, 500)
+                y_dis += random.randint(50, 200)
 
             driver.execute_script("window.scrollTo(0,{})".format(y_dis))
             if interval <= 0:
-                time.sleep(random.randint(2, 10))
+                time.sleep(random.randint(5, 20))
             else:
                 time.sleep(interval)
         if back_top:
@@ -163,13 +163,15 @@ def user_messages(driver):
         time.sleep(3)
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
         user_news.click()
+        time.sleep(5)
         browse_page(driver)
         driver.find_element_by_css_selector('span[data-sigil="most_recent_bookmark"]').click()
+        time.sleep(5)
         browse_page(driver)
-        logger.info("View the latest news success driver={}".format(driver.name))
+        logger.info("user_messages success")
         return True, 0
-    except:
-        logger.exception('user_messages exception.')
+    except Exception as e:
+        logger.exception('user_messages exception.e={}'.format(e))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -187,7 +189,7 @@ def local_surface(driver):
         browse_page(driver)
         driver.get("https://m.facebook.com/local_surface/?query_type=HOME&ref=bookmarks")
         browse_page(driver)
-        logger.info("View the local news success driver={}".format(driver.name))
+        logger.info("local_surface success")
         return True, 0
     except:
         logger.error('local_surface catch exception. start process..')
@@ -260,7 +262,9 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
                     driver.back()
                     time.sleep(3)
                 new_friends_avatar = driver.find_elements_by_css_selector("img[src^='https://scontent'")
+        logger.info("add friend succeed.")
         driver.get('https://m.facebook.com')
+        time.sleep(5)
         return True, 0
     except Exception as e:
         logger.error('add friends failed, page url={}, e={}'.format(page_url, e))
@@ -279,6 +283,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
     try:
         # 1.检查该账号是否存在好友
         # 2.向好友发送消息
+        logger.info('start send_messages, limit={}, chat content={}'.format(limit, keywords))
         for i in range(1, limit + 1):
             message_url = "https://m.facebook.com/friends/center/friends"
             driver.get(message_url)
@@ -333,10 +338,13 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                             super_click(close_btn, driver)
                     except Exception as e:
                         pass
-            driver.get('https://m.facebook.com')
-            return True, 0
+
+        driver.get('https://m.facebook.com')
+        time.sleep(5)
+        logger.info('send_messages succeed, limit={}, chat content={}'.format(limit, keywords))
+        return True, 0
     except Exception as e:
-        print(e)
+        logger.exception('send_messages failed, limit={}, chat content={}'.format(limit, keywords))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -351,6 +359,7 @@ def send_facebook_state(driver:WebDriver, keywords):
     try:
         # 1.检查该账号是否存在好友
         # 2.向好友发送消息
+        logger.info("start send_facebook_state, keywords={}".format(keywords))
         message_url = "https://m.facebook.com/home.php?sk=h_chr&ref=bookmarks"
         driver.get(message_url)
         # 检查发送状态的页面存在
@@ -358,6 +367,8 @@ def send_facebook_state(driver:WebDriver, keywords):
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
         if not send_state:
             logger.warning('can not find send state page')
+            return False, -1
+
         # 查找输入框
         time.sleep(6)
         send_state_page = driver.find_element_by_css_selector('div[role="textbox"]')
@@ -366,13 +377,17 @@ def send_facebook_state(driver:WebDriver, keywords):
         time.sleep(10)
         send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
 
-        send_info_state.send_keys(keywords.get('post'))
+        post_content = keywords.get('post')
+        send_info_state.send_keys(post_content)
         time.sleep(10)
         release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
         release_state_button.click()
+        logger.info('send post success, post={}'.format(post_content))
         driver.get('https://m.facebook.com')
+        time.sleep(5)
         return True, 0
     except:
+        logger.exception('send post failed, post={}'.format(post_content))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 

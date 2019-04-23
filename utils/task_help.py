@@ -158,7 +158,7 @@ class TaskHelper:
             else:
                 return get_fb_posts(1)
         else:
-            return {'post': '', 'img': []}
+            return {}
 
     def get_chat_msgs(self, limit=1):
         """

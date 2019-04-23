@@ -160,7 +160,6 @@ def update_task_status():
             else:
                 if task.succeed_counts >= task.limit_counts:
                     task.status = 'succeed'
-                    task.end_time = datetime.now()
                 elif sch_end_date and datetime.now() >= sch_end_date:
                     task.status = 'failed'
                 else:
@@ -170,7 +169,9 @@ def update_task_status():
                         task.status = 'failed'
 
             if task.status in ['succeed', 'failed']:
-                task.end_time = datetime.now()
+                end_t = datetime.now()
+                task.end_time = end_t
+                task.last_update = end_t
                 # aps_id = TaskOpt.get_aps_ids_by_task_id(task.id)
                 aps_id = db_session.query(Task.aps_id).filter(Task.id == task.id).first()[0]
                 try:

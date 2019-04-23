@@ -115,7 +115,7 @@ def fb_auto_feed(self, inputs):
         tsk_hlp.random_sleep()
         if tsk_hlp.is_should_post():
             send_state = tsk_hlp.get_posts()
-            if send_state:
+            if send_state and send_state.get('post', ''):
                 ret, err_code = fb.send_facebook_state(driver, keywords=send_state)
                 if not ret:
                     err_code = "send_facebook_state failed, err_code={}".format(err_code)
