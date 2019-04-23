@@ -152,6 +152,7 @@ def switch_vps_ip(self, inputs):
         subprocess.call('pppoe-start', shell=True)
         time.sleep(3)
         pppoe_restart = subprocess.Popen('pppoe-status', shell=True, stdout=subprocess.PIPE, encoding='utf-8')
+
         pppoe_restart.wait(timeout=5)
         pppoe_log = str(pppoe_restart.communicate()[0])
         adsl_ip = re.findall(r'inet (.+?) peer ', pppoe_log)[0]
