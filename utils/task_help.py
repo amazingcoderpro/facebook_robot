@@ -61,11 +61,13 @@ class TaskHelper:
         self.last_post_time = account_configure.get('last_post', '')
         self.last_add_friend_time = account_configure.get('last_add_friend', '')
         self.last_chat_time = account_configure.get('last_chat', '')
+        self.login_counts = int(account_configure.get('login_counts', 0))
 
         self.login_interval = get_account_args().get('login_interval', 3600)
         self.verify_interval = get_account_args().get('verify_interval', 36000)
         self.post_interval = get_account_args().get('post_interval', 36000)
         self.add_friend_interval = get_account_args().get('add_friend_interval', 86400)
+        self.feed_limit = get_account_args().get('feed_limit', 10)
 
     def is_inputs_valid(self):
         return self.is_valid
@@ -82,6 +84,9 @@ class TaskHelper:
                 return False
 
         return True
+
+    def is_should_use(self):
+        return self.login_counts >= self.feed_limit
 
     def is_should_post(self):
         """
@@ -259,6 +264,10 @@ class TaskHelper:
             'phone_number': phone_number,
             'profile_path': profile_path,
         }
+
+        # 登录次数加1
+        if last_login:
+            task_result['account_configure']['login_counts'] = self.login_counts+1
 
         for k, v in kwargs.items():
             task_result['account_configure'][k] = v

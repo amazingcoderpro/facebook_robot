@@ -114,13 +114,13 @@ def send_task_2_worker(task_id):
                 logger.warning('account status in invalid. task id={}, account id={}'.format(task_id, acc_id))
                 continue
 
-            area = db_scoped_session.query(Area).filter(Area.name == active_area).first()
+            area = db_scoped_session.query(Area).filter(Area.id == active_area).first()
             queue_name = 'default'
             area_id = None
             if area:
-                area_id, agent_area = area.id, active_area
+                area_id, queue_name = area.id, area.name
             else:
-                logger.warning('There have no optimal agent for task, task id={}, account id={}, account_area={}'
+                logger.warning('There have no optimal agent for task, task id={}, account id={}, account area={}'
                                .format(task_id, acc_id, active_area))
 
             active_browser = db_scoped_session.query(FingerPrint.value).filter(FingerPrint.id == active_browser_id).first()
@@ -162,8 +162,8 @@ def send_task_2_worker(task_id):
                 routing_key=queue_name
             )
 
-            logger.info('-----send sub task to worker, celery task name={}, queue={}, '
-                        'task id={}, account id={}, track id={}'.format(celery_task_name, queue_name, task_id, acc_id, track.id))
+            logger.info('-----send sub task to worker, celery task name={}, area id={}, queue={}, '
+                        'task id={}, account id={}, track id={}'.format(celery_task_name, area_id, queue_name, task_id, acc_id, track.id))
 
             job = Job()
             job.task = task_id

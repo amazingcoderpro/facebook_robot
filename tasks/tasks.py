@@ -73,8 +73,8 @@ def fb_auto_feed(self, inputs):
             return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         last_login = datetime.datetime.now()
-
         logger.info('login succeed. account={}, password={}'.format(account, password))
+
         ret, err_code = fb.user_messages(driver=driver)
         if not ret:
             msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
@@ -89,6 +89,11 @@ def fb_auto_feed(self, inputs):
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
                 tsk_hlp.screenshots(driver, err_code=err_code)
                 return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+
+        # 账号是否可以继续用作其他用途
+        if not tsk_hlp.is_should_use():
+            logger.info("account can not be used!! login counts={}".format(tsk_hlp.login_counts))
+            return tsk_hlp.make_result(True, last_login=last_login)
 
         tsk_hlp.random_sleep()
         if tsk_hlp.is_should_add_friend():
