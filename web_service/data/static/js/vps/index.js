@@ -34,7 +34,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     },
     modifyItem=function(item){
         $('#detail').removeClass('none').html(detailHtml),
-        $('#info .box-title').text(item.queue_name+'基本信息'),
+        $('#info .box-title').text(item.active_area+'基本信息'),
         $.each(item, function(propName, value){$('#info input[name="'+propName+'"]').val(value),$('#info select[name="'+propName+'"]').val(value)});
         $('select[name="edit_area"] option').each(function () {
             if($(this).val() == item.area_name) {
@@ -72,22 +72,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 {
                     title: '区域',
                     data: 'area_name'
-                },
-                {
-                    title: '忙闲状态',
-                    data: 'status',
-                    // render: function(data){
-                    //
-                    //     switch(data){
-                    //         case '0': return 'idle';
-                    //         case '1': return 'normal';
-                    //         case '2': return 'busy';
-                    //         default:
-                    //             return 'disable'
-                    //     }
-                    // }
                 }
-
             ],
             onSingleRowClick: function(item){
                 if(item)modifyItem(item);

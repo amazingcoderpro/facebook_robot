@@ -9,14 +9,14 @@ from account.models import AccountCategory
 # Function: 社交账户类型序列化类
 
 
-class CategorySerializer(serializers.HyperlinkedModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
 
     # 检查社交账户类型是否存在，存在则不创建
-    def create(self, validated_data):
-        try:
-            return AccountCategory.objects.get(name=validated_data['name'])
-        except ObjectDoesNotExist:
-            return super(CategorySerializer, self).create(validated_data)
+    # def create(self, validated_data):
+    #     try:
+    #         return AccountCategory.objects.get(name=validated_data['name'])
+    #     except ObjectDoesNotExist:
+    #         return super(CategorySerializer, self).create(validated_data)
 
     class Meta:
         model = AccountCategory

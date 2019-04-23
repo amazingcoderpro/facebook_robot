@@ -15,8 +15,10 @@ db:
     db_type: mysql
 
 account:
-    login_interval: 600         # 账号登录的最小间隔时间
-    verify_interval: 3600        # 账号验证的时长
+    login_interval: 7200         # 账号登录的最小间隔时间
+    verify_interval: 36000        # 账号验证的时长
+    post_interval: 36000          # 账号发状态的间隔时间
+    add_friend_interval: 86400          # 添加好友间隔时间
     local_photo_path: resource/photos/    # 账号图象的本地存储位置
     remote_photo_path: ftp://xxx.xx.xx/ab/cc    # 账号图象的服务器存储位置
 

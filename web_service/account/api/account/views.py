@@ -3,7 +3,9 @@
 
 from django.http import HttpResponse
 from django.views.generic import View
+from users.common import user_by_token
 from rest_framework import viewsets
+from rest_framework.response import Response
 
 from account.models import Account
 from utils.request_utils import AuthPermission, search, handle_order
@@ -48,11 +50,6 @@ class AccountViewSet(viewsets.ModelViewSet):
         if 'export' in request.query_params:
             return CSVExportView().get(request, *args, **kwargs)
         return super(AccountViewSet, self).list(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        if 'import' in request.query_params:
-            return AccountCSVImportView().post(request, *args, **kwargs)
-        return super(AccountViewSet, self).create(request, *args, **kwargs)
 
 
 # 导出视图类

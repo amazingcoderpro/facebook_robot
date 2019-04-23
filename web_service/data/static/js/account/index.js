@@ -4,13 +4,14 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         sub: '新增、导入、管理社交账号',
         path: ['account']
     });
-    var categories=[], url='/api/account/', detailHtml='',
+    var categories=[], url='/api/account/', detailHtml='', area_select_array='',
     newAccount=function(){
-        var req={category: {name: $('#modal-new select[name="category"]').val()}};
+        var req={category: parseInt($('#modal-new select[name="category"]').find("option:selected").attr("id"))};
         $.each($('#modal-new input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
+        req["active_area"]=parseInt($('select[name="save_active_name"]').find("option:selected").attr("id"));
         if(req.username=='')global.showTip('请输入社交账号名');
         else if(req.fullname=='')global.showTip('请输入社交账号姓名');
-        else if(req.email=='')global.showTip('请输入邮件地址');
+        // else if(req.email=='')global.showTip('请输入邮件地址');
         else if(req.pwd=='')global.showTip('请输入初始密码');
         else $.ajax({
             url: global.getAPI(url),
@@ -27,16 +28,27 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
     },
     modifyAccount=function(item){
         $('#detail').removeClass('none').html(detailHtml),
-        $('#info .box-title').text(item.name+'的基本信息'),
+        $('#info .box-title').text(item.name+'基本信息'),
         $.each(item, function(propName, value){$('#info input[name="'+propName+'"]').val(value)});
-        $.each(item, function(propName, value){$('#info p.'+propName).text(value)});
-        $('#info p.category').text(item.category.name);
+        // $.each(item, function(propName, value){$('#info p.'+propName).text(value)});
+        $('#info input[name="category"]').val(item.category.name).attr("id",item.category.category);
+        var are_id=item.active_area;
+        var el0=$('select[name="edit_active_name"]');
+        $.each(area_select_array,function (i,item) {
+            if(i==are_id){
+                el0.append('<option id="'+item.id+'" value="'+item.name+'" selected>'+item.name+'</option>');
+            }else {
+                el0.append('<option id="'+item.id+'" value="'+item.name+'">'+item.name+'</option>');
+            }
+        });
         $('#info .save').on('click',function(){
             var req={};
-            Object.assign(req, item);
+            // Object.assign(req, item);
             $.each($('#detail input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
+            req["category"]=parseInt($('#info input[name="category"]').attr("id"));
+            req["owner"] = item.owner.id;
+            req["active_area"]=parseInt($('select[name="edit_active_name"]').find("option:selected").attr("id"));
             if(req.fullname=='')global.showTip('请输入社交账号姓名');
-            else if(req.email=='')global.showTip('请输入邮件地址');
             else $.ajax({
                 url: global.getAPI(url+item.id+'/'),
                 contentType: "application/json",
@@ -104,7 +116,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                     });
             }
         });
-        $('#modal-new .ok').on('click', newAccount)
+        $('#modal-new .ok').on('click', newAccount);
         detailHtml=$('#detail').html(),
         $('#detail').html(''),
         $.ajax({
@@ -115,7 +127,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                 categories = data.data;
                 var el=$('#modal-new select[name="category"]');
                 $.each(categories, function(i, item){
-                    el.append('<option value="'+item.name+'">'+item.name+'</option>')
+                    el.append('<option id="'+item.category+'" value="'+item.name+'">'+item.name+'</option>')
                 })
             }
         }),
@@ -140,6 +152,17 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                     dataTable.ajax.reload()
                 }
             });
+        });
+        $.ajax({
+            url: global.getAPI('/api/area/'),
+            contentType: "application/json",
+            method: 'get',
+            success: function(data){
+                area_select_array = data.data;
+                var el0=$('select[name="save_active_name"]');
+                $.each(area_select_array, function(i, item){
+                    el0.append('<option id="'+item.id+'" value="'+item.name+'">'+item.name+'</option>');
+                })
+            }
         })
-
-})
+});
