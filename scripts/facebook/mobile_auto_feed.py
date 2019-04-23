@@ -5,6 +5,7 @@
 import time
 import random
 from selenium import webdriver
+# from appium import webdriver as appwebdriver
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -116,13 +117,14 @@ def auto_login(driver, account, password, gender=1):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
-def browse_page(driver, browse_times=10, distance=0, interval=0, return_top=True):
+def browse_page(driver, browse_times=10, distance=0, interval=0, back_top=True):
     """
     浏览页面
     :param driver: 浏览器驱动
     :param browse_times: 浏览次数
     :param distance: 每次间隔距离，默认为零，代表使用随机距离
     :param interval: 间隔时间， 单位秒, 默认为零，代表使用随机停顿时间
+    :param back_top: 是否回到顶点
     :return:
     """
     # 浏览页面js
@@ -140,7 +142,7 @@ def browse_page(driver, browse_times=10, distance=0, interval=0, return_top=True
                 time.sleep(random.randint(2, 10))
             else:
                 time.sleep(interval)
-        if return_top:
+        if back_top:
             driver.execute_script("window.scrollTo(0,0)")
 
         return True
@@ -311,7 +313,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                 logger.info('start chat.')
                 for keys in keywords:
                     # 输入聊天内容
-                    browse_page(driver, 3)
+                    browse_page(driver, 3, distance=50, interval=2, back_top=False)
                     time.sleep(1)
                     message_info = driver.find_element_by_css_selector('textarea[data-sigil^="m-textarea-input"]')
                     message_info.send_keys(keys)
@@ -363,8 +365,8 @@ def send_facebook_state(driver:WebDriver, keywords):
         # 输入需要发送的文本
         time.sleep(10)
         send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
-        print(send_info_state)
-        send_info_state.send_keys("HELLO WORLD")
+
+        send_info_state.send_keys(keywords.get('post'))
         time.sleep(10)
         release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
         release_state_button.click()
@@ -400,7 +402,7 @@ def post_status(driver):
 
 
 if __name__ == '__main__':
-    filename = 'accont_info.txt'
+    filename = 'facebook_account.txt'
     with open(filename, 'r') as line:
         all_readline = line.readlines()
         for date in all_readline:
@@ -412,7 +414,7 @@ if __name__ == '__main__':
             if not res:
                 continue
             # add_friends(driver, ["xiaoning"], 2)
-            # send_facebook_state(driver, "xiaoning")
+            send_facebook_state(driver, {"post":"xiaoning"})
             send_messages(driver, ["hello?", "how are you!"], 2)
             # send_messages(driver)
             # user_messages(driver)

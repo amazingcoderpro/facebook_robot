@@ -96,9 +96,22 @@ def fb_auto_feed(self, inputs):
                 tsk_hlp.screenshots(driver, err_code=err_code)
                 return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
+        tsk_hlp.random_sleep()
         msgs = tsk_hlp.get_chat_msgs()
         if msgs:
-            fb.send_messages(driver, keywords=msgs, limit=random.randint(1, 3))
+            ret, err_code = fb.send_messages(driver, keywords=msgs, limit=random.randint(1, 3))
+            if not ret:
+                err_code = "send_message failed, err_code={}".format(err_code)
+                tsk_hlp.screenshots(driver, err_code=err_code)
+                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+
+        tsk_hlp.random_sleep()
+        send_state = tsk_hlp.get_posts()
+        if send_state:
+            ret, err_code = fb.send_facebook_state(driver, keywords=send_state)
+            err_code = "get_posts failed, err_code={}".format(err_code)
+            tsk_hlp.screenshots(driver, err_code=err_code)
+            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         tsk_hlp.random_sleep(20, 100)
         logger.info('-----task fb_auto_feed succeed. account={}'.format(account))
