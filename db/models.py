@@ -249,12 +249,9 @@ class Account(Base):
 
     def __repr__(self):
         return "id:{}, account:{}, password:{}, email={}, email_pwd:{}, gender:{}, birthday:{}, national_id:{}, " \
-               "register_time:{}, name:{}, profile_id:{}, status:{}, owner:{}, last_login:{}, last_post:{}, " \
-               "las_chat:{}, last_comment:{}, last_farming:{}, last_edit:{}, profile_path:{}. ".format(
+               "register_time:{}, name:{}, profile_id:{}, status:{}, owner:{}, profile_path:{}. configure={}".format(
                    self.id, self.account, self.password, self.email, self.email_pwd, self.gender, self.birthday,
-                   self.national_id, self.register_time, self.name, self.profile_id, self.status, self.owner,
-                   self.last_login, self.last_post, self.last_chat, self.last_comment, self.last_farming,
-                   self.last_edit, self.profile_path)
+                   self.national_id, self.register_time, self.name, self.profile_id, self.status, self.owner, self.profile_path, self.configure)
 
 
 class AccountCategory(Base):
