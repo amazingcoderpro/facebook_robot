@@ -654,6 +654,7 @@ def show_test_data():
     # for j in jobs:
     #     print(j)
 
+
 def opt_db():
     print(datetime.datetime.now())
     jobs = []
@@ -715,24 +716,27 @@ def test_db():
 
 def produce_account():
     # 添加账号
-    filename = 'E:/accont_info.txt'
+    filename = 'E:/facebook.txt'
     with open(filename, 'r') as line:
         all_readline = line.readlines()
         import random
         t = random.randint(1, 100)
         for i in all_readline:
-            str_info = i.split("/")
+            str_info = i.split(" / ")
             print(str_info)
-            user_account = str(str_info[0])
-            user_password = str(str_info[1])
-            email_password = str(str_info[2])
+            user_account = str(str_info[0]).strip()
+            user_password = str(str_info[1]).strip()
+            email_password = str(str_info[2]).strip()
             gender = int(str_info[3])
-            AccountOpt.save_account(account=user_account,
+            birthday = str(str_info[6]+"-"+str_info[4]+"-"+str_info[5]).strip()
+            profile_id = str(str_info[7]).strip()
+
+            ret = AccountOpt.save_account(account=user_account,
                             password=user_password, owner=3, category=1,
-                            email='', email_pwd=email_password,
-                            gender=gender, birthday='1986-8-4', profile_id='', status='valid', active_browser=(t%6+1),
-                                    configure=json.dumps({'last_login': '2019-4-2 18:36:20', 'last_post': '2018-8-2 18:36:20'},
-                                                         last_update=datetime.datetime.now()))
+                            email=user_account, email_pwd=email_password,
+                            gender=gender, birthday=birthday, profile_id=profile_id, status='valid', active_browser=(t%6+1),
+                                    configure=json.dumps({'last_login': '', 'last_post': ''}), using=0, active_area=1, last_update=datetime.datetime.now())
+            print(ret)
 
 
 def produce_tasks():
@@ -792,22 +796,21 @@ def generate_fb_json():
 
 
 
-
 if __name__ == '__main__':
     # init_db_data()
     # show_test_data()
     # test_db()
-    # produce_account()
+    produce_account()
     # print(11)
     # produce_tasks()
     # generate_fb_json()
     # TaskOpt.save_task(category_id=1, creator_id=1, scheduler_id=3, account_ids=[i for i in range(1,10000)], name=u'太多的账号', limit_counts=10, limit_end_time=datetime.datetime.now()+datetime.timedelta(days=3))
 
-    ALTER_SQL = '''
-    ALTER TABLE `user` ADD COLUMN `auth_id` INT NOT NULL;
-    ALTER TABLE `user` ADD UNIQUE KEY `auth_id` (`auth_id`);
-    ALTER TABLE `user` ADD CONSTRAINT `user_auth_id_3666ad92_fk_auth_user_id` FOREIGN KEY (`auth_id`) REFERENCES `auth_user` (`id`);
-    '''
+    # ALTER_SQL = '''
+    # ALTER TABLE `user` ADD COLUMN `auth_id` INT NOT NULL;
+    # ALTER TABLE `user` ADD UNIQUE KEY `auth_id` (`auth_id`);
+    # ALTER TABLE `user` ADD CONSTRAINT `user_auth_id_3666ad92_fk_auth_user_id` FOREIGN KEY (`auth_id`) REFERENCES `auth_user` (`id`);
+    # '''
 
  # pipenv run python web_service/initialization/users/new_user.py
 
