@@ -116,7 +116,7 @@ def auto_login(driver, account, password, gender=1):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
-def browse_page(driver, browse_times=10, distance=0, interval=0):
+def browse_page(driver, browse_times=10, distance=0, interval=0, return_top=True):
     """
     浏览页面
     :param driver: 浏览器驱动
@@ -140,8 +140,9 @@ def browse_page(driver, browse_times=10, distance=0, interval=0):
                 time.sleep(random.randint(2, 10))
             else:
                 time.sleep(interval)
+        if return_top:
+            driver.execute_script("window.scrollTo(0,0)")
 
-        driver.execute_script("window.scrollTo(0,0)")
         return True
     except Exception as e:
         logger.exception('browse_page exception. e={}'.format(e))
@@ -284,53 +285,56 @@ def send_messages(driver:WebDriver, keywords, limit=2):
             fridens_page = WebDriverWait(driver, 4).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="friends_center_main"]')))
             if fridens_page:
+                logger.info('enter friends list page.')
                 # 查找所有相关好友的属性
                 list_fridens = driver.find_elements_by_css_selector('i[class="img profpic"]')
                 if not list_fridens:
                     logger.warning('can not find any friend')
                     continue
 
-                idx_fridens = random.randint(0, len(list_fridens)-1)
-                list_fridens[idx_fridens].click()
+                idx_friends = random.randint(0, len(list_fridens)-1)
+                list_fridens[idx_friends].click()
                 # 打开聊天 注意：这里内容加载较慢需要时间等待
                 time.sleep(3)
-                message_page = driver.find_element_by_partial_link_text("Message")
-                message_page.click()
-
+                message_page = driver.find_elements_by_css_selector("span[data-sigil='m-profile-action-button-label']")[2]
+                super_click(message_page, driver)
+                time.sleep(3)
                 # 出现下载Messenager 选择关闭
                 try:
                     install_messenger = driver.find_element_by_css_selector('div[data-sigil="m-promo-interstitial"]')
                     if install_messenger:
-                        driver.find_element_by_css_selector('div[aria-label="Close"]').click()
+                        close_btn = driver.find_element_by_css_selector('img[data-nt^="NT:IMAGE"]')
+                        super_click(close_btn, driver)
                 except:
                     pass
 
+                logger.info('start chat.')
                 for keys in keywords:
+                    # 输入聊天内容
+                    browse_page(driver, 3)
+                    time.sleep(1)
+                    message_info = driver.find_element_by_css_selector('textarea[data-sigil^="m-textarea-input"]')
+                    message_info.send_keys(keys)
+                    time.sleep(2)
+
+                    # 发送聊天内容
+                    send_info = driver.find_element_by_css_selector('button[name$="end"]')
+
+                    super_click(send_info, driver, double=True)
+                    time.sleep(3)
+
                     try:
-                        # 输入聊天内容
-                        time.sleep(1)
-                        message_info = driver.find_element_by_css_selector('textarea[data-sigil^="m-textarea-input"]')
-                        message_info.send_keys(keys)
-                        time.sleep(1)
-
-                        # 发送聊天内容
-                        send_info = driver.find_element_by_css_selector('button[name$="end"]')
-
-                        super_click(send_info.parent, driver, 10, 10)
-                        # send_info.click()
-
-                        # 提示下载messenger 选择忽略
                         install_messenger = driver.find_element_by_css_selector(
                             'div[data-sigil="m-promo-interstitial"]')
                         if install_messenger:
-                            driver.find_element_by_css_selector('div[aria-label="Close"]').click()
+                            close_btn = driver.find_element_by_css_selector('img[data-nt^="NT:IMAGE"]')
+                            super_click(close_btn, driver)
                     except Exception as e:
-                        print(e)
+                        pass
+
             return True, 0
-        else:
-            logger.warning('can not find any friend')
-            return False, -1
-    except:
+    except Exception as e:
+        print(e)
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -396,7 +400,7 @@ def post_status(driver):
 
 
 if __name__ == '__main__':
-    filename = 'E:/accont_info.txt'
+    filename = 'accont_info.txt'
     with open(filename, 'r') as line:
         all_readline = line.readlines()
         for date in all_readline:
