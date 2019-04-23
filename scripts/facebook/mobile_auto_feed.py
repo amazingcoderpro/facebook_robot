@@ -402,7 +402,7 @@ def post_status(driver):
 
 
 if __name__ == '__main__':
-    filename = 'facebook_account.txt'
+    filename = '../../resource/facebook_account.txt'
     with open(filename, 'r') as line:
         all_readline = line.readlines()
         for date in all_readline:
