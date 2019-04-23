@@ -58,9 +58,16 @@ class TaskHelper:
         account_configure = self.account_info.get("configure", {})
         self.last_login_time = account_configure.get('last_login', '')
         self.last_verifying_time = account_configure.get('last_verify', '')
+        self.last_post_time = account_configure.get('last_post', '')
+        self.last_add_friend_time = account_configure.get('last_add_friend', '')
+        self.last_chat_time = account_configure.get('last_chat', '')
+        self.login_counts = int(account_configure.get('login_counts', 0))
 
         self.login_interval = get_account_args().get('login_interval', 3600)
         self.verify_interval = get_account_args().get('verify_interval', 36000)
+        self.post_interval = get_account_args().get('post_interval', 36000)
+        self.add_friend_interval = get_account_args().get('add_friend_interval', 86400)
+        self.feed_limit = get_account_args().get('feed_limit', 10)
 
     def is_inputs_valid(self):
         return self.is_valid
@@ -74,6 +81,35 @@ class TaskHelper:
             dt_last_login = datetime.strptime(self.last_login_time, "%Y-%m-%d %H:%M:%S")
             if (datetime.now() - dt_last_login).total_seconds() < self.login_interval:
                 logger.warning('Less than {} seconds before the last login, last login at: {}'.format(self.login_interval, self.last_login_time))
+                return False
+
+        return True
+
+    def is_should_use(self):
+        return self.login_counts >= self.feed_limit
+
+    def is_should_post(self):
+        """
+        通过判断上次发状态时间与当前时间间隔决定是否可以发状态
+        :return:
+        """
+        if self.last_post_time:
+            dt_last_post = datetime.strptime(self.last_post_time, "%Y-%m-%d %H:%M:%S")
+            if (datetime.now() - dt_last_post).total_seconds() < self.post_interval:
+                logger.warning('Less than {} seconds before the last post, last post at: {}'.format(self.post_interval, self.last_post_time))
+                return False
+
+        return True
+
+    def is_should_add_friend(self):
+        """
+        通过判断上次发状态时间与当前时间间隔决定是否可以发状态
+        :return:
+        """
+        if self.last_add_friend_time:
+            dt_last_add = datetime.strptime(self.last_add_friend_time, "%Y-%m-%d %H:%M:%S")
+            if (datetime.now() - dt_last_add).total_seconds() < self.add_friend_interval:
+                logger.warning('Less than {} seconds before the last add friend, last add friend at: {}'.format(self.add_friend_interval, self.last_add_friend_time))
                 return False
 
         return True
@@ -127,7 +163,7 @@ class TaskHelper:
             else:
                 return get_fb_posts(1)
         else:
-            return {'post': '', 'img': []}
+            return {}
 
     def get_chat_msgs(self, limit=1):
         """
@@ -196,7 +232,8 @@ class TaskHelper:
                 logger.exception('screenshots exception={}'.format(e))
 
     def make_result(self, ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None,
-                    last_farming=None, last_comment=None, last_edit=None, last_verify=None, phone_number='', profile_path='', **kwargs):
+                    last_farming=None, last_comment=None, last_edit=None, last_verify=None, last_add_friend=None,
+                    phone_number='', profile_path='', **kwargs):
         task_result = {
             'status': 'failed',  # 'failed', 'succeed'
             'err_msg': '',
@@ -223,9 +260,14 @@ class TaskHelper:
             'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else '',
             'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime) else '',
             'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime) else '',
+            'last_add_friend': last_add_friend.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_add_friend, datetime) else '',
             'phone_number': phone_number,
             'profile_path': profile_path,
         }
+
+        # 登录次数加1
+        if last_login:
+            task_result['account_configure']['login_counts'] = self.login_counts+1
 
         for k, v in kwargs.items():
             task_result['account_configure'][k] = v

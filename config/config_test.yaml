@@ -16,9 +16,12 @@ db:
 
 account:
     login_interval: 600         # 账号登录的最小间隔时间
-    verify_interval: 3600        # 账号验证的时长
+    verify_interval: 36000        # 账号验证的时长
+    post_interval: 36000          # 账号发状态的间隔时间
+    add_friend_interval: 86400          # 添加好友间隔时间
     local_photo_path: resource/photos/    # 账号图象的本地存储位置
     remote_photo_path: ftp://xxx.xx.xx/ab/cc    # 账号图象的服务器存储位置
+    feed_limit: 10                  # 最低养号次数，当账号成功登录次数大于该值时，账号才可用于其他用途，否则只能时行登录浏览
 
 task:
     job_timeout: 3600               # job的超时时间3600秒,即1小时
@@ -29,4 +32,4 @@ task:
 
 system:
     screenshots_dir: screenshots    # 截图保存目录
-    screenshots_keep: 15             # 默认保存最近15天的截图
+    screenshots_keep: 10             # 默认保存最近15天的截图
