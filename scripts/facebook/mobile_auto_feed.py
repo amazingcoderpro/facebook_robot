@@ -167,7 +167,7 @@ def home_browsing(driver):
         logger.info("home_browsing success")
         return True, 0
     except Exception as e:
-        logger.exception(' exception.e={}'.format(e))
+        logger.exception('home_browsing exception.e={}'.format(e))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3, wait=5)
 
@@ -393,6 +393,7 @@ def user_home(driver:WebDriver, limit):
     :return:
     """
     try:
+        logger.info("user_home start, limit={}".format(limit))
         driver.get("https://m.facebook.com")
         # browse_page(driver)
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
@@ -415,10 +416,10 @@ def user_home(driver:WebDriver, limit):
             user_news.click()
             browse_page(driver, browse_times=5)
             time.sleep(5)
-        logger.info("User Center browsing completed")
+        logger.info("user_home browsing completed")
         return True, 0
     except Exception as e:
-        logger.exception("User Center browsing failed  error ={}".format(e))
+        logger.exception("user_home browsing failed  error ={}".format(e))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
