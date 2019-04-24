@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
 
+
 import time
 import random
 from selenium import webdriver
@@ -65,7 +66,6 @@ def sign_up(driver, account, password, gender=1):
     :return:
     """
     # 登录FB
-    # driver.delete_all_cookies()
     'https://m.facebook.com/reg/'
     driver.get('https://www.facebook.com/')
     try:

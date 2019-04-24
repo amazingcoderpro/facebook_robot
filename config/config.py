@@ -80,6 +80,8 @@ def get_db_args():
 
 
 def get_account_args():
+    if not cfg:
+        load_config()
     return cfg.get('account')
 
 

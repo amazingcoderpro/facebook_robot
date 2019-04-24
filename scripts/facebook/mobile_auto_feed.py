@@ -33,7 +33,7 @@ def start_chrome(finger_print, headless=True):
         #     chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
-        # chrome_options.add_argument('--user-agent=iphone')
+        chrome_options.add_argument('--user-agent=iphone')
         chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
         chrome_options.add_argument('lang=en_US')
 
@@ -149,45 +149,38 @@ def browse_page(driver, browse_times=20, distance=0, interval=0, back_top=True):
     except Exception as e:
         logger.exception('browse_page exception. e={}'.format(e))
         fb_exp = FacebookException(driver)
-        return fb_exp.auto_process(3)
+        return fb_exp.auto_process(3, wait=5)
 
 
-def user_messages(driver):
+def home_browsing(driver):
     """
-    查看FB最新动态
+    首页内容浏览
     :param driver: 浏览器驱动
-    :return:
+    :return: Ture False
     """
     try:
-        logger.info('user_messages start.')
+        logger.info('home_browsing start.')
         time.sleep(3)
-        user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-        user_news.click()
-        time.sleep(5)
-        browse_page(driver)
-        driver.find_element_by_css_selector('span[data-sigil="most_recent_bookmark"]').click()
-        time.sleep(5)
-        browse_page(driver)
-        logger.info("user_messages success")
+        url = "https://m.facebook.com"
+        driver.get(url)
+        browse_page(driver, browse_times=5)
+        logger.info("home_browsing success")
         return True, 0
     except Exception as e:
-        logger.exception('user_messages exception.e={}'.format(e))
+        logger.exception(' exception.e={}'.format(e))
         fbexcept = FacebookException(driver)
-        return fbexcept.auto_process(3)
+        return fbexcept.auto_process(3, wait=5)
 
 
 def local_surface(driver):
     """
-    浏览本地新闻
+    浏览本地新闻   [弃用]
     :param driver:
     :return: 浏览器驱动
     """
     try:
         logger.info('local_surface start.')
-        # user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-        # user_news.click()
-        # browse_page(driver)
-        driver.get("https://m.facebook.com/local_surface/?query_type=HOME&ref=bookmarks")
+        driver.get("https://m.facebook.com/bookmarks/sidenav")
         time.sleep(3)
         browse_page(driver)
         logger.info("local_surface success")
@@ -195,7 +188,7 @@ def local_surface(driver):
     except Exception as e:
         logger.error('local_surface catch exception. start process.., e={}'.format(e))
         fbexcept = FacebookException(driver)
-        return fbexcept.auto_process(3)
+        return fbexcept.auto_process(3, wait=5)
 
 
 def add_friends(driver:WebDriver, search_keys, limit=2):
@@ -393,17 +386,39 @@ def send_facebook_state(driver:WebDriver, keywords):
         return fbexcept.auto_process(3)
 
 
-def user_home(driver):
+def user_home(driver:WebDriver, limit):
     """
     # 用户中心浏览
     :param driver:
     :return:
     """
     try:
-        driver.get("https://m.facebook.com/bertoualocal.miners?ref=bookmarks")
-        browse_page(driver)
+        driver.get("https://m.facebook.com")
+        # browse_page(driver)
+        user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
+        user_news.click()
+        # 个人中心全部的菜单栏
+        user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
+        list_rang = range(len(user_list))
+        # 随机浏览limit个个人中心页面
+        slice = random.sample(list_rang, limit)
+        for i in slice:
+            # browse_page(driver, browse_times=5)
+            user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
+            user_list[i].click()
+            browse_page(driver, browse_times=5)
+            time.sleep(3)
+            driver.back()
+            browse_page(driver, browse_times=5)
+            time.sleep(6)
+            user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
+            user_news.click()
+            browse_page(driver, browse_times=5)
+            time.sleep(5)
+        logger.info("User Center browsing completed")
         return True, 0
-    except:
+    except Exception as e:
+        logger.exception("User Center browsing failed  error ={}".format(e))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
@@ -423,17 +438,17 @@ if __name__ == '__main__':
     with open(filename, 'r') as line:
         all_readline = line.readlines()
         for date in all_readline:
-            str_info = date.split()
-            user_account = str(str_info[0])
-            user_password = str(str_info[1])
+            str_info = date.split('---')
+            user_account = str(str_info[0]).strip()
+            user_password = str(str_info[1]).strip()
             driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
             res, statu = auto_login(driver, user_account, user_password)
             if not res:
                 continue
+            user_home(driver, 3)
             # add_friends(driver, ["xiaoning"], 2)
-            send_facebook_state(driver, {"post":"xiaoning"})
-            send_messages(driver, ["hello?", "how are you!"], 2)
-            # send_messages(driver)
+            # send_facebook_state(driver, {"post":"xiaoning"})
+            # send_messages(driver, ["hello?", "how are you!"], 2)
             # user_messages(driver)
             # local_surface(driver)
             time.sleep(6)

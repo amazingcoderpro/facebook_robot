@@ -9,21 +9,27 @@ define(['utils/global'], function(global) {
         return 'busy'
     },
     // 通过状态聚合
+    // groupByStatus=function(agents, array){
+    //     var result={};
+    //     $.each(agents, function(i, item){
+    //         var status=displayStatus(item.status);
+    //         if(status in result){
+    //             result[status]['count']+=1,
+    //             result[status]['items'].push(item)
+    //         }else result[status] = {
+    //             'count': 1,
+    //             'items': [item]
+    //         }
+    //     });
+    //     if(!array)return result;
+    //     var arrayResult={'status': [], 'count': [], 'items': []};
+    //     $.each(result, function(i, item){arrayResult['status'].push(i),arrayResult['count'].push(item['count']),
+    //         arrayResult['items'].push(item['items'])});
+    //     return arrayResult
+    // };
     groupByStatus=function(agents, array){
-        var result={};
-        $.each(agents, function(i, item){
-            var status=displayStatus(item.status);
-            if(status in result){
-                result[status]['count']+=1,
-                result[status]['items'].push(item)
-            }else result[status] = {
-                'count': 1,
-                'items': [item]
-            }
-        });
-        if(!array)return result;
-        var arrayResult={'status': [], 'count': [], 'items': []};
-        $.each(result, function(i, item){arrayResult['status'].push(i),arrayResult['count'].push(item['count']),
+        var arrayResult={'name': [], 'running_tasks': [], 'items': []};
+        $.each(agents, function(i, item){arrayResult['name'].push(item["name"]),arrayResult['running_tasks'].push(item['running_tasks']),
             arrayResult['items'].push(item['items'])});
         return arrayResult
     };
