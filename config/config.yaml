@@ -21,6 +21,7 @@ account:
     add_friend_interval: 86400          # 添加好友间隔时间
     local_photo_path: resource/photos/    # 账号图象的本地存储位置
     remote_photo_path: ftp://xxx.xx.xx/ab/cc    # 账号图象的服务器存储位置
+    feed_limit: 10                  # 最低养号次数，当账号成功登录次数大于该值时，账号才可用于其他用途，否则只能时行登录浏览
 
 task:
     job_timeout: 86400               # job的超时时间3600×24秒,即1天

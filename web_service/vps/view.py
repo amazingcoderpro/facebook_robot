@@ -3,6 +3,7 @@
 from django.views import View
 from django.shortcuts import HttpResponse
 from rest_framework import viewsets
+from rest_framework.response import Response
 from utils.request_utils import AdminPermission, search, handle_order
 from vps.serializers import AgentSerializer,AreaSerializer,AreaAccountCountSerializer
 from vps.models import Agent,Area
@@ -22,13 +23,13 @@ class AgentViewSet(viewsets.ModelViewSet):
         from django.db.models import Q
         queryset = search(self.request, queryset,
                           lambda qs, keyword: qs.filter(Q(queue_name__icontains=keyword) | Q(area__icontains=keyword)))
+        print(queryset)
         return queryset
 
     def list(self, request, *args, **kwargs):
-        if 'all' in request.query_params:
-            from rest_framework.response import Response
-            serializer = AgentSerializer(self.get_queryset(), many=True, context={'request': request})
-            return Response(serializer.data)
+        # if 'all' in request.query_params:
+        #     serializer = AgentSerializer(self.get_queryset(), many=True, context={'request': request})
+        #     return Response(serializer.data)
         return super(AgentViewSet, self).list(request, *args, **kwargs)
 
 
@@ -44,6 +45,13 @@ class AreaViewSet(viewsets.ModelViewSet):
         queryset = search(self.request, queryset,
                           lambda qs, keyword: qs.filter(name__icontains=keyword))
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'all' in request.query_params:
+            serializer = AreaSerializer(self.get_queryset(), many=True, context={'request': request})
+            return Response(serializer.data)
+        return super(AreaViewSet, self).list(request, *args, **kwargs)
+
 
 
 class AreaAccountCount(View):

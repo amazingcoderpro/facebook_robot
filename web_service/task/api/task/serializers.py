@@ -42,24 +42,13 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
             validated_data['scheduler'] = Scheduler.objects.create(**scheduler_data)  # SchedulerSerializer().create(scheduler_data)  # (validated_data.pop('scheduler'))
             account_count = int(validated_data['accounts_num'])
             instance = super(TaskSerializer, self).create(validated_data)
-            # if has_accounts and accounts_data:
-            #     for account_data in accounts_data:
-            #         try:
-            #             account = Account.objects.get(pk=account_data['id'])
-            #             instance.accounts.add(account)
-            #         except ObjectDoesNotExist:
-            #             pass
-            #     instance.save()
-            # 分配账号
-
-            # from django.db.models import Q
-            # accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
-            #                                   Q(status='valid') | Q(status__icontains='verify')).order_by('using')[:account_count]
-
-            # accounts = Account.objects.filter(**{"active_area_id": area_id}).order_by('using')[:account_count]
-            accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
-                                               Q(status='valid') | Q(status__icontains='verify'),
-                                               active_area_id=area_id).order_by('using')[:account_count]
+            if area_id == -1:
+                accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
+                                                  Q(status='valid') | Q(status__icontains='verify')).order_by('using')[:account_count]
+            else:
+                accounts = Account.objects.filter(Q(owner_id=user.id) | Q(owner__category__name=u'管理员'),
+                                                   Q(status='valid') | Q(status__icontains='verify'),
+                                                   active_area_id=area_id).order_by('using')[:account_count]
             for account in accounts:
                 TaskAccountRelationship.objects.create(account_id=account.id, task_id=instance.id)
             self.update_timestamp(instance)
