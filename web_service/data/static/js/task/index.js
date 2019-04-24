@@ -329,7 +329,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 }),
                 onCategoryChange()
             }
-        }),
+        });
         $.each(taskCommon.schedulerMode, function(i, item){$('#modal-new select[name="scheduler"]').append('<option value="'+i+'">'+item+'</option>')})
         $('#modal-new select[name="category"]').on('change', onCategoryChange);
         $('#modal-new select[name="scheduler"]').on('change', onModeChange);
@@ -340,7 +340,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             $areaAccountCount.find("option").eq(randomNum).prop("selected",true);
             $('#modal-new').modal('show'),
             onCategoryChange(), onModeChange()
-        }),
+        });
         $.ajax({
             url: global.getAPI('/api/areaAccountCount/'),
             contentType: "application/json",
@@ -351,7 +351,9 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 $.each(area, function(i,item){
                     var v = item.name + " (" +item.count + ")";
                     el.append('<option index="'+item.id+'" value="'+ v +'" selected>' + v +'</option>');
-                })
+                });
+                var cha="随机";
+                el.append('<option index="'+-1+'" value="'+ cha +'" selected>' + cha +'</option>');
             }
         })
-})
+});

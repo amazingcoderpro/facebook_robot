@@ -50,7 +50,7 @@ class AreaViewSet(viewsets.ModelViewSet):
         if 'all' in request.query_params:
             serializer = AreaSerializer(self.get_queryset(), many=True, context={'request': request})
             return Response(serializer.data)
-        return super(AreaSerializer, self).list(request, *args, **kwargs)
+        return super(AreaViewSet, self).list(request, *args, **kwargs)
 
 
 
