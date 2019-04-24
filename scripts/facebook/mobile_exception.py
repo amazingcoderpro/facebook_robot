@@ -153,12 +153,12 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("处理理忽略保存账号密码")
+            logger.info("处理理忽略保存账号密码处理中")
             no_password = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_words'][1])))
             no_password.click()
         except Exception as e:
-            logger.exception("处理理忽略保存账号密码失败, e={}".format(e))
+            logger.exception("处理理忽略保存账号密码处理异常, e={}".format(e))
             return False, 1
 
         logger.info("处理理忽略保存账号密码成功")
@@ -171,14 +171,15 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("忽略输入电话号码")
+            logger.info("忽略输入电话号码处理中")
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(2)['key_words'][0])))
             tel_number.click()
-            logger.info("忽略输入电话号码成功")
+            time.sleep(3)
         except Exception as e:
-            logger.exception("忽略输入电话号码失败, e={}".format(e))
+            logger.exception("忽略输入电话号码处理异常, e={}".format(e))
             return False, 2
+        logger.info("忽略输入电话号码成功")
         return True, 2
 
     def process_upload_photo(self, **kwargs):
@@ -188,14 +189,14 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info('忽略上传图像')
+            logger.info('忽略上传图像处理中')
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(3)['key_words'][0])))
             tel_number.click()
-            logger.info('忽略上传图像成功')
         except Exception as e:
-            logger.info('忽略上传图像失败， e={}'.format(e))
+            logger.info('忽略上传图像处理异常， e={}'.format(e))
             return False, 3
+        logger.info('忽略上传图像成功')
         return True, 3
 
     def process_download_app(self, **kwargs):
@@ -207,27 +208,31 @@ class FacebookException(BaseException):
 
         time.sleep(3)
         try:
-            logger.info('忽略下载app')
+            logger.info('忽略下载app处理中')
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(4)['key_words'][0])))
             never_save_number.click()
-        except:
+        except Exception as e:
+            logger.exception("忽略下载app提示处理异常, e={}".format(e))
             return False, 4
+        logger.info('忽略下载app提示处理成功')
         return True, 4
 
     def process_account_invalid(self, **kwargs):
         """
-        # 过度页面点击
+        # 账号被封杀
         :param kwargs:
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info('账号被封杀')
+            logger.info('账号被封杀处理中')
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(5)['key_words'][0])))
             never_save_number.click()
-        except:
+        except Exception as e:
+            logger.exception("账号被封杀处理异常, e={}".format(e))
             return False, 5
+        logger.info("账号被封杀")
         return False, 5
 
     def process_auth_button_two_verify(self, **kwargs):
@@ -237,12 +242,14 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info('身份验证类型二，跳转按钮')
+            logger.info('身份验证类型二，跳转按钮,处理中')
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_words'][0])))
-        except:
+        except Exception as e:
+            logger.exception("身份验证类型二,跳转按钮, e={}".format(e))
             return False, 6
-        return False, 6
+        logger.info('身份验证类型二，跳转按钮,处理成功')
+        return True, 6
 
     def process_phone_sms_verify(self, **kwargs):
         """
@@ -251,7 +258,7 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("处理手机短信验证")
+            logger.info("处理手机短信验证处理中")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_words'][0])))
             # # 操作下拉列表
@@ -269,9 +276,11 @@ class FacebookException(BaseException):
             #     logger.info("The mailbox verification code has been sent successfully")
             #     email_code.send_keys('456895')
 
-        except:
+        except Exception as e:
+            logger.exception("处理手机短信验证处理异常, e={}".format(e))
             return False, 7
-        return False, 7
+        logger.info("处理手机短信验证处理完成")
+        return True, 7
 
     def process_photo_verify(self, **kwargs):
         """
@@ -280,7 +289,7 @@ class FacebookException(BaseException):
        :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("处理上传图片验证的异常")
+            logger.info("处理上传图片验证处理中")
             photo_upload = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_words'][0])))
             account = ''
@@ -310,9 +319,11 @@ class FacebookException(BaseException):
             else:
                 logger.warning("process photo verify unfinished, photo path={}".format(photo_path))
                 os.remove(photo_path)
-        except:
+        except Exception as e:
+            logger.exception("上传照片验证异常, e={}".format(e))
             return False, 8
-        return False, 8
+        logger.info("处理上传图片验证的完成")
+        return True, 8
 
     def process_auth_button_one_verify(self, **kwargs):
         """
@@ -321,12 +332,14 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("身份验证类型一，跳转按钮")
+            logger.info("身份验证类型一，跳转按钮处理中")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0]))).click()
-        except:
+        except Exception as e:
+            logger.exception("身份验证类型一，跳转按钮处理异常, e={}".format(e))
             return False, 9
-        return False, 9
+        logger.info("身份验证类型一，跳转按钮处理完成")
+        return True, 9
 
     def process_email_verify(self, **kwargs):
         """
@@ -335,12 +348,14 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("登录邮箱数字验证码验证")
+            logger.info("登录邮箱数字验证码验证处理中")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(10)['key_words'][0]))).click()
-        except:
+        except Exception as e:
+            logger.exception("登录邮箱数字验证码验证处理异常, e={}".format(e))
             return False, 10
-        return False, 10
+        logger.info("登录邮箱数字验证码验证处理完成")
+        return True, 10
 
     def process_sms_verify(self, **kwargs):
         """
@@ -349,14 +364,16 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("登录短信验证码验证")
+            logger.info("登录短信验证码验证处理中")
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
                     (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'button[name="submit[Back]"]'))).click()
-        except:
+        except Exception as e:
+            logger.exception("手机短信验证码验证处理异常, e={}".format(e))
             return False, 11
-        return False, 11
+        logger.info("登录短信验证码验证处理完成")
+        return True, 11
 
     def process_wrong_password(self, **kwargs):
         """
@@ -365,12 +382,14 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("账号密码不正确")
+            logger.info("账号密码不正确 处理中")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(12)['key_words'][0])))
-        except:
+        except Exception as e:
+            logger.exception("账号密码不正确处理异常, e={}".format(e))
             return False, -1
+        logger.info("账号密码不正确")
         return False, -1
 
     def process_shared_login(self, **kwargs):
@@ -379,13 +398,15 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("移动端共享登录验证")
+            logger.info("移动端共享登录验证处理中")
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(13)['key_words'][0])))
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'a[data-sigil="MBackNavBarClick"]'))).click()
-        except:
+        except Exception as e:
+            logger.exception("移动端手机共享登录验证处理异常, e={}".format(e))
             return False, 13
+        logger.info("移动端共享登录验证")
         return False, 13
 
     def process_policy_clause(self, **kwargs):
@@ -394,16 +415,19 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("条款和使用政策验证")
+            logger.info("条款和使用政策验证处理中")
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(14)['key_words'][0])))
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="J’accepte"]'))).click()
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="Revenir au fil d’actualité"]'))).click()
-        except:
+        except Exception as e:
+            logger.exception("条款和使用政策验证处理异常, e={}".format(e))
             return False, 14
-        return False, 14
+
+        logger.info("条款和使用政策验证处理完成")
+        return True, 14
 
     def process_step_email_verify(self, **kwargs):
         """
@@ -414,7 +438,8 @@ class FacebookException(BaseException):
             logger.info("邮箱验证前的继续按钮处理")
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(15)['key_words'][0])))
-        except:
+        except Exception as e:
+            logger.exception("邮箱验证前的登录按钮处理  暂时没有做点击处理, e={}".format(e))
             return False, 15
         return False, 15
 

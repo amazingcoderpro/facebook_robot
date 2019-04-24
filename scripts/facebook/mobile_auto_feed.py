@@ -184,15 +184,16 @@ def local_surface(driver):
     """
     try:
         logger.info('local_surface start.')
-        user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-        user_news.click()
-        browse_page(driver)
+        # user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
+        # user_news.click()
+        # browse_page(driver)
         driver.get("https://m.facebook.com/local_surface/?query_type=HOME&ref=bookmarks")
+        time.sleep(3)
         browse_page(driver)
         logger.info("local_surface success")
         return True, 0
-    except:
-        logger.error('local_surface catch exception. start process..')
+    except Exception as e:
+        logger.error('local_surface catch exception. start process.., e={}'.format(e))
         fbexcept = FacebookException(driver)
         return fbexcept.auto_process(3)
 
