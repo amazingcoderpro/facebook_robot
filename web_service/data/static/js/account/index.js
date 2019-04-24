@@ -10,9 +10,9 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         $.each($('#modal-new input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
         req["active_area"]=parseInt($('select[name="save_active_name"]').find("option:selected").attr("id"));
         if(req.username=='')global.showTip('请输入社交账号名');
-        else if(req.fullname=='')global.showTip('请输入社交账号姓名');
+        else if(req.account=='')global.showTip('请输入社交账号姓名');
         // else if(req.email=='')global.showTip('请输入邮件地址');
-        else if(req.pwd=='')global.showTip('请输入初始密码');
+        else if(req.password=='')global.showTip('请输入初始密码');
         else $.ajax({
             url: global.getAPI(url),
             contentType: "application/json",
@@ -166,3 +166,17 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             }
         })
 });
+
+var moreinfo = $('#moreinfo');
+moreinfo.click(function() {
+    if ($('#hiddeninfo').hasClass('hidden')) {
+            $('#hiddeninfo').removeClass('hidden');
+            $('#moreinfo span').removeClass('glyphicon-chevron-up');
+            $('#moreinfo span').addClass('glyphicon-chevron-down');
+        }
+    else {
+        $('#hiddeninfo').addClass('hidden');
+        $('#moreinfo span').removeClass('glyphicon-chevron-down');
+        $('#moreinfo span').addClass('glyphicon-chevron-up');
+        }
+})
