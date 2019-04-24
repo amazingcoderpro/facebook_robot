@@ -357,3 +357,15 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
             }
         })
 });
+$('#detailinfo').click(function() {
+    if ($('#hiddinfo').hasClass('hidden')) {
+            $('#hiddinfo').removeClass('hidden');
+            $('#detailinfo span').removeClass('glyphicon-chevron-up');
+            $('#detailinfo span').addClass('glyphicon-chevron-down');
+        }
+    else {
+        $('#hiddinfo').addClass('hidden');
+        $('#detailinfo span').removeClass('glyphicon-chevron-down');
+        $('#detailinfo span').addClass('glyphicon-chevron-up');
+        }
+});
