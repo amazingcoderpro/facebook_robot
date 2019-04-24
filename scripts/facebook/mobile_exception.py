@@ -211,7 +211,8 @@ class FacebookException(BaseException):
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(4)['key_words'][0])))
             never_save_number.click()
-        except:
+        except Exception as e:
+            logger.exception("忽略下载app提示, e={}".format(e))
             return False, 4
         return True, 4
 
@@ -226,7 +227,8 @@ class FacebookException(BaseException):
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(5)['key_words'][0])))
             never_save_number.click()
-        except:
+        except Exception as e:
+            logger.exception("账号被封杀, e={}".format(e))
             return False, 5
         return False, 5
 
@@ -240,9 +242,10 @@ class FacebookException(BaseException):
             logger.info('身份验证类型二，跳转按钮')
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(6)['key_words'][0])))
-        except:
+        except Exception as e:
+            logger.exception("身份验证类型二,跳转按钮, e={}".format(e))
             return False, 6
-        return False, 6
+        return True, 6
 
     def process_phone_sms_verify(self, **kwargs):
         """
@@ -269,9 +272,10 @@ class FacebookException(BaseException):
             #     logger.info("The mailbox verification code has been sent successfully")
             #     email_code.send_keys('456895')
 
-        except:
+        except Exception as e:
+            logger.exception("身份验证类型二,跳转按钮, e={}".format(e))
             return False, 7
-        return False, 7
+        return True, 7
 
     def process_photo_verify(self, **kwargs):
         """
@@ -310,9 +314,10 @@ class FacebookException(BaseException):
             else:
                 logger.warning("process photo verify unfinished, photo path={}".format(photo_path))
                 os.remove(photo_path)
-        except:
+        except Exception as e:
+            logger.exception("上传照片验证, e={}".format(e))
             return False, 8
-        return False, 8
+        return True, 8
 
     def process_auth_button_one_verify(self, **kwargs):
         """
@@ -326,7 +331,7 @@ class FacebookException(BaseException):
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0]))).click()
         except:
             return False, 9
-        return False, 9
+        return True, 9
 
     def process_email_verify(self, **kwargs):
         """
@@ -338,9 +343,10 @@ class FacebookException(BaseException):
             logger.info("登录邮箱数字验证码验证")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(10)['key_words'][0]))).click()
-        except:
+        except Exception as e:
+            logger.exception("上传照片验证, e={}".format(e))
             return False, 10
-        return False, 10
+        return True, 10
 
     def process_sms_verify(self, **kwargs):
         """
@@ -354,9 +360,10 @@ class FacebookException(BaseException):
                     (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'button[name="submit[Back]"]'))).click()
-        except:
+        except Exception as e:
+            logger.exception("手机短信验证码验证, e={}".format(e))
             return False, 11
-        return False, 11
+        return True, 11
 
     def process_wrong_password(self, **kwargs):
         """
@@ -369,7 +376,8 @@ class FacebookException(BaseException):
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(12)['key_words'][0])))
-        except:
+        except Exception as e:
+            logger.exception("账号密码不正确, e={}".format(e))
             return False, -1
         return False, -1
 
@@ -384,7 +392,8 @@ class FacebookException(BaseException):
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(13)['key_words'][0])))
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'a[data-sigil="MBackNavBarClick"]'))).click()
-        except:
+        except Exception as e:
+            logger.exception("移动端手机共享登录验证, e={}".format(e))
             return False, 13
         return False, 13
 
@@ -401,9 +410,10 @@ class FacebookException(BaseException):
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="J’accepte"]'))).click()
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="Revenir au fil d’actualité"]'))).click()
-        except:
+        except Exception as e:
+            logger.exception("条款和使用政策验证, e={}".format(e))
             return False, 14
-        return False, 14
+        return True, 14
 
     def process_step_email_verify(self, **kwargs):
         """
@@ -414,7 +424,8 @@ class FacebookException(BaseException):
             logger.info("邮箱验证前的继续按钮处理")
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(15)['key_words'][0])))
-        except:
+        except Exception as e:
+            logger.exception("邮箱验证前的登录按钮处理  暂时没有做点击处理, e={}".format(e))
             return False, 15
         return False, 15
 
