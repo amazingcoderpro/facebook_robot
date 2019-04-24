@@ -75,7 +75,7 @@ def fb_auto_feed(self, inputs):
         last_login = datetime.datetime.now()
         logger.info('login succeed. account={}, password={}'.format(account, password))
 
-        ret, err_code = fb.user_messages(driver=driver)
+        ret, err_code = fb.home_browsing(driver=driver)
         if not ret:
             msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
             logger.error(msg)
@@ -84,7 +84,7 @@ def fb_auto_feed(self, inputs):
 
         tsk_hlp.random_sleep()
         if tsk_hlp.random_select():
-            ret, err_code = fb.local_surface(driver=driver)
+            ret, err_code = fb.user_home(driver=driver, limit=4)
             if not ret:
                 err_msg = 'local_surface failed, err_code={}'.format(err_code)
                 tsk_hlp.screenshots(driver, err_code=err_code)

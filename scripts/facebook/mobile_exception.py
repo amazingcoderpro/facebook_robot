@@ -153,15 +153,15 @@ class FacebookException(BaseException):
         :return: 成功返回 True, 失败返回 False
         """
         try:
-            logger.info("处理理忽略保存账号密码处理中")
+            logger.info("忽略保存账号密码处理中")
             no_password = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(1)['key_words'][1])))
             no_password.click()
         except Exception as e:
-            logger.exception("处理理忽略保存账号密码处理异常, e={}".format(e))
+            logger.exception("忽略保存账号密码处理异常, e={}".format(e))
             return False, 1
 
-        logger.info("处理理忽略保存账号密码成功")
+        logger.info("忽略保存账号密码成功")
         return True, 1
 
     def process_save_phone_number(self, **kwargs):
@@ -240,6 +240,7 @@ class FacebookException(BaseException):
         身份验证类型二，跳转按钮
         :param kwargs:
         :return: 成功返回 True, 失败返回 False
+        将两步验证的函数设置为False
         """
         try:
             logger.info('身份验证类型二，跳转按钮,处理中')
@@ -249,16 +250,17 @@ class FacebookException(BaseException):
             logger.exception("身份验证类型二,跳转按钮, e={}".format(e))
             return False, 6
         logger.info('身份验证类型二，跳转按钮,处理成功')
-        return True, 6
+        return False, 6
 
     def process_phone_sms_verify(self, **kwargs):
         """
         # 手机短信验证码验证
         :param kwargs:
         :return: 成功返回 True, 失败返回 False
+        提示  为了调试方便 调整为FALSE
         """
         try:
-            logger.info("处理手机短信验证处理中")
+            logger.info("手机短信验证处理中")
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(7)['key_words'][0])))
             # # 操作下拉列表
@@ -280,7 +282,7 @@ class FacebookException(BaseException):
             logger.exception("处理手机短信验证处理异常, e={}".format(e))
             return False, 7
         logger.info("处理手机短信验证处理完成")
-        return True, 7
+        return False, 7
 
     def process_photo_verify(self, **kwargs):
         """
@@ -300,13 +302,16 @@ class FacebookException(BaseException):
                 elif k == 'gender':
                     gender = v
             photo_path = self.get_photo(account, gender)
-            logger.info('process_photo_verify photo path={}'.format(photo))
+            logger.info('process_photo_verify photo path={}'.format(photo_path))
+            if not photo_path:
+                return False, 8
             # photo_path = 'E:\\IMG_3563.JPG'
             # 上传图片
             photo_upload.send_keys(photo_path)
             # 点击继续
-            WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]'))).click()
+            phone_button = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]')))
+            phone_button.click()
             # 重新检查页面
             photo_btn = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
@@ -315,7 +320,6 @@ class FacebookException(BaseException):
                 account_photo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(photo_path))), "{}.jpg".format(account))
                 shutil.move(photo_path, account_photo_path)
                 logger.info("process photo verify succeed, photo path={}".format(account_photo_path))
-                return True, 8
             else:
                 logger.warning("process photo verify unfinished, photo path={}".format(photo_path))
                 os.remove(photo_path)
