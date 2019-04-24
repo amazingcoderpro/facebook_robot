@@ -83,12 +83,12 @@ def fb_auto_feed(self, inputs):
             return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         tsk_hlp.random_sleep()
-        if tsk_hlp.random_select():
-            ret, err_code = fb.user_home(driver=driver, limit=4)
-            if not ret:
-                err_msg = 'local_surface failed, err_code={}'.format(err_code)
-                tsk_hlp.screenshots(driver, err_code=err_code)
-                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+        # if tsk_hlp.random_select():
+        ret, err_code = fb.user_home(driver=driver, limit=random.randint(3, 5))
+        if not ret:
+            err_msg = 'user_home failed, err_code={}'.format(err_code)
+            tsk_hlp.screenshots(driver, err_code=err_code)
+            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         # 账号是否可以继续用作其他用途
         if not tsk_hlp.is_should_use():

@@ -116,23 +116,49 @@ def sign_up(driver, account, password, gender=1):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
+def email_login(driver:WebDriver, account, password):
+    """
+    126邮箱登录验证
+    :param driver:
+    :return:
+    """
+    url ="https://passport.126.com/ydzj/maildl?product=mail126&pdconf=yddl_mail126_conf&mc=146E1F&curl=https%3A%2F%2Fmail.126.com%2Fentry%2Fcgi%2Fntesdoor%3Ffrom%3Dsmart%26language%3D0%26style%3D11%26destip%3D192.168.202.48%26df%3Dsmart_ios"
+    driver.get(url)
+    emial_account = WebDriverWait(driver, 6).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="account"]')))
+    emial_account.send_keys(account)
+    email_password = WebDriverWait(driver, 6).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
+    email_password.send_keys(password)
+
+    login_email = WebDriverWait(driver, 6).until(
+             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
+    login_email.send_keys(Keys.ENTER)
+
+    # 处理弹框
+    time.sleep(30)
+    alter_info = WebDriverWait(driver, 6).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, 'div[class="msgbox-simpleText "]')))
+    if alter_info:
+        alter_button = driver.find_elements_by_css_selector('span[class="btn-inner"]')
+        alter_button[2].click()
+    handles = driver.window_handles
+    print(handles)
+    driver.switch_to_window(handles[0])  # 切换回原来页面
+
+    search_button = driver.find_element_by_css_selector('div[class="toolbar-optItem "]')
+    search_button.click()
+
+    send_info = driver.find_element_by_css_selector('input[class="ipt-input"]')
+    send_info.send_keys("facebook")
+    send_info.send_keys(Keys.ENTER)
+
+
+
+    pass
+
+
 if __name__ == '__main__':
-    filename = '../../resource/facebook_account.txt'
-    with open(filename, 'r') as line:
-        all_readline = line.readlines()
-        for date in all_readline:
-            str_info = date.split()
-            user_account = str(str_info[0])
-            user_password = str(str_info[1])
-            driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-            res, statu = sign_up(driver, user_account, user_password)
-            if not res:
-                continue
-            # add_friends(driver, ["xiaoning"], 2)
-            # send_facebook_state(driver, {"post":"xiaoning"})
-            # send_messages(driver, ["hello?", "how are you!"], 2)
-            # send_messages(driver)
-            # user_messages(driver)
-            # local_surface(driver)
-            time.sleep(6)
-            # driver.quit()
+    driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
+    email_login(driver, "twobercancan", "13209334446")
+
