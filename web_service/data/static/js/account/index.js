@@ -4,7 +4,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
         sub: '新增、导入、管理社交账号',
         path: ['account']
     });
-    var categories=[], url='/api/account/', detailHtml='', area_select_array='',
+    var categories=[], url='/api/account/', detailHtml='', area_select_array='', url_task='/api/task/',
     newAccount=function(){
         var req={category: parseInt($('#modal-new select[name="category"]').find("option:selected").attr("id"))};
         $.each($('#modal-new input'), function(i, item){item=$(item),req[item.attr('name')]=item.val().trim()});
@@ -62,16 +62,49 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
             });
         })
     },
+    checkAll=function(){
+     var rows = dataTable.rows({ 'search': 'applied' }).nodes();
+      if ($("#checkall").prop('checked')){
+            $("#checkall").prop('checked', false)
+            $('input[type="checkbox"]', rows).prop('checked', false);
+      }else{
+            $("#checkall").prop('checked', true)
+            $('input[type="checkbox"]', rows).prop('checked', true);
+      }
+    },
+    newTask=function(){
+        alert("待开发")
+    }
+
     dataTable=table.initTable('#dataTable', {
             ajax: {url: global.getAPI(url)},
+            'order': [[1, 'asc']],
+              'columnDefs': [{
+                 'targets': 0,
+                 'searchable': false,
+                 'orderable': false,
+                 'className': 'dt-body-center',
+                 'render': function (data, type, full, meta){
+                     return '<input type="checkbox" name="id[]" value="' + $('<div/>').text(full['id']).html() + '">';
+                }
+              }],
+               buttons: [
+                'selectAll',
+                'selectNone'
+            ],
+
             columns: [
+                {
+                    title: "",
+                    data: ""
+                },
                 {
                     title: 'ID',
                     data: 'id'
                 },
                 {
                     title: '区域',
-                    data: 'area_name'
+                    data: 'active_area.name'
                 },
                 {
                     title: '类型',
@@ -95,12 +128,16 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                     visible: global.user.category.isAdmin
                 }
             ],
+
             onSingleRowClick: function(item){
-                if(item)modifyAccount(item);
+                if(item){
+                    modifyAccount(item);
+                }
                 else $('#detail').html('')
             },
             onButtonClick: function(button, table, item, id){
-                if(button.hasClass('modify'))modifyAccount(item);
+                if(button.hasClass('modify'))
+                {modifyAccount(item);}
                 else if(button.hasClass('delete'))
                     global.dialog.deleteWarning('是否删除社交账号？', function(){
                         $.ajax({
@@ -114,9 +151,14 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form'], function(Vue, glob
                             }
                         });
                     });
-            }
+            },
         });
+
+
         $('#modal-new .ok').on('click', newAccount);
+        $('#btn_checkall').on('click', checkAll)
+        $('#btn_new_task').on('click', newTask)
+
         detailHtml=$('#detail').html(),
         $('#detail').html(''),
         $.ajax({

@@ -17,13 +17,20 @@
                 <button type="button" class="btn btn-primary import" data-toggle="modal" data-target="#modal-import">导入</button>
                 <button type="button" class="btn btn-primary export">导出</button>
                 <button type="button" class="btn single-row delete">删除</button>
+                <button type="button" class="btn btn-primary" id="btn_checkall">全选</button>
+                <button type="button" class="btn btn-primary" id="btn_new_task">创建任务</button>
+                <input type="checkbox" id="checkall" style="display:None">
             </div>
             <!-- /.box-header -->
             <div class="box-body">
               <table id="dataTable" class="table table-bordered table-striped">
-                <thead><tr></tr></thead>
+                <thead>
+                <tr>
+                </tr>
+                </thead>
                 <tbody></tbody>
-                <tfoot></tfoot>
+                <tfoot>
+                </tfoot>
               </table>
             </div>
             <!-- /.box-body -->
