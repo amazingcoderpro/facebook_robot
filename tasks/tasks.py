@@ -77,7 +77,7 @@ def fb_auto_feed(self, inputs):
 
         ret, err_code = fb.home_browsing(driver=driver)
         if not ret:
-            msg = 'user_messages, account={}, err_code={}'.format(account, err_code)
+            msg = 'home_browsing, account={}, err_code={}'.format(account, err_code)
             logger.error(msg)
             tsk_hlp.screenshots(driver, err_code=err_code)
             return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
