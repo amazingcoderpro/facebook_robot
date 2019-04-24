@@ -24,14 +24,14 @@ require(['vue', 'utils/global', 'utils/table', 'task/common', 'vps/common'], fun
                         "data":values,
                         "backgroundColor":['#f56954', '#00a65a', '#f39c12', '#00c0ef', '#3c8dbc', '#d2d6de']
                     }]
-                },
+                }
             })
         }
     });
     // 获取 Agent 状态
     if(global.user.category.isAdmin)
     $.ajax({
-        url: global.getAPI('/api/agent/?all=true'),
+        url: global.getAPI('/api/area/?all=true'),
         contentType: "application/json",
         method: 'get',
         success: function(data){
@@ -40,10 +40,10 @@ require(['vue', 'utils/global', 'utils/table', 'task/common', 'vps/common'], fun
             new Chart($('#agentStatus').get(0).getContext('2d'), {
             type: 'bar',
             data: {
-                labels: data['status'],
+                labels: data['name'],
                 datasets: [{
                     label: '# of Votes',
-                    data: data['count'],
+                    data: data['running_tasks'],
                     backgroundColor: [
                         'rgba(255, 99, 132, 0.2)',
                         'rgba(54, 162, 235, 0.2)',
