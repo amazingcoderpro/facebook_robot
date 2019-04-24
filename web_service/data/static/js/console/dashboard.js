@@ -13,7 +13,7 @@ require(['vue', 'utils/global', 'utils/table', 'task/common', 'vps/common'], fun
         success: function(data){
             if(typeof data=='string')data = JSON.parse(data);
             var labels=[], values=[];
-            $.each(data.data, function(i,item){labels.push(item['status']),values.push(item['value'])})
+            $.each(data.data, function(i,item){labels.push(item['name']),values.push(item['value'])})
 
             new Chart($('#taskStatus').get(0).getContext('2d'),{
                 "type": "doughnut",

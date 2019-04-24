@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import viewsets
+from rest_framework.generics import GenericAPIView
 
 from task.api.task.serializers import TaskSerializer
 from task.models import Task
 from utils.request_utils import AuthPermission, search, handle_order
-from rest_framework.generics import GenericAPIView
+from json import dumps
+from django.http import HttpResponse
+from django.db.models import Count
 
 
 # Created by: guangda.lee
@@ -47,9 +50,6 @@ class TaskSumView(GenericAPIView):
     permission_classes = (AuthPermission,)
 
     def get(self, request, *args, **kwargs):
-        from json import dumps
-        from django.http import HttpResponse
-        from django.db.models import Count
         rs = TaskViewSet(request=request).get_queryset().values('status').annotate(total=Count('status'))
         result = dict()
         for r in rs:
@@ -57,9 +57,8 @@ class TaskSumView(GenericAPIView):
                 result[r['status']] += r['total']
             else:
                 result[r['status']] = r['total']
+
         return HttpResponse(dumps({
-            'data': list(map(lambda x: {
-                'status': x,
-                'value': result[x]
-            }, result))
+            # 'data': list(map(lambda item:[item, result[item]], result))
+            'data': list(map(lambda item:{"name": item, "value": result[item]},result))
         }))
