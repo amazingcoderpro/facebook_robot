@@ -33,7 +33,7 @@ def start_chrome(finger_print, headless=True):
         #     chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
-        chrome_options.add_argument('--user-agent=iphone')
+        # chrome_options.add_argument('--user-agent=iphone')
         chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
         chrome_options.add_argument('lang=en_US')
 
@@ -397,7 +397,10 @@ def user_home(driver:WebDriver, limit):
         driver.get("https://m.facebook.com")
         # browse_page(driver)
         user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-        user_news.click()
+        super_click(user_news, driver)
+
+        time.sleep(5)
+        browse_page(driver, browse_times=3)
         # 个人中心全部的菜单栏
         user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
         list_rang = range(len(user_list))
@@ -406,14 +409,16 @@ def user_home(driver:WebDriver, limit):
         for i in slice:
             # browse_page(driver, browse_times=5)
             user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
-            user_list[i].click()
+            # user_list[i].click()
+            super_click(user_list[i], driver)
             browse_page(driver, browse_times=5)
             time.sleep(3)
             driver.back()
             browse_page(driver, browse_times=5)
             time.sleep(6)
             user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-            user_news.click()
+            # user_news.click()
+            super_click(user_news, driver)
             browse_page(driver, browse_times=5)
             time.sleep(5)
         logger.info("user_home browsing completed")
@@ -446,6 +451,8 @@ if __name__ == '__main__':
             res, statu = auto_login(driver, user_account, user_password)
             if not res:
                 continue
+            cookies = driver.get_cookies()
+
             user_home(driver, 3)
             # add_friends(driver, ["xiaoning"], 2)
             # send_facebook_state(driver, {"post":"xiaoning"})
