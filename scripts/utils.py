@@ -44,21 +44,23 @@ def super_sendkeys(ele, strinfo):
     :return:
     """
 
-    if not ele and strinfo:
+    if not all([ele, strinfo]):
         return False
-    if strinfo:
 
-        n = random.randint(3, 6)
-        final = [strinfo[i * n:(i + 1) * n] for i in range((len(strinfo) + n - 1) // n)]
-        print(final)
-        for i in final:
-            rantime = random.uniform(0.9, 2.0)
-            ele.send_keys(i)
-            time.sleep(rantime)
+    while strinfo:
+        n = random.randint(2, 8)
+        if n > len(strinfo):
+            n = len(strinfo)
+        input = strinfo[:n]
+        ele.send_keys(input)
+        rantime = random.uniform(0.5, 5.0)
+        time.sleep(rantime)
+        strinfo = strinfo[n:]
+
     return True
 
 
 # if __name__ == '__main__':
-#     super_sendkeys(ele="11", strinfo="rrtretretj")
+#     super_sendkeys(ele="11", strinfo="ffsafjksa;fjsa;fjsa;fkasfaf")
 
 

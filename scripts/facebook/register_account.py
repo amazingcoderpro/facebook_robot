@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from scripts.facebook.mobile_exception import FacebookException
 from config import logger
+from scripts.utils import super_sendkeys, super_click
 
 
 def start_chrome(finger_print, headless=True):
@@ -56,7 +57,7 @@ def start_chrome(finger_print, headless=True):
         return None, str(e)
 
 
-def sign_up(driver, account, password, gender=1):
+def sign_up(driver:WebDriver, user_account, user_password, gender=1):
     """
      登录facebook平台
     :param driver:  浏览器驱动
@@ -66,54 +67,53 @@ def sign_up(driver, account, password, gender=1):
     :return:
     """
     # 登录FB
-    'https://m.facebook.com/reg/'
-    driver.get('https://www.facebook.com/')
+    url = 'https://m.facebook.com/reg/?cid&soft=hjk'
+    driver.get(url)
     try:
-        # FB登录
-        email_box = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
-        email_box.send_keys(account)
+        # 注册名称
+        fitst_name = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.ID, 'firstname_input')))
+        super_sendkeys(fitst_name, "xiaoning")
         time.sleep(3)
-
-        password_tabindex = driver.find_elements_by_css_selector('input[tabindex^="-"]')
-        # 代表没有密码输入框
-        if password_tabindex:
-            login_btn = driver.find_element_by_css_selector('button[type="button"]')
-            login_btn.send_keys(Keys.ENTER)
-            time.sleep(2)
-
-        password_box = driver.find_element_by_name("pass")
-        password_box.send_keys(password)
-
-        # login_ebutn = driver.find_element_by_css_selector('button[type="button"]')
-        # login_ebutn.send_keys(Keys.ENTER)
+        last_name = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.ID, 'lastname_input')))
+        super_sendkeys(last_name, "meng")
         time.sleep(3)
-        password_box.send_keys(Keys.ENTER)
-        old_url = driver.current_url
-        time.sleep(3)
-        retry = 0
-        # wrong_password = driver.find_elements_by_css_selector('a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
-        while retry < 3:
-            now_url = driver.current_url
-            if now_url == old_url:
-                password_box.send_keys(Keys.ENTER)
-                time.sleep(2)
-                wrong_password = driver.find_elements_by_css_selector(
-                    'a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
-                if wrong_password:
-                    break
-                retry += 1
-            else:
-                break
+        last_name.send_keys(Keys.ENTER)
 
-        # 检查是否在首页
-        WebDriverWait(driver, 6).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
-        logger.info("login success！username={}, password={}".format(account, password))
-        return True, 0
+        # 生日
+        birthday = WebDriverWait(driver, 6).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'button[data-sigil="touchable multi_step_next"]')))
+        super_click(birthday)
+
+        # email account
+        phone_account = WebDriverWait(driver, 6).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'data-sigil="switch_phone_to_email"')))
+        super_click(phone_account)
+        time.sleep(5)
+
+        # 邮箱
+        email_account = WebDriverWait(driver, 6).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[id="contactpoint_step_input"]')))
+        super_sendkeys(email_account, user_account)
+        email_account.send_keys(Keys.ENTER)
+
+        # 性别
+        gender = driver.find_elements_by_css_selector('input[name="sex"]')
+        n = random.randint(1, 10)
+        if n % 2 == 0:
+            super_click(gender[0])
+        else:
+            super_click(gender[1])
+        gender_button = WebDriverWait(driver, 6).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'button[data-sigil="touchable multi_step_next"]')))
+        super_click(gender_button)
+
+        # 密码
+        new_password = WebDriverWait(driver, 6).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[id="password_step_input"]')))
+        super_sendkeys(new_password, user_password)
+
+
     except Exception as e:
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
-        fb_exp = FacebookException(driver)
-        return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
 def email_login(driver:WebDriver, account, password):
@@ -126,14 +126,19 @@ def email_login(driver:WebDriver, account, password):
     driver.get(url)
     emial_account = WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="account"]')))
-    emial_account.send_keys(account)
+
+    super_sendkeys(emial_account, account.split("@")[0])
+    time.sleep(5)
     email_password = WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
-    email_password.send_keys(password)
+
+    super_sendkeys(email_password, password)
+    time.sleep(5)
 
     login_email = WebDriverWait(driver, 6).until(
              EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
     login_email.send_keys(Keys.ENTER)
+    time.sleep(5)
 
     # 处理弹框
     time.sleep(30)
@@ -154,11 +159,17 @@ def email_login(driver:WebDriver, account, password):
     send_info.send_keys(Keys.ENTER)
 
 
-
-    pass
-
-
 if __name__ == '__main__':
-    driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-    email_login(driver, "twobercancan", "13209334446")
+    filename = '../../resource/126account.txt'
+    with open(filename, 'r') as line:
+        all_readline = line.readlines()
+        for date in all_readline:
+            str_info = date.split('----')
+            user_account = str(str_info[0]).strip()
+            user_password = str(str_info[1]).strip()
+            driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
+            res, statu = email_login(driver, user_account, user_password)
+            if not res:
+                continue
+
 
