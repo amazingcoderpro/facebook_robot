@@ -17,13 +17,20 @@
                 <button type="button" class="btn btn-primary import" data-toggle="modal" data-target="#modal-import">导入</button>
                 <button type="button" class="btn btn-primary export">导出</button>
                 <button type="button" class="btn single-row delete">删除</button>
+                <button type="button" class="btn btn-primary" id="btn_checkall">全选</button>
+                <button type="button" class="btn btn-primary" id="btn_new_task">创建任务</button>
+                <input type="checkbox" id="checkall" style="display:None">
             </div>
             <!-- /.box-header -->
             <div class="box-body">
               <table id="dataTable" class="table table-bordered table-striped">
-                <thead><tr></tr></thead>
+                <thead>
+                <tr>
+                </tr>
+                </thead>
                 <tbody></tbody>
-                <tfoot></tfoot>
+                <tfoot>
+                </tfoot>
               </table>
             </div>
             <!-- /.box-body -->
@@ -177,47 +184,52 @@
           </select>
         </div>
         <div class="form-group">
-            <label>昵称</label>
-            <input type="text" class="form-control" name="name" placeholder="请输入姓名" />
+            <a id="moreinfo">更多信息<span class="glyphicon glyphicon-chevron-up"></span></a>
         </div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="text" class="form-control" name="email" placeholder="请输入 Email 地址" />
-        </div>
-        <div class="form-group">
-            <label>Email 密码</label>
-            <input type="text" class="form-control" name="email_pwd" placeholder="请输入 Email 密码" />
-        </div>
-        <div class="form-group">
-            <label>电话号码</label>
-            <input type="text" class="form-control" name="phone_number" placeholder="请输入电话号码" />
-        </div>
-        <div class="form-group">
-          <label>性别</label>
-          <select class="form-control" name="gender">
-              <option value="0">女</option>
-              <option value="1">男</option>
-          </select>
-        </div>
-        <div class="form-group">
-            <label>生日</label>
-            <input type="text" class="form-control" name="birthday" placeholder="请输入生日" />
-        </div>
-        <div class="form-group">
-            <label>国家ID</label>
-            <input type="text" class="form-control" name="national_id" placeholder="请输入国家ID" />
-        </div>
-        <div class="form-group">
-            <label>注册时间</label>
-            <input type="text" class="form-control" name="register_time" placeholder="请输入注册时间" />
-        </div>
-        <div class="form-group">
-            <label>Profile ID</label>
-            <input type="text" class="form-control" name="profile_id" placeholder="请输入 Profile ID" />
-        </div>
-        <div class="form-group">
-            <label>可执行任务</label>
-            <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
+        <div id="hiddeninfo" class="hidden">
+            <div class="form-group">
+              <label>昵称</label>
+              <input type="text" class="form-control" name="name" placeholder="请输入姓名" />
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="text" class="form-control" name="email" placeholder="请输入 Email 地址" />
+            </div>
+            <div class="form-group">
+                <label>Email 密码</label>
+                <input type="text" class="form-control" name="email_pwd" placeholder="请输入 Email 密码" />
+            </div>
+            <div class="form-group">
+                <label>电话号码</label>
+                <input type="text" class="form-control" name="phone_number" placeholder="请输入电话号码" />
+            </div>
+            <div class="form-group">
+              <label>性别</label>
+              <select class="form-control" name="gender">
+                  <option value="0">女</option>
+                  <option value="1">男</option>
+              </select>
+            </div>
+            <div class="form-group">
+                <label>生日</label>
+                <input type="text" class="form-control" name="birthday" placeholder="请输入生日" />
+            </div>
+            <div class="form-group">
+                <label>国家ID</label>
+                <input type="text" class="form-control" name="national_id" placeholder="请输入国家ID" />
+            </div>
+            <div class="form-group">
+                <label>注册时间</label>
+                <input type="text" class="form-control" name="register_time" placeholder="请输入注册时间" />
+            </div>
+            <div class="form-group">
+                <label>Profile ID</label>
+                <input type="text" class="form-control" name="profile_id" placeholder="请输入 Profile ID" />
+            </div>
+            <div class="form-group">
+                <label>可执行任务</label>
+                <input type="text" class="form-control" name="enable_tasks" placeholder="请输入任务代码，用分号隔开" />
+            </div>
         </div>
       </div>
       <div class="modal-footer">

@@ -57,7 +57,7 @@ class AccountSerializer(serializers.ModelSerializer):
         data = super(AccountSerializer, self).to_representation(instance)
         data["owner"] = UserSerializer(instance.owner, context=self.context).data
         data["category"] = CategorySerializer(instance.category, context=self.context).data
-        data["area_name"] = AreaSerializer(instance.active_area, context=self.context).data["name"]
+        data["active_area"] = AreaSerializer(instance.active_area, context=self.context).data
 
         return data
 
