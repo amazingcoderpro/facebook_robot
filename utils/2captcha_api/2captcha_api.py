@@ -80,6 +80,6 @@ if __name__ == '__main__':
     print(answer)
 
     # if answer:
-    #     browser.execute_script('document.getElementById("g-recaptcha-response").innerHTML="{}"'.format(answer))
+        browser.execute_script('document.getElementById("g-recaptcha-response").innerHTML="{}"'.format(answer))
     #     # browser.find_element_by_css_selector('input[id="recaptcha-demo-submit"]').click()
     #     browser.find_element_by_css_selector("button[id='checkpointSubmitButton']").click()

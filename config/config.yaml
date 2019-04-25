@@ -33,3 +33,8 @@ task:
 system:
     screenshots_dir: screenshots    # 截图保存目录
     screenshots_keep: 5             # 默认保存最近5天的截图
+
+support:
+    captcha_in_api = "http://2captcha.com/in.php"
+    captcha_res_api = "http://2captcha.com/res.php"
+    captcha_api_key = "f4f632da069e2208dd4e5ede45efd683"
