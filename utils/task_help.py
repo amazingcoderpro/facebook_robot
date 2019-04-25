@@ -57,11 +57,15 @@ class TaskHelper:
 
         account_configure = self.account_info.get("configure", {})
         self.last_login_time = account_configure.get('last_login', '')
-        self.last_verifying_time = account_configure.get('last_verify', '')
+        self.last_verify_time = account_configure.get('last_verify', '')
         self.last_post_time = account_configure.get('last_post', '')
         self.last_add_friend_time = account_configure.get('last_add_friend', '')
         self.last_chat_time = account_configure.get('last_chat', '')
+        self.last_farming_time = account_configure.get('last_farming', '')
+        self.last_comment_time = account_configure.get('last_comment', '')
+        self.last_edit_time = account_configure.get('last_edit', '')
         self.login_counts = int(account_configure.get('login_counts', 0))
+        self.cookies = account_configure.get('cookies', {})
 
         self.login_interval = get_account_args().get('login_interval', 3600)
         self.verify_interval = get_account_args().get('verify_interval', 36000)
@@ -126,10 +130,10 @@ class TaskHelper:
         通过判断上次提交验证时间与当前时间间隔决定账号是否还在验证中
         :return:
         """
-        if self.last_verifying_time:
-            dt_last_verify = datetime.strptime(self.last_verifying_time, "%Y-%m-%d %H:%M:%S")
+        if self.last_verify_time:
+            dt_last_verify = datetime.strptime(self.last_verify_time, "%Y-%m-%d %H:%M:%S")
             if (datetime.now() - dt_last_verify).total_seconds() < self.verify_interval:
-                logger.warning(logger.error('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verifying_time)))
+                logger.warning(logger.error('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verify_time)))
                 return True
 
         return False
@@ -233,7 +237,7 @@ class TaskHelper:
 
     def make_result(self, ret=False, err_code=-1, err_msg='', last_login=None, last_post=None, last_chat=None,
                     last_farming=None, last_comment=None, last_edit=None, last_verify=None, last_add_friend=None,
-                    phone_number='', profile_path='', **kwargs):
+                    phone_number='', profile_path='', cookies=None, **kwargs):
         task_result = {
             'status': 'failed',  # 'failed', 'succeed'
             'err_msg': '',
@@ -253,22 +257,21 @@ class TaskHelper:
             task_result['err_msg'] = err_msg if err_msg else 'err_code={}'.format(err_code)
 
         task_result['account_configure'] = {
-            'last_login': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_login, datetime) else '',
-            'last_post': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_post, datetime) else '',
-            'last_chat': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_chat, datetime) else '',
-            'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime) else '',
-            'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else '',
-            'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime) else '',
-            'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime) else '',
-            'last_add_friend': last_add_friend.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_add_friend, datetime) else '',
-            'phone_number': phone_number,
-            'profile_path': profile_path,
+            'last_login': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_login, datetime) else self.last_login_time,
+            'last_post': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_post, datetime) else self.last_post_time,
+            'last_chat': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_chat, datetime) else self.last_chat_time,
+            'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime) else self.last_farming_time,
+            'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else self.las_comment_time,
+            'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime) else self.last_edit_time,
+            'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime) else self.last_verify_time,
+            'last_add_friend': last_add_friend.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_add_friend, datetime) else last_add_friend,
+            'cookies': cookies if cookies else self.cookies,
+            'phone_number': phone_number if phone_number else self.phone_number,
+            'profile_path': profile_path if profile_path else self.profile_path,
+            'login_counts': self.login_counts+1 if last_login else self.login_counts    # 登录次数加1
         }
 
-        # 登录次数加1
-        if last_login:
-            task_result['account_configure']['login_counts'] = self.login_counts+1
-
+        # 其他
         for k, v in kwargs.items():
             task_result['account_configure'][k] = v
 

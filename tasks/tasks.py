@@ -41,6 +41,7 @@ def fb_auto_feed(self, inputs):
         last_chat = None
         last_post = None
         last_add_friend = None
+        cookies = None
         tsk_hlp = TaskHelper(inputs)
 
         if not tsk_hlp.is_inputs_valid():
@@ -73,6 +74,7 @@ def fb_auto_feed(self, inputs):
             return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         last_login = datetime.datetime.now()
+        cookies = driver.get_cookies()
         logger.info('login succeed. account={}, password={}'.format(account, password))
 
         ret, err_code = fb.home_browsing(driver=driver)
@@ -138,7 +140,8 @@ def fb_auto_feed(self, inputs):
     finally:
         if driver:
             driver.quit()
-    return tsk_hlp.make_result(True, last_login=last_login, last_chat=last_chat, last_post=last_post, last_add_friend=last_add_friend)
+    return tsk_hlp.make_result(True, last_login=last_login, last_chat=last_chat,
+                               last_post=last_post, last_add_friend=last_add_friend, cookies=cookies)
 
 
 @app.task(base=BaseTask, bind=True, max_retries=3, time_limit=300)
