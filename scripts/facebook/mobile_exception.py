@@ -484,7 +484,16 @@ class FacebookException(BaseException):
         :param kwargs:
         :return:
         """
+<<<<<<< HEAD
         result = True #CaptchaVerify(self.driver).handle_verify()
+=======
+
+        try:
+            result = CaptchaVerify(self.driver).handle_verify()
+        except:
+            return False, 15
+
+>>>>>>> d06f8a45f2d702ce603e6815fe68b86d241fe845
         if not result:
             return False, 15
         return True, 15
@@ -517,7 +526,7 @@ class FacebookException(BaseException):
 
     def get_photo(self, account, gender):
         try:
-            local_photo_path = local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
+            local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
 
             # 先在本地找
             local_photo_name = os.path.join(local_photo_path, "{}.jpg".format(account))
