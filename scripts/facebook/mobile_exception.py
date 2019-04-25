@@ -522,7 +522,7 @@ class FacebookException(BaseException):
 
     def get_photo(self, account, gender):
         try:
-            local_photo_path = local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
+            local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
 
             # 先在本地找
             local_photo_name = os.path.join(local_photo_path, "{}.jpg".format(account))
