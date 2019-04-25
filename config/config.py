@@ -118,6 +118,8 @@ def get_fb_chat_msgs(limit=1):
 
 
 def get_support_args():
+    if not cfg:
+        load_config()
     return cfg.get('support')
 
 
