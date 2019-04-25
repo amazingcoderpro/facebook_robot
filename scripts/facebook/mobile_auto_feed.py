@@ -26,11 +26,11 @@ def start_chrome(finger_print, headless=True):
     try:
         # 定制浏览器启动项
         chrome_options = webdriver.ChromeOptions()
-        # if headless:
-        #     chrome_options.add_argument('--headless')
-        #     chrome_options.add_argument('--no-sandbox')
-        #     chrome_options.add_argument('--disable-extensions')
-        #     chrome_options.add_argument('--disable-gpu')
+        if headless:
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
         # chrome_options.add_argument('--user-agent=iphone')
@@ -57,18 +57,34 @@ def start_chrome(finger_print, headless=True):
         return None, str(e)
 
 
-def auto_login(driver, account, password, gender=1):
+def auto_login(driver, account, password, gender=1, cookies=None):
     """
      登录facebook平台
     :param driver:  浏览器驱动
     :param account: FB账号
     :param password: FB密码
     :param gender: 账号性别
+    :param cookies: 账号上次登录的cookies
     :return:
     """
     # 登录FB
-    # driver.delete_all_cookies()
     driver.get('https://www.facebook.com/')
+    try:
+
+        # 先用cookies登录
+        if cookies:
+            for item in cookies:
+                driver.add_cookie(item)
+
+            driver.get('https://www.facebook.com/')
+
+            WebDriverWait(driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
+            logger.info("login success by cookies！ account={}".format(account))
+            return True, 0
+    except Exception as e:
+        logger.exception("login by cookies failed. continue use password, account={}, e={}".format(account, e))
+
     try:
         # FB登录
         email_box = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
@@ -448,12 +464,24 @@ if __name__ == '__main__':
             user_account = str(str_info[0]).strip()
             user_password = str(str_info[1]).strip()
             driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
+
             res, statu = auto_login(driver, user_account, user_password)
             if not res:
                 continue
             cookies = driver.get_cookies()
-
+            print(cookies)
             user_home(driver, 3)
+            # driver2, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
+            # driver2.get('https://www.facebook.com/')
+            # time.sleep(6)
+            # for item in cookies:
+            #     driver2.add_cookie(item)
+            # time.sleep(4)
+            # driver2.get('https://www.facebook.com/')
+
+
+            time.sleep(55)
+
             # add_friends(driver, ["xiaoning"], 2)
             # send_facebook_state(driver, {"post":"xiaoning"})
             # send_messages(driver, ["hello?", "how are you!"], 2)

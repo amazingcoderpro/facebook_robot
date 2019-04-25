@@ -266,7 +266,6 @@ def update_results():
                 dict_res = json.loads(result)
                 status = status_map.get(dict_res.get('status'), dict_res.get('status'))
                 job_res = dict_res.get('result', '')
-                str_job_res = ''
 
                 # 除了任务本身的成败外,还需要关注实际返回的结果
                 if isinstance(job_res, dict):
@@ -275,15 +274,19 @@ def update_results():
 
                     account_status = job_res.get('account_status', '')
                     account_config = job_res.get('account_configure', {})
-                    if account_status:
-                        logger.info('update account status={}'.format(account_status))
+                    logger.info('update account account_id={}, status={}, config={}'.format(account_id, account_status, account_config))
+                    # 如果返回的账号状态不为空再更新， 否则不更新状态
+                    if account_status and account_config:
                         db_session.query(Account).filter(Account.id == account_id).update({Account.status: account_status,
+                                                                                           Account.configure: json.dumps(account_config),
                                                                                            Account.last_update: datetime.now()})
-                    if account_config:
-                        logger.info('update account config={}'.format(account_config))
+                    else:
                         db_session.query(Account).filter(Account.id == account_id).update(
-                            {Account.configure: json.dumps(account_config), Account.last_update: datetime.now()})
+                            {Account.configure: json.dumps(account_config),
+                             Account.last_update: datetime.now()})
 
+                    # job里不再存放账号相关的信息
+                    job_res.pop('account_configure')
                     str_job_res = json.dumps(job_res)
                 else:
                     str_job_res = str(job_res)
