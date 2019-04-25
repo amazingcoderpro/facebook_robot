@@ -244,7 +244,7 @@ class Account(Base):
     tasks = relationship("Task", secondary=task_account_group_table)  # ,back_populates='children')
 
     # 账号的其他非常规配置信息,json串
-    configure = Column(String(2048), default='', server_default='')
+    configure = Column(String(4096), default='', server_default='')
     last_update = Column(DateTime(3), default=None)
 
     def __repr__(self):
