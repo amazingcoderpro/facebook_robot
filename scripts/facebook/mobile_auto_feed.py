@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
 
-import sys
-import os
-sys.path[0] = os.path.abspath(os.path.join(os.getcwd(), "../.."))
+
 import time
 import random
 from selenium import webdriver
-# from appium import webdriver as appwebdriver
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
