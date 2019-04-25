@@ -56,10 +56,10 @@ class CaptchaVerify:
         parameter = {
             "key": cls.captcha_api_key,
             "googlekey": cls.captcha_api_key,
-            "pageurl": cls.current_url,
+            "pageurl": cls.captcha_in_api,
             "method": "userrecaptcha"
         }
-        url = cls.current_url + "?" + parse.urlencode(parameter)
+        url = cls.captcha_in_api + "?" + parse.urlencode(parameter)
         result = requests.get(url)
         return result.text.split('|')[1]
 
