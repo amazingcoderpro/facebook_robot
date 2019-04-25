@@ -177,7 +177,6 @@ class FacebookException(BaseException):
         else:
             return False
 
-
     def process_remember_password(self, **kwargs):
         """
         # 记住账号密码
@@ -485,10 +484,11 @@ class FacebookException(BaseException):
         :param kwargs:
         :return:
         """
-        result = CaptchaVerify(**kwargs).handle_verify(self.driver)
+        result = CaptchaVerify(self.driver).handle_verify()
         if not result:
             return False, 15
         return True, 15
+
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
