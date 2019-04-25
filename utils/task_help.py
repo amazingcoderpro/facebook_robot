@@ -261,7 +261,7 @@ class TaskHelper:
             'last_post': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_post, datetime) else self.last_post_time,
             'last_chat': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_chat, datetime) else self.last_chat_time,
             'last_farming': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_farming, datetime) else self.last_farming_time,
-            'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else self.las_comment_time,
+            'last_comment': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_comment, datetime) else self.last_comment_time,
             'last_edit': last_login.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_edit, datetime) else self.last_edit_time,
             'last_verify': last_verify.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_verify, datetime) else self.last_verify_time,
             'last_add_friend': last_add_friend.strftime("%Y-%m-%d %H:%M:%S") if isinstance(last_add_friend, datetime) else last_add_friend,

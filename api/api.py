@@ -387,6 +387,7 @@ def process_updated_tasks():
 
 
 def start_all_new_tasks(scheduler=None):
+
     """
     检测新建任务, 并加入执行
     :return:

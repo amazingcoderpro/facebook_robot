@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from config import logger, get_account_args
-from utils.captcha_api.facebook_captcha import CaptchaVerify
+from .facebook_captcha import CaptchaVerify
 
 
 class FacebookException(BaseException):
@@ -60,7 +60,7 @@ class FacebookException(BaseException):
         self.driver = driver
         self.exception_type = -1
 
-    def auto_process(self, retry=1, wait=2, **kwargs):
+    def auto_process(self, retry=1, wait=3, **kwargs):
         """
         自动处理异常，根据异常类型对症处理，
         :param retry: 重试次数

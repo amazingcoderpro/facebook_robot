@@ -75,27 +75,27 @@ def fb_auto_feed(self, inputs):
 
         last_login = datetime.datetime.now()
         cookies = driver.get_cookies()
-        logger.info('login succeed. account={}, password={}'.format(account, password))
+        logger.info('login succeed. account={}, password={}, cookies={}'.format(account, password, cookies))
 
         ret, err_code = fb.home_browsing(driver=driver)
         if not ret:
             msg = 'home_browsing, account={}, err_code={}'.format(account, err_code)
             logger.error(msg)
             tsk_hlp.screenshots(driver, err_code=err_code)
-            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg, last_login=last_login, cookies=cookies)
 
         tsk_hlp.random_sleep()
         # if tsk_hlp.random_select():
-        ret, err_code = fb.user_home(driver=driver, limit=random.randint(3, 5))
+        ret, err_code = fb.user_home(driver=driver, limit=random.randint(2, 5))
         if not ret:
             err_msg = 'user_home failed, err_code={}'.format(err_code)
             tsk_hlp.screenshots(driver, err_code=err_code)
-            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+            return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg, last_login=last_login, cookies=cookies)
 
         # 账号是否可以继续用作其他用途
         if not tsk_hlp.is_should_use():
             logger.info("account can not be used!! login counts={}".format(tsk_hlp.login_counts))
-            return tsk_hlp.make_result(True, last_login=last_login)
+            return tsk_hlp.make_result(True, last_login=last_login, cookies=cookies)
 
         tsk_hlp.random_sleep()
         if tsk_hlp.is_should_add_friend():
@@ -105,7 +105,7 @@ def fb_auto_feed(self, inputs):
                 if not ret:
                     err_msg = 'add_friends failed, err_code={}'.format(err_code)
                     tsk_hlp.screenshots(driver, err_code=err_code)
-                    return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+                    return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg, last_login=last_login, cookies=cookies)
                 last_add_friend = datetime.datetime.now()
 
         tsk_hlp.random_sleep()
@@ -115,7 +115,7 @@ def fb_auto_feed(self, inputs):
             if not ret:
                 err_code = "send_message failed, err_code={}".format(err_code)
                 tsk_hlp.screenshots(driver, err_code=err_code)
-                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+                return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg, last_login=last_login, cookies=cookies)
 
             last_chat = datetime.datetime.now()
 
@@ -127,7 +127,7 @@ def fb_auto_feed(self, inputs):
                 if not ret:
                     err_code = "send_facebook_state failed, err_code={}".format(err_code)
                     tsk_hlp.screenshots(driver, err_code=err_code)
-                    return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
+                    return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg, last_login=last_login, cookies=cookies)
                 last_post = datetime.datetime.now()
 
         tsk_hlp.random_sleep(20, 100)

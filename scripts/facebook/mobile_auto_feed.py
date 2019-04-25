@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
 
-import sys
-import os
-sys.path[0] = os.path.abspath(os.path.join(os.getcwd(), "../.."))
+
 import time
 import random
 from selenium import webdriver
-# from appium import webdriver as appwebdriver
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -29,11 +26,11 @@ def start_chrome(finger_print, headless=True):
     try:
         # 定制浏览器启动项
         chrome_options = webdriver.ChromeOptions()
-        if headless:
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-gpu')
+        # if headless:
+        #     chrome_options.add_argument('--headless')
+        #     chrome_options.add_argument('--no-sandbox')
+        #     chrome_options.add_argument('--disable-extensions')
+        #     chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
         # chrome_options.add_argument('--user-agent=iphone')
@@ -138,7 +135,7 @@ def auto_login(driver, account, password, gender=1, cookies=None):
         return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
 
 
-def browse_page(driver, browse_times=20, distance=0, interval=0, back_top=True):
+def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
     """
     浏览页面
     :param driver: 浏览器驱动
@@ -152,17 +149,22 @@ def browse_page(driver, browse_times=20, distance=0, interval=0, back_top=True):
     try:
         logger.info('browse_page start.')
         y_dis = 0
+        if browse_times <= 0:
+            browse_times = random.randint(3, 15)
+
         for i in range(browse_times):
+            if interval <= 0:
+                time.sleep(random.randint(1, 10))
+            else:
+                time.sleep(interval)
+
             if distance > 0:
                 y_dis += distance
             else:
-                y_dis += random.randint(50, 200)
+                y_dis += random.randint(20, 200)
 
             driver.execute_script("window.scrollTo(0,{})".format(y_dis))
-            if interval <= 0:
-                time.sleep(random.randint(5, 20))
-            else:
-                time.sleep(interval)
+
         if back_top:
             driver.execute_script("window.scrollTo(0,0)")
 
@@ -184,13 +186,13 @@ def home_browsing(driver):
         time.sleep(3)
         url = "https://m.facebook.com"
         driver.get(url)
-        browse_page(driver, browse_times=5)
+        browse_page(driver)
         logger.info("home_browsing success")
         return True, 0
     except Exception as e:
         logger.exception('home_browsing exception.e={}'.format(e))
         fbexcept = FacebookException(driver)
-        return fbexcept.auto_process(3, wait=5)
+        return fbexcept.auto_process(3)
 
 
 def local_surface(driver):
@@ -209,7 +211,7 @@ def local_surface(driver):
     except Exception as e:
         logger.error('local_surface catch exception. start process.., e={}'.format(e))
         fbexcept = FacebookException(driver)
-        return fbexcept.auto_process(3, wait=5)
+        return fbexcept.auto_process(3)
 
 
 def add_friends(driver:WebDriver, search_keys, limit=2):
@@ -423,7 +425,7 @@ def user_home(driver:WebDriver, limit):
         super_click(user_news, driver)
 
         time.sleep(5)
-        browse_page(driver, browse_times=3)
+        browse_page(driver, browse_times=random.randint(1, 3))
         # 个人中心全部的菜单栏
         user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
         list_rang = range(len(user_list))
@@ -434,16 +436,13 @@ def user_home(driver:WebDriver, limit):
             user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
             # user_list[i].click()
             super_click(user_list[i], driver)
-            browse_page(driver, browse_times=5)
-            time.sleep(3)
+            browse_page(driver, browse_times=random.randint(3, 5))
             driver.back()
-            browse_page(driver, browse_times=5)
-            time.sleep(6)
+            browse_page(driver, browse_times=random.randint(1, 3))
             user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
             # user_news.click()
             super_click(user_news, driver)
-            browse_page(driver, browse_times=5)
-            time.sleep(5)
+            browse_page(driver, browse_times=random.randint(3, 5))
         logger.info("user_home browsing completed")
         return True, 0
     except Exception as e:
