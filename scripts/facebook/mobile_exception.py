@@ -488,7 +488,6 @@ class FacebookException(BaseException):
             result = CaptchaVerify(self.driver).handle_verify()
         except:
             return False, 15
-
         if not result:
             return False, 15
         return True, 15
