@@ -53,7 +53,7 @@ def super_sendkeys(ele, strinfo):
             n = len(strinfo)
         input = strinfo[:n]
         ele.send_keys(input)
-        rantime = random.uniform(0.5, 5.0)
+        rantime = random.uniform(0.2, 1.5)
         time.sleep(rantime)
         strinfo = strinfo[n:]
 

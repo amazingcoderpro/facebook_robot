@@ -60,7 +60,7 @@ class FacebookException(BaseException):
         self.driver = driver
         self.exception_type = -1
 
-    def auto_process(self, retry=1, wait=2, **kwargs):
+    def auto_process(self, retry=1, wait=3, **kwargs):
         """
         自动处理异常，根据异常类型对症处理，
         :param retry: 重试次数
