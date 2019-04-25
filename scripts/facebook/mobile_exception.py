@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from config import logger, get_account_args
-# from utils.captcha_api.facebook_captcha import CaptchaVerify
+from utils.captcha_api.facebook_captcha import CaptchaVerify
 
 
 class FacebookException(BaseException):
@@ -484,16 +484,10 @@ class FacebookException(BaseException):
         :param kwargs:
         :return:
         """
-<<<<<<< HEAD
-        result = True #CaptchaVerify(self.driver).handle_verify()
-=======
-
         try:
             result = CaptchaVerify(self.driver).handle_verify()
         except:
             return False, 15
-
->>>>>>> d06f8a45f2d702ce603e6815fe68b86d241fe845
         if not result:
             return False, 15
         return True, 15
