@@ -484,7 +484,6 @@ class FacebookException(BaseException):
         :param kwargs:
         :return:
         """
-
         try:
             result = CaptchaVerify(self.driver).handle_verify()
         except:
