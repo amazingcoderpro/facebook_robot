@@ -5,7 +5,9 @@
 
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import *
+from selenium.webdriver.chrome.webdriver import WebDriver
 import time
+import random
 
 
 def super_click(ele, driver, double=False):
@@ -30,8 +32,33 @@ def super_click(ele, driver, double=False):
             action.move_to_element(ele).double_click(ele)
         else:
             action.move_to_element(ele).click(ele)
-
         action.perform()
-
     return True
+
+
+def super_sendkeys(ele, strinfo):
+    """
+    封装输入的函数
+    :param ele: 需要输入的元素
+    :param strinfo: 传入的输入内容
+    :return:
+    """
+
+    if not ele and strinfo:
+        return False
+    if strinfo:
+
+        n = random.randint(3, 6)
+        final = [strinfo[i * n:(i + 1) * n] for i in range((len(strinfo) + n - 1) // n)]
+        print(final)
+        for i in final:
+            rantime = random.uniform(0.9, 2.0)
+            ele.send_keys(i)
+            time.sleep(rantime)
+    return True
+
+
+# if __name__ == '__main__':
+#     super_sendkeys(ele="11", strinfo="rrtretretj")
+
 

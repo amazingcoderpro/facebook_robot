@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from scripts.facebook.mobile_exception import FacebookException
 from config import logger
-from scripts.utils import super_click
+from scripts.utils import super_click, super_sendkeys
 
 
 def start_chrome(finger_print, headless=True):
@@ -72,7 +72,8 @@ def auto_login(driver, account, password, gender=1):
     try:
         # FB登录
         email_box = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
-        email_box.send_keys(account)
+        # email_box.send_keys(account)
+        super_sendkeys(email_box, account)
         time.sleep(3)
 
         password_tabindex = driver.find_elements_by_css_selector('input[tabindex^="-"]')
@@ -83,7 +84,8 @@ def auto_login(driver, account, password, gender=1):
             time.sleep(2)
 
         password_box = driver.find_element_by_name("pass")
-        password_box.send_keys(password)
+        # password_box.send_keys(password)
+        super_sendkeys(password_box, password)
 
         # login_ebutn = driver.find_element_by_css_selector('button[type="button"]')
         # login_ebutn.send_keys(Keys.ENTER)
@@ -315,7 +317,8 @@ def send_messages(driver:WebDriver, keywords, limit=2):
                     browse_page(driver, 3, distance=50, interval=2, back_top=False)
                     time.sleep(1)
                     message_info = driver.find_element_by_css_selector('textarea[data-sigil^="m-textarea-input"]')
-                    message_info.send_keys(keys)
+                    # message_info.send_keys(keys)
+                    super_sendkeys(message_info, keys)
                     time.sleep(2)
 
                     # 发送聊天内容
@@ -372,7 +375,8 @@ def send_facebook_state(driver:WebDriver, keywords):
         send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
 
         post_content = keywords.get('post')
-        send_info_state.send_keys(post_content)
+        # send_info_state.send_keys(post_content)
+        super_sendkeys(send_info_state, post_content)
         time.sleep(10)
         release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
         release_state_button.click()
