@@ -117,6 +117,10 @@ def get_fb_chat_msgs(limit=1):
         return random.sample(msgs, limit)
 
 
+def get_support_args():
+    return cfg.get('support')
+
+
 def get_environment():
     global environment
     return environment

@@ -11,6 +11,7 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from config import logger, get_account_args
+from utils.captcha_api.facebook_captcha import CaptchaVerify
 
 
 class FacebookException(BaseException):
@@ -33,6 +34,7 @@ class FacebookException(BaseException):
     12： 账号密码不正确
     13： 移动端共享登录验证
     14:  条款和使用政策验证
+    15:  机器人验证
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -51,6 +53,7 @@ class FacebookException(BaseException):
         12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
         13: {'name': 'shared_login', 'key_words': ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]'], 'account_status': 'verifying_shared_login'},
         14: {'name': 'policy_clause', 'key_words': ['button[value="J’accepte"]'], 'account_status': 'verifying_policy_clause'},
+        15: {"name": 'robot_verify', 'key_words': ['recaptcha-demo']}
     }
 
     def __init__(self, driver: WebDriver):
@@ -105,7 +108,7 @@ class FacebookException(BaseException):
 
             # 遍历所有异常， 如果有自己定义的检测函数则执行，如果没有，则调用通用检测函数
             if name and hasattr(self, check_func):
-                if getattr(self, check_func)():
+                if getattr(self, check_func)(v.get('key_words', [])):
                     self.exception_type = k
                     break
             else:
@@ -145,6 +148,35 @@ class FacebookException(BaseException):
             return True
         else:
             return False
+
+    def check_robot_verify(self, key_words, wait=2):
+        """
+        通用检测函数, 判断当前页面是存在指定的关键字集合
+        :param key_words: 关键字集合, list或tuple, list代表各关键字之间是且的关系， tuple代表各关键字之间是或的关系
+        :param wait: 查找关键字时的最大等待时间， 默认5秒
+        :return: 成功返回 True, 失败返回 False
+        """
+        succeed_count = 0
+        is_and_relation = isinstance(key_words, list)
+        for key in key_words:
+            try:
+                WebDriverWait(self.driver, wait).until(
+                    EC.presence_of_element_located((By.ID, key)))
+            except:
+                # 如是且的关系，任何一个异常， 即说明条件不满足
+                if is_and_relation:
+                    break
+            else:
+                succeed_count += 1
+                if not is_and_relation:
+                    break
+
+        # 如果是或的关系， 只要有一个正常， 即说明条件满足
+        if (is_and_relation and succeed_count == len(key_words)) or (not is_and_relation and succeed_count > 0):
+            return True
+        else:
+            return False
+
 
     def process_remember_password(self, **kwargs):
         """
@@ -446,6 +478,17 @@ class FacebookException(BaseException):
             logger.exception("邮箱验证前的登录按钮处理  暂时没有做点击处理, e={}".format(e))
             return False, 15
         return False, 15
+
+    def process_robot_verify(self, **kwargs):
+        """
+        机器人验证
+        :param kwargs:
+        :return:
+        """
+        result = CaptchaVerify(**kwargs).handle_verify(self.driver)
+        if not result:
+            return False, 15
+        return True, 15
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
