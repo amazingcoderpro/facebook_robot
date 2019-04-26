@@ -447,13 +447,13 @@ if __name__ == '__main__':
             # 登陆
             res, statu = auto_login(driver, user_account, user_password)
             if res:
-
                 # 页面浏览
                 #browse_page(driver)
                 # 增加好友
                 # add_friends(driver, ["dog"])
                 # 好友聊天
                 send_messages(driver, "Hi", 2)
+
 
             time.sleep(5)
 

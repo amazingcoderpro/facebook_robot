@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from scripts.facebook.mobile_exception import FacebookException
+# from scripts.facebook.mobile_exception import FacebookException
 from selenium.webdriver.support.ui import Select
 from config import logger
 from executor.utils.utils import super_sendkeys, super_click
@@ -81,7 +81,6 @@ def sign_up(driver:WebDriver, user_account, user_password, gender=1):
         last_name.send_keys(Keys.ENTER)
         time.sleep(3)
 
-
         # 生日
         year_num = random.randint(18, 26)
         mouth_num = random.randint(1, 12)
@@ -140,38 +139,40 @@ def email_login(driver:WebDriver, user_account, user_password):
     :param driver:浏览器驱动
     :return:
     """
-    driver.get('https://baidu.com')
 
     url ="https://passport.126.com/ydzj/maildl?product=mail126&pdconf=yddl_mail126_conf&mc=146E1F&curl=https%3A%2F%2Fmail.126.com%2Fentry%2Fcgi%2Fntesdoor%3Ffrom%3Dsmart%26language%3D0%26style%3D11%26destip%3D192.168.202.48%26df%3Dsmart_ios"
     js = 'window.open("{}");'.format(url)
     driver.execute_script(js)
-
-    emial_account = WebDriverWait(driver, 6).until(
+    handles = driver.window_handles
+    print(handles)
+    driver.switch_to_window(handles[1])  # 切换回原来页面
+    time.sleep(10)
+    emial_account = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="account"]')))
 
     super_sendkeys(emial_account, user_account.split("@")[0])
     time.sleep(5)
-    email_password = WebDriverWait(driver, 6).until(
+    email_password = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
 
     super_sendkeys(email_password, user_password)
     time.sleep(5)
 
-    login_email = WebDriverWait(driver, 6).until(
+    login_email = WebDriverWait(driver, 10).until(
              EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
     login_email.send_keys(Keys.ENTER)
     time.sleep(5)
 
     # 处理弹框
     time.sleep(30)
-    alter_info = WebDriverWait(driver, 6).until(
+    alter_info = WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, 'div[class="msgbox-simpleText "]')))
     if alter_info:
         alter_button = driver.find_elements_by_css_selector('span[class="btn-inner"]')
         alter_button[2].click()
     handles = driver.window_handles
     print(handles)
-    driver.switch_to_window(handles[0])  # 切换回原来页面
+    driver.switch_to_window(handles[1])  # 切换回原来页面
 
     search_button = driver.find_element_by_css_selector('div[class="toolbar-optItem "]')
     search_button.click()
@@ -190,7 +191,7 @@ if __name__ == '__main__':
             user_account = str(str_info[0]).strip()
             user_password = str(str_info[1]).strip()
             driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-            # sign_up(driver, user_account, user_password, 1)
+            sign_up(driver, user_account, user_password, 1)
             email_login(driver, user_account, user_password)
 
 
