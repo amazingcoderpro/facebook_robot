@@ -10,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select
 from config import logger, get_account_args
 from executor.utils.facebook_captcha import CaptchaVerify
 
@@ -53,7 +54,7 @@ class FacebookException(BaseException):
         12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
         13: {'name': 'shared_login', 'key_words': ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]'], 'account_status': 'verifying_shared_login'},
         14: {'name': 'policy_clause', 'key_words': ['button[value="J’accepte"]'], 'account_status': 'verifying_policy_clause'},
-        15: {"name": 'robot_verify', 'key_words': ['recaptcha-demo']}
+        15: {"name": 'robot_verify', 'key_words': ['div[class="g-recaptcha"]']}
     }
 
     def __init__(self, driver: WebDriver, env="mobile", caller="", account=""):
@@ -183,8 +184,9 @@ class FacebookException(BaseException):
         is_and_relation = isinstance(key_words, list)
         for key in key_words:
             try:
+                self.driver.switch_to.frame("captcha-recaptcha")
                 WebDriverWait(self.driver, wait).until(
-                    EC.presence_of_element_located((By.ID, key)))
+                    EC.presence_of_element_located((By.CSS_SELECTOR, key)))
             except:
                 # 如是且的关系，任何一个异常， 即说明条件不满足
                 if is_and_relation:
@@ -508,13 +510,15 @@ class FacebookException(BaseException):
         :return:
         """
         try:
+            logger.info("机器人验证: beginning")
             result = CaptchaVerify(self.driver).handle_verify()
-        except:
+            logger.info("机器人验证: endding")
+        except Exception as e:
+            logger.error("机器人验证: 异常-->{}".format(str))
             return False, 15
         if not result:
             return False, 15
         return True, 15
-
 
     def download_photo(self, account, gender):
         logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
