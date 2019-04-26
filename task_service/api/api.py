@@ -87,7 +87,7 @@ def scheduler_task(db_session, scheduler_id, *args):
 
 def dispatch_test():
     import time
-    from workers import app
+    from start_worker import app
     account_list = [("eddykkqf56@outlook.com", "nYGcEXNjGY")]
     for i in range(3):
         for acc in account_list:

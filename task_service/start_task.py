@@ -13,7 +13,7 @@ from api import clean_environment, update_results, start_all_new_tasks, restart_
 
 def dispatch_test():
     import time
-    from workers import app
+    from start_worker import app
     account_list = [("eddykkqf56@outlook.com", "nYGcEXNjGY")]
     for i in range(3):
         for acc in account_list:
@@ -61,6 +61,6 @@ def run(task_start_mode='new', update_interval=30):
 if __name__ == '__main__':
     run(task_start_mode=task_start_mode, update_interval=interval)
 
-# pipenv run python3 main.py [test|pro] [new|restart]
-# eg: python3 main.py test new
+# pipenv run python3 start_task.py [test|pro] [new|restart]
+# eg: python3 start_task.py test new
 
