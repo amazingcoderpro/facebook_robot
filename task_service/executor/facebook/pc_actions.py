@@ -102,17 +102,7 @@ def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
         #     else:
         #         break
 
-
-        # time.sleep(10)
-        # dig_alert = driver.switch_to.alert
-        # time.sleep(1)
-        # # 打印警告对话框内容
-        # print(dig_alert.text)
-        # # alert对话框属于警告对话框，我们这里只能接受弹窗
-        # dig_alert.accept()
-
         # 检查是否在首页
-        driver.switch_to_alert()
         WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-testid="search_input"]')))
         logger.info("login success！username={}, password={}".format(account, password))
@@ -202,7 +192,7 @@ def local_surface(driver):
         return fbexcept.auto_process(3)
 
 
-def add_friends(driver:WebDriver, search_keys, limit=2):
+def add_friends(driver:WebDriver, search_keys, limit=5):
     """
     添加朋友
     :param driver: 浏览器驱动
@@ -212,7 +202,7 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
     """
     try:
         limit = 1 if limit <= 0 else limit
-        logger.info('start add friends, friends={}, limit={}'.format(search_keys, limit))
+        logger.info('增加好友: friends={}, limit={}'.format(search_keys, limit))
         for friend in search_keys:
             page_url = "https://www.facebook.com/search/people/?q={}&epa=SERP_TAB".format(friend)
             driver.get(page_url)
@@ -222,9 +212,10 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div[class='FriendButton'")))
 
             # 找到新的好友列表
+            browse_page(driver, browse_times=5, distance=0, interval=5, back_top=True)
             new_friends = driver.find_elements_by_css_selector("button[aria-label='Add Friend'")
             if not new_friends:
-                logger.warning('can not find any friend avatar. friend keyword={}'.format(friend))
+                logger.warning('增加好友: can not find any friend. friend keyword={}'.format(friend))
                 continue
 
             # 组装要加的好友列表
@@ -233,34 +224,10 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
 
             # 循环加好友
             for idx in new_friends:
-                # 点击对应好友的图像，进入其profile页面
                 super_click(idx, driver)
                 time.sleep(3)
-
-                if 'id=' not in driver.current_url:
-                    continue
-
-                profile_id = driver.current_url.split("id=")[1]
-                # 获取添加好友或者点赞的按钮
-                # add_btn = driver.find_element_by_css_selector("a[href^='/a/mobile/friends/'")
-                # add_btn_1 = driver.find_element_by_css_selector("a[href*='{}'".format(profile_id))
-                add_btn = driver.find_element_by_css_selector("div[data-store*='{}'".format(profile_id))
-                if not add_btn:
-                    add_btn = driver.find_element_by_css_selector("a[href^='https://static.xx'")
-                    if not add_btn:
-                        driver.back()
-                        continue
-
-                super_click(add_btn, driver)
-                logger.info('add friend succeed, key word={}, new friend id={}'.format(friend, profile_id))
-                time.sleep(2)
-                # 回到好友列表页面，继续添加好友
-                if driver.current_url != page_url:
-                    driver.back()
-                    time.sleep(3)
-                new_friends_avatar = driver.find_elements_by_css_selector("img[src^='https://scontent'")
-        logger.info("add friend succeed.")
-        driver.get('https://m.facebook.com')
+        logger.info("增加好友: add friend succeed.")
+        driver.get('https://www.facebook.com')
         time.sleep(5)
         return True, 0
     except Exception as e:
@@ -282,7 +249,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
         # 2.向好友发送消息
         logger.info('start send_messages, limit={}, chat content={}'.format(limit, keywords))
         for i in range(1, limit + 1):
-            message_url = "https://m.facebook.com/friends/center/friends"
+            message_url = "https://www.facebook.com/profile.php?sk=friends"
             driver.get(message_url)
 
             # 检查是否进入好友列表页面
@@ -443,53 +410,52 @@ def post_status(driver):
 
 if __name__ == '__main__':
 
-    user_account = str(17610069110)
-    user_password = str("sanmang111..fb").strip()
-
-    # 启动浏览器
-    driver, msg = start_chrome(headless=False)
-    # 登陆
-    res, statu = auto_login(driver, user_account, user_password)
-    if res:
-
-        # 页面浏览
-        #browse_page(driver)
-        # 增加好友
-        add_friends(driver, ["dog"])
-
-    time.sleep(300)
-
-
-
-
-
-
-
-
-
-
-
-
-    # filename = '../../resource/facebook_account.txt'
-    # with open(filename, 'r') as line:
-    #     all_readline = line.readlines()
-    #     for date in all_readline:
-    #         str_info = date.split('---')
-    #         user_account = str(str_info[0]).strip()
-    #         user_password = str(str_info[1]).strip()
+    # user_account = str(17610069110)
+    # user_password = str("sanmang111..fb").strip()
     #
-    #         # 启动浏览器
-    #         driver, msg = start_chrome(headless=False)
-    #         # 登陆
-    #         res, statu = auto_login(driver, user_account, user_password)
-    #         if not res:
-    #             break
-    #         # 页面浏览
-    #         browse_page(driver)
+    # # 启动浏览器
+    # driver, msg = start_chrome(headless=False)
+    # # 登陆
+    # res, statu = auto_login(driver, user_account, user_password)
+    # if res:
     #
+    #     # 页面浏览
+    #     #browse_page(driver)
+    #     # 增加好友
+    #     # add_friends(driver, ["dog"])
+    #     # 好友聊天
+    #     send_messages(driver, "Hi", 2)
     #
-    #         time.sleep(300)
+    # time.sleep(300)
 
+
+
+
+
+
+
+    filename = '../../resource/facebook_account.txt'
+    with open(filename, 'r') as line:
+        all_readline = line.readlines()
+        for date in all_readline:
+            str_info = date.split('---')
+            user_account = str(str_info[0]).strip()
+            user_password = str(str_info[1]).strip()
+
+            # 启动浏览器
+            driver, msg = start_chrome(headless=False)
+            # 登陆
+            res, statu = auto_login(driver, user_account, user_password)
+            if res:
+
+                # 页面浏览
+                #browse_page(driver)
+                # 增加好友
+                # add_friends(driver, ["dog"])
+                # 好友聊天
+                send_messages(driver, "Hi", 2)
+
+            time.sleep(5)
 
 
 
