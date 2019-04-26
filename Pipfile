@@ -22,9 +22,9 @@ django = "*"
 djangorestframework = "*"
 markdown = "*"
 django-filter = "*"
-log-config = "*"
 mysqlclient = "*"
 pyvirtualdisplay = "*"
+log-config = "*"
 
 [requires]
 python_version = "3.6"

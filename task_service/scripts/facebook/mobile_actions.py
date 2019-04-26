@@ -11,9 +11,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from scripts.facebook.mobile_exception import FacebookException
-from config import logger
-from scripts.utils import super_click, super_sendkeys
+from task_service.scripts.facebook.exception import FacebookException
+from task_service.config import logger
+from task_service.scripts.utils.utils import super_click, super_sendkeys
 
 
 def start_chrome(finger_print, headless=True):
@@ -26,11 +26,11 @@ def start_chrome(finger_print, headless=True):
     try:
         # 定制浏览器启动项
         chrome_options = webdriver.ChromeOptions()
-        # if headless:
-        #     chrome_options.add_argument('--headless')
-        #     chrome_options.add_argument('--no-sandbox')
-        #     chrome_options.add_argument('--disable-extensions')
-        #     chrome_options.add_argument('--disable-gpu')
+        if headless:
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
         # chrome_options.add_argument('--user-agent=iphone')
@@ -73,6 +73,7 @@ def auto_login(driver, account, password, gender=1, cookies=None):
 
         # 先用cookies登录
         if cookies:
+            logger.info("login by cookies start！ account={}".format(account))
             for item in cookies:
                 driver.add_cookie(item)
 

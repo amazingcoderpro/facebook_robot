@@ -4,12 +4,6 @@
 # Function: 
 
 
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Created by Charles on 19-3-18
-# Function:
-
-
 from datetime import timedelta, datetime
 from collections import namedtuple
 import json
@@ -93,7 +87,7 @@ def scheduler_task(db_session, scheduler_id, *args):
 
 def dispatch_test():
     import time
-    from tasks.workers import app
+    from workers import app
     account_list = [("eddykkqf56@outlook.com", "nYGcEXNjGY")]
     for i in range(3):
         for acc in account_list:

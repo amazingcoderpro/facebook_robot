@@ -93,18 +93,41 @@ WSGI_APPLICATION = 'web_service.wsgi.application'
 
 # load db config
 import os
+
+db_cfg_all = {
+    "pro": {
+        "host": "47.112.113.252",  # 10.252.252.67
+        "port": 3306,
+        "user": "charles",
+        "password": "charles@orderplus",
+        "db_name": "facebook",
+    },
+    "test": {
+        "host": "47.112.113.252",  # 10.252.252.67
+        "port": 3306,
+        "user": "charles",
+        "password": "charles@orderplus",
+        "db_name": "facebook_test",
+    }
+
+}
+
 env = os.getenv('env', 'pro')
-if env == 'pro':
-    config_path = os.path.join(os.path.join(os.path.dirname(BASE_DIR), 'config'), 'config.yaml')
-else:
-    config_path = os.path.join(os.path.join(os.path.dirname(BASE_DIR), 'config'), 'config_test.yaml')
+db_cfg = db_cfg_all.get(env, None)
+assert db_cfg, "请指定正确的运行环境！"
+assert db_cfg.get("host", None), "请正确配置数据库环境信息！"
+# if env == 'pro':
+#     config_path = os.path.join(os.path.join(os.path.dirname(BASE_DIR), 'config'), 'config.yaml')
+# else:
+#     config_path = os.path.join(os.path.join(os.path.dirname(BASE_DIR), 'config'), 'config_test.yaml')
+#
+# print(config_path)
+# with open(config_path, encoding='utf-8') as f:
+#     content = f.read()
+#
+# cfg = load(content, Loader=FullLoader)
+# db_cfg = cfg.get('db')
 
-print(config_path)
-with open(config_path, encoding='utf-8') as f:
-    content = f.read()
-
-cfg = load(content, Loader=FullLoader)
-db_cfg = cfg.get('db')
 
 DATABASES = {
     'default': {

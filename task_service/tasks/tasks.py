@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
-# Function: 养号任务入口
+# Function: 相关任务响应函数
+
+
+"""
+所有任务响应函数入口在此定义
+"""
 
 import time
 import datetime
@@ -9,10 +14,10 @@ import random
 import subprocess
 import re
 from celery import Task
-from .workers import app
-from config import logger
-import scripts.facebook as fb
-from utils.task_help import TaskHelper
+from task_service.workers import app
+from task_service.config import logger
+import task_service.scripts.facebook as fb
+from task_service.tasks.task_help import TaskHelper
 
 
 class BaseTask(Task):
@@ -66,7 +71,7 @@ def fb_auto_feed(self, inputs):
 
         account = tsk_hlp.account
         password = tsk_hlp.password
-        ret, err_code = fb.auto_login(driver=driver, account=account, password=password, gender=tsk_hlp.gender)
+        ret, err_code = fb.auto_login(driver=driver, account=account, password=password, gender=tsk_hlp.gender, cookies=tsk_hlp.cookies)
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)

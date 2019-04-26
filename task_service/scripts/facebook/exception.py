@@ -10,8 +10,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from config import logger, get_account_args
-from .facebook_captcha import CaptchaVerify
+from task_service.config import logger, get_account_args
+from task_service.scripts.utils.facebook_captcha import CaptchaVerify
 
 
 class FacebookException(BaseException):
@@ -348,7 +348,7 @@ class FacebookException(BaseException):
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
             if photo_btn:
                 logger.info("photo uploaded successfully!")
-                account_photo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(photo_path))), "{}.jpg".format(account))
+                account_photo_path = os.path.join(os.path.dirname(os.path.dirname(photo_path)), "{}.jpg".format(account))
                 shutil.move(photo_path, account_photo_path)
                 logger.info("process photo verify succeed, photo path={}".format(account_photo_path))
             else:
