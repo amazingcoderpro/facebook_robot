@@ -57,50 +57,60 @@ class FacebookException(BaseException):
         15: {"name": 'robot_verify', 'key_words': ['div[class="g-recaptcha"]']}
     }
 
-    def __init__(self, driver: WebDriver, env="mobile", caller="", account=""):
+    def __init__(self, driver: WebDriver, env="mobile", caller="", account="", gender=1):
         self.driver = driver
         self.exception_type = -1
         self.env = env
         self.caller = caller
         self.account = account
+        self.gender = gender
         self.trace_info = "[{}:env={}, caller={}, account={}]".format(
             self.__class__.__name__, self.env, self.caller, self.account)
 
-    def auto_process(self, retry=1, wait=3, **kwargs):
+    @property
+    def exception_name(self):
+        return self.MAP_EXP_PROCESSOR.get(self.exception_type, {}).get('name', 'unknown')
+
+    @property
+    def account_status(self):
+        return self.MAP_EXP_PROCESSOR.get(self.exception_type, {}).get('account_status', '')
+
+    def auto_process(self, retry=1, wait=3):
         """
         自动处理异常，根据异常类型对症处理，
         :param retry: 重试次数
         :param wait: 重试间隔，单位秒
         :return: 元组 -- （结果, 异常码）
         """
-        logger.info('call auto process, retry={}, wait={}, kwargs={}'.format(retry, wait, kwargs))
+        logger.info('call auto process, retry={}, wait={}, trace_info={}'.format(retry, wait, self.trace_info))
         while retry > 0:
-            exception_type = self.auto_check()
+            self.exception_type = self.auto_check()
 
             # 如果已经在home页面或者是未知异常，不用处理
-            if exception_type == 0:
+            if self.exception_type == 0:
                 logger.info('auto process succeed, status==0')
                 return True, 0
-            elif exception_type == -1:
+            elif self.exception_type == -1:
                 logger.info('auto process failed, status==-1')
                 return False, -1
 
-            processor = 'process_{}_{}'.format(self.MAP_EXP_PROCESSOR.get(exception_type, {}).get('name', ''), self.env)
+            processor = 'process_{}_{}'.format(self.exception_name, self.env)
             if hasattr(self, processor):
-                ret, status = getattr(self, processor)(**kwargs)
+                ret, status = getattr(self, processor)()
             else:
                 logger.error('auto_process can not find processor. processor={}'.format(processor))
                 ret, status = False, -1
 
             # 如果无法处理，不用再重试
             if not ret:
-                logger.error('auto process failed, return: {}, exception code: {}, name={}, account status={}'
-                             .format(ret, status, self.MAP_EXP_PROCESSOR[status]['name'], self.MAP_EXP_PROCESSOR[status].get('account_status', '')))
+                logger.error('auto process failed, return: {}, exception code: {}, name={}, '
+                             'account status={}, trace_info={}'.format(ret, status, self.exception_name,
+                                                                       self.account_status, self.trace_info))
                 return ret, status
             retry -= 1
             time.sleep(wait)
 
-        logger.error('auto process succeed')
+        logger.error('auto process succeed, status={}, trace_info={}'.format(status, self.trace_info))
         return ret, status
 
     def auto_check(self):
@@ -118,17 +128,19 @@ class FacebookException(BaseException):
                     self.exception_type = k
                     break
                 else:
-                    logger.warning("auto_check invoke: {} return False, code={}".format(check_func, k))
+                    logger.warning("auto_check invoke: {} return False, code={}, trace_info={}".format(check_func, k, self.trace_info))
             else:
                 if self.check_func(v.get('key_words', {}).get(self.env, {})):
                     self.exception_type = k
                     break
                 else:
-                    logger.warning("auto_check invoke check_func return False, code={}".format(k))
+                    logger.warning("auto_check invoke check_func return False, code={}, trace_info={}".format(k, self.trace_info))
         else:
             self.exception_type = -1
+            logger.warning('auto_check failed exception=-1, trace_info={}'.format(self.exception_type, self.trace_info))
+            return self.exception_type
 
-        logger.info('auto_check get exception type={}, name={}, env={}'.format(self.exception_type, self.MAP_EXP_PROCESSOR[self.exception_type]['name'], self.env))
+        logger.info('auto_check get exception type={}, name={}, trace_info={}'.format(self.exception_type, self.exception_name, self.trace_info))
         return self.exception_type
 
     def check_func(self, key_words, wait=2):
