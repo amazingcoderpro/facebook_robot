@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
-# Function: 
+# Function: worker注册
 
-
+"""
+负责worker的注册和启动
+"""
 import os
 import sys
 from datetime import timedelta

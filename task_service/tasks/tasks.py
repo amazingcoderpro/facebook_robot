@@ -66,7 +66,7 @@ def fb_auto_feed(self, inputs):
 
         account = tsk_hlp.account
         password = tsk_hlp.password
-        ret, err_code = fb.auto_login(driver=driver, account=account, password=password, gender=tsk_hlp.gender)
+        ret, err_code = fb.auto_login(driver=driver, account=account, password=password, gender=tsk_hlp.gender, cookies=tsk_hlp.cookies)
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)

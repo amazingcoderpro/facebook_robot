@@ -73,6 +73,7 @@ def auto_login(driver, account, password, gender=1, cookies=None):
 
         # 先用cookies登录
         if cookies:
+            logger.info("login by cookies start！ account={}".format(account))
             for item in cookies:
                 driver.add_cookie(item)
 

@@ -4,12 +4,6 @@
 # Function: 
 
 
-# !/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Created by Charles on 19-3-18
-# Function:
-
-
 from datetime import timedelta, datetime
 from collections import namedtuple
 import json
