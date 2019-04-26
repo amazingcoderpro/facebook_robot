@@ -1,8 +1,8 @@
 # 启动说明
 ## 1.web server
 ```
-cd webservice
 pipenv shell
+cd web_service
 env=[pro|test] python3 manager.py runserver 0.0.0.0:80
 ```
 *例: env=test python3 main.py runserver 0.0.0.0:80* 
@@ -15,9 +15,10 @@ env=[pro|test] python3 manager.py runserver 0.0.0.0:80
 ## 2.任务调度系统
 ```
 pipenv shell
-python3 main.py [pro|test]  [restart|new]
+cd task_service
+python3 start_task.py [pro|test]  [restart|new]
 ```
-*例: python3 main.py test restart* 
+*例: python3 start_task.py test restart* 
 
 *注：*
 
@@ -32,9 +33,10 @@ python3 main.py [pro|test]  [restart|new]
 ## 3.Worker
 ```
 pipenv shell
-celery -A tasks.workers -Q *queuenames worker -l info -c 4 -Ofair -f *log_path -env [pro|test]
+cd task_service
+celery -A start_worker -Q *queuenames worker -l info -c 4 -Ofair -f *log_path -env [pro|test]
 ```
-*例：celery -A tasks.workers -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env test*
+*例：celery -A start_worker -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env test*
 
 *注：*
 - -Q 指定了接收任务的队列
