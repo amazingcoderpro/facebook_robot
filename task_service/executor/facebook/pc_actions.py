@@ -470,25 +470,6 @@ if __name__ == '__main__':
 
 
 
-    # filename = '../../resource/facebook_account.txt'
-    # with open(filename, 'r') as line:
-    #     all_readline = line.readlines()
-    #     for date in all_readline:
-    #         str_info = date.split('---')
-    #         user_account = str(str_info[0]).strip()
-    #         user_password = str(str_info[1]).strip()
-    #
-    #         # 启动浏览器
-    #         driver, msg = start_chrome(headless=False)
-    #         # 登陆
-    #         res, statu = auto_login(driver, user_account, user_password)
-    #         if not res:
-    #             break
-    #         # 页面浏览
-    #         browse_page(driver)
-    #
-    #
-    #         time.sleep(300)
 
 
 
