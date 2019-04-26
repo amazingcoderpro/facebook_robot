@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from executor.facebook.exception import FacebookException
+from executor.facebook.exception import FacebookExceptionProcessor
 from config import logger
 from executor.utils.utils import super_click, super_sendkeys
 
@@ -119,8 +119,8 @@ def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
         return True, 0
     except Exception as e:
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
-        fb_exp = FacebookException(driver)
-        return fb_exp.auto_process(4, wait=2, account=account, gender=gender)
+        fb_exp = FacebookExceptionProcessor(driver, env="pc", account=account, )
+        return fb_exp.auto_process(4, wait=2)
 
 
 def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
@@ -159,7 +159,7 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
         return True
     except Exception as e:
         logger.exception('browse_page exception. e={}'.format(e))
-        fb_exp = FacebookException(driver)
+        fb_exp = FacebookExceptionProcessor(driver, env='pc')
         return fb_exp.auto_process(3, wait=5)
 
 
@@ -179,7 +179,7 @@ def home_browsing(driver):
         return True, 0
     except Exception as e:
         logger.exception('home_browsing exception.e={}'.format(e))
-        fbexcept = FacebookException(driver)
+        fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
 
@@ -198,7 +198,7 @@ def local_surface(driver):
         return True, 0
     except Exception as e:
         logger.error('local_surface catch exception. start process.., e={}'.format(e))
-        fbexcept = FacebookException(driver)
+        fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
 
@@ -265,7 +265,7 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
         return True, 0
     except Exception as e:
         logger.error('add friends failed, page url={}, e={}'.format(page_url, e))
-        fbexcept = FacebookException(driver)
+        fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
 
@@ -343,7 +343,7 @@ def send_messages(driver:WebDriver, keywords, limit=2):
         return True, 0
     except Exception as e:
         logger.exception('send_messages failed, limit={}, chat content={}'.format(limit, keywords))
-        fbexcept = FacebookException(driver)
+        fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
 
@@ -387,7 +387,7 @@ def send_facebook_state(driver:WebDriver, keywords):
         return True, 0
     except:
         logger.exception('send post failed, post={}'.format(post_content))
-        fbexcept = FacebookException(driver)
+        fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
 
@@ -427,13 +427,13 @@ def user_home(driver:WebDriver, limit):
         return True, 0
     except Exception as e:
         logger.exception("user_home browsing failed  error ={}".format(e))
-        fbexcept = FacebookException(driver)
+        fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
 
 def post_status(driver):
     try:
-        fb = FacebookException(driver)
+        fb = FacebookExceptionProcessor(driver, env="pc")
         if 0 == fb.auto_check():
             pass
 

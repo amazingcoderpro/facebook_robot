@@ -2,20 +2,24 @@
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
 
-import os, sys
+import os
+import traceback
 import shutil
 import time
-import random
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support.ui import Select
-from config import logger, get_account_args
+from config import logger
 from executor.utils.facebook_captcha import CaptchaVerify
+from executor.utils.utils import get_photo
 
 
-class FacebookException(BaseException):
+class FacebookExceptionProcessor(BaseException):
+    """
+    Facebook异常处理类, 包括异常码的定义、异常检测与处理
+    """
+
     """
     :MAP_EXP_PROCESSOR:
     异常分类--
@@ -39,29 +43,63 @@ class FacebookException(BaseException):
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
-        0: {'name': 'home', 'key_words': {'mobile': {"css": ['div[id="MComposer"]'], "xpath": []}, "pc": {"css": ['div[id="MComposerPC"]']}}},
-        1: {'name': 'remember_password', 'key_words': ['a[href^="/login/save-device/cancel/?"]', 'button[type="submit"]']},
-        2: {'name': 'save_phone_number', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
-        3: {'name': 'upload_photo', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
-        4: {'name': 'download_app', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
-        5: {'name': 'account_invalid', 'key_words': ['div[class^="mvm uiP fsm"]'], 'account_status': 'invalid'},
-        6: {'name': 'auth_button_two_verify', 'key_words': ['button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]'], 'account_status': 'verifying_auth_button_two'},
-        7: {'name': 'phone_sms_verify', 'key_words': ['option[value="US"]'], 'account_status': 'verifying_sms'},
-        8: {'name': 'photo_verify', 'key_words': ['input[name="photo-input"]', 'input[id="photo-input"]'], 'account_status': 'verifying_photo'},
-        9: {'name': 'auth_button_one_verify', 'key_words': ['button[name="submit[Secure Account]"]'], 'account_status': 'verifying_auth_button_one'},
-        10: {'name': 'email_verify', 'key_words': ['input[placeholder="######"]'], 'account_status': 'verifying_email_code'},
-        11: {'name': 'sms_verify', 'key_words': ['input[name="p_c"]'], 'account_status': 'verifying_sms_code'},
-        12: {'name': 'wrong_password', 'key_words': ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]'], 'account_status': 'verifying_wrong_password'},
-        13: {'name': 'shared_login', 'key_words': ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]'], 'account_status': 'verifying_shared_login'},
-        14: {'name': 'policy_clause', 'key_words': ['button[value="J’accepte"]'], 'account_status': 'verifying_policy_clause'},
-        15: {"name": 'robot_verify', 'key_words': ['div[class="g-recaptcha"]']}
+        0: {'name': 'home', 'key_words': {'mobile': {"css": ['div[id="MComposer"]'], "xpath": []},
+                                          "pc": {"css": ['div[id="MComposerPC"]']}}},
+        1: {'name': 'remember_password',
+            'key_words': {"mobile": {"css": ['a[href^="/login/save-device/cancel/?"]', 'button[type="submit"]']},
+                          "pc": {"css": []}}},
+        2: {'name': 'save_phone_number', 'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
+                                                       "pc": {"css": []}}},
+        3: {'name': 'upload_photo', 'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
+                                                  "pc": {"css": []}}},
+        4: {'name': 'download_app', 'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
+                                                  "pc": {"css": []}}},
+        5: {'name': 'account_invalid', 'key_words': {"mobile": {"css": ['div[class^="mvm uiP fsm"]']},
+                                                     "pc": {"css": []}},
+            'account_status': 'invalid'},
+        6: {'name': 'auth_button_two_verify',
+            'key_words': {"mobile": {"css": ['button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]']},
+                          "pc": {"css": []}},
+            'account_status': 'verifying_auth_button_two'},
+        7: {'name': 'phone_sms_verify', 'key_words': {"mobile": {"css": ['option[value="US"]']},
+                                                      "pc": {"css": []}},
+            'account_status': 'verifying_sms'},
+        8: {'name': 'photo_verify',
+            'key_words': {"mobile": {"css": ['input[name="photo-input"]', 'input[id="photo-input"]']},
+                          "pc": {"css": []}},
+            'account_status': 'verifying_photo'},
+        9: {'name': 'auth_button_one_verify',
+            'key_words': {"mobile": {"css": ['button[name="submit[Secure Account]"]']},
+                          "pc": {"css": []}},
+            'account_status': 'verifying_auth_button_one'},
+        10: {'name': 'email_verify', 'key_words': {"mobile": {"css": ['input[placeholder="######"]']},
+                                                   "pc": {"css": []}},
+             'account_status': 'verifying_email_code'},
+        11: {'name': 'sms_verify', 'key_words': {"mobile": {"css": ['input[name="p_c"]']},
+                                                 "pc": {"css": []}},
+             'account_status': 'verifying_sms_code'},
+        12: {'name': 'wrong_password',
+             'key_words': {"mobile": {"css": ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]']},
+                           "pc": {"css": []}},
+             'account_status': 'verifying_wrong_password'},
+        13: {'name': 'shared_login',
+             'key_words': {"mobile": {"css": ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]']},
+                           "pc": {"css": []}},
+             'account_status': 'verifying_shared_login'},
+        14: {'name': 'policy_clause', 'key_words': {"mobile": {"css": ['button[value="J’accepte"]']},
+                                                    "pc": {"css": []}},
+             'account_status': 'verifying_policy_clause'},
+        15: {"name": 'robot_verify',
+             'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'], 'iframe': "captcha-recaptcha"},
+                           "pc": {"css": {}}}}
     }
 
-    def __init__(self, driver: WebDriver, env="mobile", caller="", account="", gender=1):
+    def __init__(self, driver: WebDriver, env="mobile", account="", gender=1):
         self.driver = driver
         self.exception_type = -1
         self.env = env
-        self.caller = caller
+        tac = traceback.extract_stack()
+        self.caller = tac[-2][2]
         self.account = account
         self.gender = gender
         self.trace_info = "[{}:env={}, caller={}, account={}]".format(
@@ -128,26 +166,31 @@ class FacebookException(BaseException):
                     self.exception_type = k
                     break
                 else:
-                    logger.warning("auto_check invoke: {} return False, code={}, trace_info={}".format(check_func, k, self.trace_info))
+                    logger.warning("auto_check invoke: {} return False, code={}, trace_info={}".format(check_func, k,
+                                                                                                       self.trace_info))
             else:
                 if self.check_func(v.get('key_words', {}).get(self.env, {})):
                     self.exception_type = k
                     break
                 else:
-                    logger.warning("auto_check invoke check_func return False, code={}, trace_info={}".format(k, self.trace_info))
+                    logger.warning(
+                        "auto_check invoke check_func return False, code={}, trace_info={}".format(k, self.trace_info))
         else:
             self.exception_type = -1
             logger.warning('auto_check failed exception=-1, trace_info={}'.format(self.exception_type, self.trace_info))
             return self.exception_type
 
-        logger.info('auto_check get exception type={}, name={}, trace_info={}'.format(self.exception_type, self.exception_name, self.trace_info))
+        logger.info(
+            'auto_check get exception type={}, name={}, trace_info={}'.format(self.exception_type, self.exception_name,
+                                                                              self.trace_info))
         return self.exception_type
 
-    def check_func(self, key_words, wait=2):
+    def check_func(self, key_words, iframe=None, wait=3):
         """
         通用检测函数, 判断当前页面是存在指定的关键字集合
-        :param key_words: 关键字集合, list或tuple, list代表各关键字之间是且的关系， tuple代表各关键字之间是或的关系
-        :param wait: 查找关键字时的最大等待时间， 默认5秒
+        :param key_words: 关键字集合, 字典类型, 目前支持css和xpath, css或xpath内部为list或tuple, list代表各关键字之间是且的关系， tuple代表各关键字之间是或的关系
+        :param iframe: 查找关键字之前需要切换至的iframe, 类型可以为int或str, int代表iframe的索引, str-代表iframe的id.
+        :param wait: 查找关键字时的最大等待时间， 默认3秒
         :return: 成功返回 True, 失败返回 False
         """
         css_keywords = key_words.get("css", [])
@@ -167,11 +210,16 @@ class FacebookException(BaseException):
         is_and_relation = isinstance(key_words, list)
         for key in key_words:
             try:
+                if iframe is not None:
+                    if isinstance(iframe, [str, int]):
+                        self.driver.switch_to.frame(iframe)
+                        time.sleep(1)
 
                 WebDriverWait(self.driver, wait).until(
                     EC.presence_of_element_located((key_words_type, key)))
-            except:
+            except Exception as e:
                 # 如是且的关系，任何一个异常， 即说明条件不满足
+                logger.warning("check_func e={}, key={}, trace_info={}".format(e, key, self.trace_info))
                 if is_and_relation:
                     break
             else:
@@ -185,36 +233,7 @@ class FacebookException(BaseException):
         else:
             return False
 
-    def check_robot_verify(self, key_words, wait=2):
-        """
-        通用检测函数, 判断当前页面是存在指定的关键字集合
-        :param key_words: 关键字集合, list或tuple, list代表各关键字之间是且的关系， tuple代表各关键字之间是或的关系
-        :param wait: 查找关键字时的最大等待时间， 默认5秒
-        :return: 成功返回 True, 失败返回 False
-        """
-        succeed_count = 0
-        is_and_relation = isinstance(key_words, list)
-        for key in key_words:
-            try:
-                self.driver.switch_to.frame("captcha-recaptcha")
-                WebDriverWait(self.driver, wait).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, key)))
-            except:
-                # 如是且的关系，任何一个异常， 即说明条件不满足
-                if is_and_relation:
-                    break
-            else:
-                succeed_count += 1
-                if not is_and_relation:
-                    break
-
-        # 如果是或的关系， 只要有一个正常， 即说明条件满足
-        if (is_and_relation and succeed_count == len(key_words)) or (not is_and_relation and succeed_count > 0):
-            return True
-        else:
-            return False
-
-    def process_remember_password(self, **kwargs):
+    def process_remember_password_mobile(self):
         """
         # 记住账号密码
         :param kwargs:
@@ -232,7 +251,7 @@ class FacebookException(BaseException):
         logger.info("忽略保存账号密码成功")
         return True, 1
 
-    def process_save_phone_number(self, **kwargs):
+    def process_save_phone_number_mobile_mobile(self):
         """
          # 忽略电话号码提示
         :param kwargs:
@@ -250,7 +269,7 @@ class FacebookException(BaseException):
         logger.info("忽略输入电话号码成功")
         return True, 2
 
-    def process_upload_photo(self, **kwargs):
+    def process_upload_photo_mobile(self):
         """
         # 忽略上传头像提示
         :param kwargs:
@@ -267,7 +286,7 @@ class FacebookException(BaseException):
         logger.info('忽略上传图像成功')
         return True, 3
 
-    def process_download_app(self, **kwargs):
+    def process_download_app_mobile(self):
         """
          # 忽略下载APP提示
         :param kwargs:
@@ -286,7 +305,7 @@ class FacebookException(BaseException):
         logger.info('忽略下载app提示处理成功')
         return True, 4
 
-    def process_account_invalid(self, **kwargs):
+    def process_account_invalid_mobile(self):
         """
         # 账号被封杀
         :param kwargs:
@@ -303,7 +322,7 @@ class FacebookException(BaseException):
         logger.info("账号被封杀")
         return False, 5
 
-    def process_auth_button_two_verify(self, **kwargs):
+    def process_auth_button_two_verify_mobile(self):
         """
         身份验证类型二，跳转按钮
         :param kwargs:
@@ -320,7 +339,7 @@ class FacebookException(BaseException):
         logger.info('身份验证类型二，跳转按钮,处理成功')
         return False, 6
 
-    def process_phone_sms_verify(self, **kwargs):
+    def process_phone_sms_verify_mobile(self):
         """
         # 手机短信验证码验证
         :param kwargs:
@@ -352,7 +371,7 @@ class FacebookException(BaseException):
         logger.info("处理手机短信验证处理完成")
         return False, 7
 
-    def process_photo_verify(self, **kwargs):
+    def process_photo_verify_mobile(self):
         """
         # 上传图片验证
         :param kwargs:
@@ -362,14 +381,8 @@ class FacebookException(BaseException):
             logger.info("处理上传图片验证处理中")
             photo_upload = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(8)['key_words'][0])))
-            account = ''
-            gender = 1
-            for k, v in kwargs.items():
-                if k == 'account':
-                    account = v
-                elif k == 'gender':
-                    gender = v
-            photo_path = self.get_photo(account, gender)
+
+            photo_path = get_photo(self.account, self.gender)
             logger.info('process_photo_verify photo path={}'.format(photo_path))
             if not photo_path:
                 return False, 8
@@ -385,7 +398,8 @@ class FacebookException(BaseException):
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
             if photo_btn:
                 logger.info("photo uploaded successfully!")
-                account_photo_path = os.path.join(os.path.dirname(os.path.dirname(photo_path)), "{}.jpg".format(account))
+                account_photo_path = os.path.join(os.path.dirname(os.path.dirname(photo_path)),
+                                                  "{}.jpg".format(self.account))
                 shutil.move(photo_path, account_photo_path)
                 logger.info("process photo verify succeed, photo path={}".format(account_photo_path))
             else:
@@ -397,7 +411,7 @@ class FacebookException(BaseException):
         logger.info("处理上传图片验证的完成")
         return True, 8
 
-    def process_auth_button_one_verify(self, **kwargs):
+    def process_auth_button_one_verify_mobile(self):
         """
         身份验证类型一，跳转按钮
         :param kwargs:
@@ -406,14 +420,15 @@ class FacebookException(BaseException):
         try:
             logger.info("身份验证类型一，跳转按钮处理中")
             WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0]))).click()
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(9)['key_words'][0]))).click()
         except Exception as e:
             logger.exception("身份验证类型一，跳转按钮处理异常, e={}".format(e))
             return False, 9
         logger.info("身份验证类型一，跳转按钮处理完成")
         return True, 9
 
-    def process_email_verify(self, **kwargs):
+    def process_email_verify_mobile(self):
         """
         登录邮箱数字验证码验证
         :param kwargs:
@@ -422,14 +437,15 @@ class FacebookException(BaseException):
         try:
             logger.info("登录邮箱数字验证码验证处理中")
             WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(10)['key_words'][0]))).click()
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(10)['key_words'][0]))).click()
         except Exception as e:
             logger.exception("登录邮箱数字验证码验证处理异常, e={}".format(e))
             return False, 10
         logger.info("登录邮箱数字验证码验证处理完成")
         return True, 10
 
-    def process_sms_verify(self, **kwargs):
+    def process_sms_verify_mobile(self):
         """
         短信验证码验证
         :param kwargs:
@@ -438,7 +454,7 @@ class FacebookException(BaseException):
         try:
             logger.info("登录短信验证码验证处理中")
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
+                (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'button[name="submit[Back]"]'))).click()
         except Exception as e:
@@ -447,7 +463,7 @@ class FacebookException(BaseException):
         logger.info("登录短信验证码验证处理完成")
         return True, 11
 
-    def process_wrong_password(self, **kwargs):
+    def process_wrong_password_mobile(self):
         """
         账号密码不正确
         :param kwargs:
@@ -464,7 +480,7 @@ class FacebookException(BaseException):
         logger.info("账号密码不正确")
         return False, -1
 
-    def process_shared_login(self, **kwargs):
+    def process_shared_login_mobile(self):
         """
         移动端手机共享登录验证
         :return: 成功返回 True, 失败返回 False
@@ -481,7 +497,7 @@ class FacebookException(BaseException):
         logger.info("移动端共享登录验证")
         return False, 13
 
-    def process_policy_clause(self, **kwargs):
+    def process_policy_clause_mobile(self):
         """
         条款和使用政策验证
         :return: 成功返回 True, 失败返回 False
@@ -501,7 +517,7 @@ class FacebookException(BaseException):
         logger.info("条款和使用政策验证处理完成")
         return True, 14
 
-    def process_step_email_verify(self, **kwargs):
+    def process_step_email_verify_mobile(self):
         """
         :action:  邮箱验证前的登录按钮处理  暂时没有做点击处理
         :return: 成功返回 True, 失败返回 False
@@ -515,7 +531,7 @@ class FacebookException(BaseException):
             return False, 15
         return False, 15
 
-    def process_robot_verify(self, **kwargs):
+    def process_robot_verify_mobile(self):
         """
         机器人验证
         :param kwargs:
@@ -532,49 +548,11 @@ class FacebookException(BaseException):
             return False, 15
         return True, 15
 
-    def download_photo(self, account, gender):
-        logger.info('start download photo from server, account={}, gender={}'.format(account, gender))
-        remote_photo_path = get_account_args()['remote_photo_path']
-        local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
-        save_path = os.path.join(local_photo_path, "{}.jpg".format(account))
-        # 下载保存到本地
-        # do something
 
-        # 测试阶段直接从本地拿图片, 根据性别请求一张图片
-        if gender == 0:
-            random_photo_dir = os.path.join(local_photo_path, 'female')
-        else:
-            random_photo_dir = os.path.join(local_photo_path, 'male')
-
-        photos = os.listdir(random_photo_dir)
-        rad_idx = random.randint(1, 10000) % len(photos)
-        random_photo_name = os.path.join(random_photo_dir, photos[rad_idx])
-
-        # 把照片从随机池中取到账号池中
-        # shutil.move(random_photo_name, save_path)
-        save_path = random_photo_name
-
-        logger.info('download photo from server, account={}, gender={}, save_path={}'.format(account, gender, save_path))
-        return save_path
-
-    def get_photo(self, account, gender):
-        try:
-            local_photo_path = os.path.join(os.path.dirname(os.path.dirname(sys.path[0])), get_account_args()['local_photo_path'])
-
-            # 先在本地找
-            local_photo_name = os.path.join(local_photo_path, "{}.jpg".format(account))
-            if os.path.exists(local_photo_name):
-                logger.info('get photo from local path={}'.format(local_photo_name))
-                return local_photo_name
-            else:
-                # 如果本地没有，则去下载
-                return self.download_photo(account, gender)
-        except Exception as e:
-            logger.error('get photo failed. account={}, e={}'.format(account, e))
-            return ''
-
+def test():
+    fbe = FacebookExceptionProcessor(None, env='pc', account="a@b.com", gender=1)
+    print(fbe.caller)
+    print(fbe.exception_name)
 
 if __name__ == '__main__':
-    fbe = FacebookException(None)
-    photo = fbe.get_photo('abc@com', 1)
-    print(photo)
+    test()

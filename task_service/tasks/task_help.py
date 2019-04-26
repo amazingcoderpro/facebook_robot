@@ -249,7 +249,7 @@ class TaskHelper:
             task_result['status'] = 'succeed'
         else:
             task_result['status'] = 'failed'
-            account_status = fb.FacebookException.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')  # valid, invalid, verifying
+            account_status = fb.FacebookExceptionProcessor.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')  # valid, invalid, verifying
             task_result['account_status'] = account_status
             if 'verifying' in account_status and not last_verify:
                 last_verify = datetime.now()
