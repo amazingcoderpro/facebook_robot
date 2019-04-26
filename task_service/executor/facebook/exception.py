@@ -38,7 +38,7 @@ class FacebookException(BaseException):
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
-        0: {'name': 'home', 'key_words': ['div[id="MComposer"]']},
+        0: {'name': 'home', 'key_words': {'mobile': {"css": ['div[id="MComposer"]'], "xpath": []}, "pc": {"css": ['div[id="MComposerPC"]']}}},
         1: {'name': 'remember_password', 'key_words': ['a[href^="/login/save-device/cancel/?"]', 'button[type="submit"]']},
         2: {'name': 'save_phone_number', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
         3: {'name': 'upload_photo', 'key_words': ['div[data-sigil="mChromeHeaderRight"]']},
@@ -56,9 +56,14 @@ class FacebookException(BaseException):
         15: {"name": 'robot_verify', 'key_words': ['recaptcha-demo']}
     }
 
-    def __init__(self, driver: WebDriver):
+    def __init__(self, driver: WebDriver, env="mobile", caller="", account=""):
         self.driver = driver
         self.exception_type = -1
+        self.env = env
+        self.caller = caller
+        self.account = account
+        self.trace_info = "[{}:env={}, caller={}, account={}]".format(
+            self.__class__.__name__, self.env, self.caller, self.account)
 
     def auto_process(self, retry=1, wait=3, **kwargs):
         """
@@ -79,7 +84,7 @@ class FacebookException(BaseException):
                 logger.info('auto process failed, status==-1')
                 return False, -1
 
-            processor = 'process_{}'.format(self.MAP_EXP_PROCESSOR.get(exception_type, {}).get('name', ''))
+            processor = 'process_{}_{}'.format(self.MAP_EXP_PROCESSOR.get(exception_type, {}).get('name', ''), self.env)
             if hasattr(self, processor):
                 ret, status = getattr(self, processor)(**kwargs)
             else:
@@ -104,21 +109,25 @@ class FacebookException(BaseException):
                 continue
 
             name = v.get('name', '')
-            check_func = 'check_{}'.format(name)
+            check_func = 'check_{}_{}'.format(name, self.env)
 
             # 遍历所有异常， 如果有自己定义的检测函数则执行，如果没有，则调用通用检测函数
             if name and hasattr(self, check_func):
-                if getattr(self, check_func)(v.get('key_words', [])):
+                if getattr(self, check_func)(v.get('key_words', {}).get(self.env, {})):
                     self.exception_type = k
                     break
+                else:
+                    logger.warning("auto_check invoke: {} return False, code={}".format(check_func, k))
             else:
-                if self.check_func(v.get('key_words', [])):
+                if self.check_func(v.get('key_words', {}).get(self.env, {})):
                     self.exception_type = k
                     break
+                else:
+                    logger.warning("auto_check invoke check_func return False, code={}".format(k))
         else:
             self.exception_type = -1
 
-        logger.info('auto_check get exception type={}, name={}'.format(self.exception_type, self.MAP_EXP_PROCESSOR[self.exception_type]['name']))
+        logger.info('auto_check get exception type={}, name={}, env={}'.format(self.exception_type, self.MAP_EXP_PROCESSOR[self.exception_type]['name'], self.env))
         return self.exception_type
 
     def check_func(self, key_words, wait=2):
@@ -128,12 +137,26 @@ class FacebookException(BaseException):
         :param wait: 查找关键字时的最大等待时间， 默认5秒
         :return: 成功返回 True, 失败返回 False
         """
+        css_keywords = key_words.get("css", [])
+        xpath_keywords = key_words.get("xpath", [])
+        if not any([css_keywords, xpath_keywords]):
+            self.exception_type = -1
+            logger.error("check func keywords is empty.")
+            return False
+
+        key_words_type = By.CSS_SELECTOR
+        key_words = css_keywords
+        if not css_keywords:
+            key_words = xpath_keywords
+            key_words_type = By.XPATH
+
         succeed_count = 0
         is_and_relation = isinstance(key_words, list)
         for key in key_words:
             try:
+
                 WebDriverWait(self.driver, wait).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, key)))
+                    EC.presence_of_element_located((key_words_type, key)))
             except:
                 # 如是且的关系，任何一个异常， 即说明条件不满足
                 if is_and_relation:
