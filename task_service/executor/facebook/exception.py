@@ -165,23 +165,23 @@ class FacebookExceptionProcessor(BaseException):
                 if getattr(self, check_func)(v.get('key_words', {}).get(self.env, {})):
                     self.exception_type = k
                     break
-                else:
-                    logger.warning("auto_check invoke: {} return False, code={}, trace_info={}".format(check_func, k,
-                                                                                                       self.trace_info))
+                # else:
+                #     logger.warning("auto_check invoke: {} return False, code={}, trace_info={}".format(check_func, k,
+                #                                                                                        self.trace_info))
             else:
                 if self.check_func(v.get('key_words', {}).get(self.env, {})):
                     self.exception_type = k
                     break
-                else:
-                    logger.warning(
-                        "auto_check invoke check_func return False, code={}, trace_info={}".format(k, self.trace_info))
+                # else:
+                #     logger.warning(
+                #         "auto_check invoke check_func return False, code={}, trace_info={}".format(k, self.trace_info))
         else:
             self.exception_type = -1
-            logger.warning('auto_check failed exception=-1, trace_info={}'.format(self.exception_type, self.trace_info))
+            logger.warning('auto_check failed exception=-1, trace_info={}'.format(self.trace_info))
             return self.exception_type
 
         logger.info(
-            'auto_check get exception type={}, name={}, trace_info={}'.format(self.exception_type, self.exception_name,
+            'auto_check succeed, exception type={}, name={}, trace_info={}'.format(self.exception_type, self.exception_name,
                                                                               self.trace_info))
         return self.exception_type
 
@@ -219,7 +219,7 @@ class FacebookExceptionProcessor(BaseException):
                     EC.presence_of_element_located((key_words_type, key)))
             except Exception as e:
                 # 如是且的关系，任何一个异常， 即说明条件不满足
-                logger.warning("check_func e={}, key={}, trace_info={}".format(e, key, self.trace_info))
+                # logger.warning("check_func e={}, key={}, trace_info={}".format(e, key, self.trace_info))
                 if is_and_relation:
                     break
             else:

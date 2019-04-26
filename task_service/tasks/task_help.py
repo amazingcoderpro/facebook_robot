@@ -133,7 +133,7 @@ class TaskHelper:
         if self.last_verify_time:
             dt_last_verify = datetime.strptime(self.last_verify_time, "%Y-%m-%d %H:%M:%S")
             if (datetime.now() - dt_last_verify).total_seconds() < self.verify_interval:
-                logger.warning(logger.error('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verify_time)))
+                logger.warning('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verify_time))
                 return True
 
         return False
