@@ -88,19 +88,7 @@ def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
 
         time.sleep(3)
         password_box.send_keys(Keys.ENTER)
-        # old_url = driver.current_url
         time.sleep(3)
-
-        retry = 0
-
-        # while retry < 3:
-        #     now_url = driver.current_url
-        #     if now_url == old_url:
-        #         password_box.send_keys(Keys.ENTER)
-        #         time.sleep(2)
-        #         retry += 1
-        #     else:
-        #         break
 
         # 检查是否在首页
         WebDriverWait(driver, 6).until(
@@ -220,12 +208,19 @@ def add_friends(driver:WebDriver, search_keys, limit=5):
 
             # 组装要加的好友列表
             limit = limit if limit < len(new_friends) else len(new_friends)-1
-            new_friends = new_friends[:limit]
+            limit_friends = new_friends[:limit]
 
             # 循环加好友
-            for idx in new_friends:
-                super_click(idx, driver)
-                time.sleep(3)
+            for idx in limit_friends:
+                try:
+                    dig_alert = driver.switch_to.alert
+                    dig_alert.dismiss()
+                except Exception as e:
+                    logger.info(str(e))
+                    pass
+                finally:
+                    super_click(idx, driver)
+                    time.sleep(3)
         logger.info("增加好友: add friend succeed.")
         driver.get('https://www.facebook.com')
         time.sleep(5)
@@ -254,16 +249,18 @@ def send_messages(driver:WebDriver, keywords, limit=2):
 
             # 检查是否进入好友列表页面
             fridens_page = WebDriverWait(driver, 4).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="friends_center_main"]')))
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="pagelet_main_column_personal"]')))
             if fridens_page:
                 logger.info('enter friends list page.')
                 # 查找所有相关好友的属性
-                list_fridens = driver.find_elements_by_css_selector('i[class="img profpic"]')
+                list_fridens = driver.find_elements_by_css_selector('div[id="pagelet_main_column_personal"] a img')
                 if not list_fridens:
                     logger.warning('can not find any friend')
                     continue
+                logger.info(list_fridens)
 
-                idx_friends = random.randint(0, len(list_fridens)-1)
+                idx_friends = random.randint(0, len(list_fridens)-1 if len(list_fridens) >1 else 0)
+
                 list_fridens[idx_friends].click()
                 # 打开聊天 注意：这里内容加载较慢需要时间等待
                 time.sleep(3)
@@ -410,52 +407,52 @@ def post_status(driver):
 
 if __name__ == '__main__':
 
-    # user_account = str(17610069110)
-    # user_password = str("sanmang111..fb").strip()
+    user_account = str(17610069110)
+    user_password = str("sanmang111..fb").strip()
+
+    # 启动浏览器
+    driver, msg = start_chrome(headless=False)
+    # 登陆
+    res, statu = auto_login(driver, user_account, user_password)
+    if res:
+
+        # 页面浏览
+        #browse_page(driver)
+        # 增加好友
+        # add_friends(driver, ["pig"],10)
+        # 好友聊天
+        send_messages(driver, "Hi", 2)
+
+    time.sleep(300)
+
+
+
+
+
+
+
+    # filename = '../../resource/facebook_account.txt'
+    # with open(filename, 'r') as line:
+    #     all_readline = line.readlines()
+    #     for date in all_readline:
+    #         str_info = date.split('---')
+    #         user_account = str(str_info[0]).strip()
+    #         user_password = str(str_info[1]).strip()
     #
-    # # 启动浏览器
-    # driver, msg = start_chrome(headless=False)
-    # # 登陆
-    # res, statu = auto_login(driver, user_account, user_password)
-    # if res:
+    #         # 启动浏览器
+    #         driver, msg = start_chrome(headless=False)
+    #         # 登陆
+    #         res, statu = auto_login(driver, user_account, user_password)
+    #         if res:
     #
-    #     # 页面浏览
-    #     #browse_page(driver)
-    #     # 增加好友
-    #     # add_friends(driver, ["dog"])
-    #     # 好友聊天
-    #     send_messages(driver, "Hi", 2)
+    #             # 页面浏览
+    #             #browse_page(driver)
+    #             # 增加好友
+    #             # add_friends(driver, ["dog"])
+    #             # 好友聊天
+    #             send_messages(driver, "Hi", 2)
     #
-    # time.sleep(300)
-
-
-
-
-
-
-
-    filename = '../../resource/facebook_account.txt'
-    with open(filename, 'r') as line:
-        all_readline = line.readlines()
-        for date in all_readline:
-            str_info = date.split('---')
-            user_account = str(str_info[0]).strip()
-            user_password = str(str_info[1]).strip()
-
-            # 启动浏览器
-            driver, msg = start_chrome(headless=False)
-            # 登陆
-            res, statu = auto_login(driver, user_account, user_password)
-            if res:
-
-                # 页面浏览
-                #browse_page(driver)
-                # 增加好友
-                # add_friends(driver, ["dog"])
-                # 好友聊天
-                send_messages(driver, "Hi", 2)
-
-            time.sleep(5)
+    #         time.sleep(5)
 
 
 
