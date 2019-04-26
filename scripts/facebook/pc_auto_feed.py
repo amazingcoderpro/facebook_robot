@@ -88,17 +88,25 @@ def auto_login(driver, account, password, gender=1, cookies=None):
 
         time.sleep(3)
         password_box.send_keys(Keys.ENTER)
-        old_url = driver.current_url
+        # old_url = driver.current_url
         time.sleep(3)
         retry = 0
-        while retry < 3:
-            now_url = driver.current_url
-            if now_url == old_url:
-                password_box.send_keys(Keys.ENTER)
-                time.sleep(2)
-                retry += 1
-            else:
-                break
+        # while retry < 3:
+        #     now_url = driver.current_url
+        #     if now_url == old_url:
+        #         password_box.send_keys(Keys.ENTER)
+        #         time.sleep(2)
+        #         retry += 1
+        #     else:
+        #         break
+
+        # time.sleep(10)
+        # dig_alert = driver.switch_to.alert
+        # time.sleep(1)
+        # # 打印警告对话框内容
+        # print(dig_alert.text)
+        # # alert对话框属于警告对话框，我们这里只能接受弹窗
+        # dig_alert.accept()
 
         # 检查是否在首页
         WebDriverWait(driver, 6).until(
@@ -160,7 +168,7 @@ def home_browsing(driver):
     try:
         logger.info('home_browsing start.')
         time.sleep(3)
-        url = "https://m.facebook.com"
+        url = "https://www.facebook.com"
         driver.get(url)
         browse_page(driver)
         logger.info("home_browsing success")
@@ -202,12 +210,13 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
         limit = 1 if limit <= 0 else limit
         logger.info('start add friends, friends={}, limit={}'.format(search_keys, limit))
         for friend in search_keys:
-            page_url = "https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend)
+            # page_url = "https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend)
+            page_url = "https://www.facebook.com/search/people/?q={}&epa=SERP_TAB".format(friend)
             driver.get(page_url)
 
             # 判断是否进入了加好友页面
             search_inputs = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[id='main-search-input'")))
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div[class='FriendButton'")))
 
             # 找到所有相关人员图像元素
             new_friends_avatar = driver.find_elements_by_css_selector("img[src^='https://scontent'")
@@ -215,6 +224,7 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
                 logger.warning('can not find any friend avatar. friend keyword={}'.format(friend))
                 continue
 
+            print(new_friends_avatar)
             i = 1
             add_friends_index = [0]
             limit = limit if limit < len(new_friends_avatar) else len(new_friends_avatar)-1
@@ -438,36 +448,49 @@ def post_status(driver):
 
 
 if __name__ == '__main__':
-    filename = '../../resource/facebook_account.txt'
-    with open(filename, 'r') as line:
-        all_readline = line.readlines()
-        for date in all_readline:
-            str_info = date.split('---')
-            user_account = str(str_info[0]).strip()
-            user_password = str(str_info[1]).strip()
-            driver, msg = start_chrome(headless=False)
-            res, statu = auto_login(driver, user_account, user_password)
-            if not res:
-                continue
-            cookies = driver.get_cookies()
-            print(cookies)
-            user_home(driver, 3)
-            # driver2, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-            # driver2.get('https://www.facebook.com/')
-            # time.sleep(6)
-            # for item in cookies:
-            #     driver2.add_cookie(item)
-            # time.sleep(4)
-            # driver2.get('https://www.facebook.com/')
-            time.sleep(55)
-            # add_friends(driver, ["xiaoning"], 2)
-            # send_facebook_state(driver, {"post":"xiaoning"})
-            # send_messages(driver, ["hello?", "how are you!"], 2)
-            # user_messages(driver)
-            # local_surface(driver)
-            time.sleep(6)
-            # driver.quit()
 
+    user_account = str(17610069110)
+    user_password = str("sanmang111..fb").strip()
+
+    # 启动浏览器
+    driver, msg = start_chrome(headless=False)
+    # 登陆
+    res, statu = auto_login(driver, user_account, user_password)
+    if res:
+        # 页面浏览
+        add_friends(driver, "老师")
+    time.sleep(300)
+
+
+
+
+
+
+
+
+
+
+
+
+    # filename = '../../resource/facebook_account.txt'
+    # with open(filename, 'r') as line:
+    #     all_readline = line.readlines()
+    #     for date in all_readline:
+    #         str_info = date.split('---')
+    #         user_account = str(str_info[0]).strip()
+    #         user_password = str(str_info[1]).strip()
+    #
+    #         # 启动浏览器
+    #         driver, msg = start_chrome(headless=False)
+    #         # 登陆
+    #         res, statu = auto_login(driver, user_account, user_password)
+    #         if not res:
+    #             break
+    #         # 页面浏览
+    #         browse_page(driver)
+    #
+    #
+    #         time.sleep(300)
 
 
 
