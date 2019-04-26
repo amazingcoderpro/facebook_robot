@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from executor.facebook.exception import FacebookException
 from config import logger
-from executor.utils import super_click, super_sendkeys
+from executor.utils.utils import super_click, super_sendkeys
 
 
 def start_chrome(headless=False):
@@ -210,7 +210,6 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
         limit = 1 if limit <= 0 else limit
         logger.info('start add friends, friends={}, limit={}'.format(search_keys, limit))
         for friend in search_keys:
-            # page_url = "https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend)
             page_url = "https://www.facebook.com/search/people/?q={}&epa=SERP_TAB".format(friend)
             driver.get(page_url)
 
@@ -218,29 +217,20 @@ def add_friends(driver:WebDriver, search_keys, limit=2):
             search_inputs = WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div[class='FriendButton'")))
 
-            # 找到所有相关人员图像元素
-            new_friends_avatar = driver.find_elements_by_css_selector("img[src^='https://scontent'")
-            if not new_friends_avatar:
+            # 找到新的好友列表
+            new_friends = driver.find_elements_by_css_selector("button[aria-label='Add Friend'")
+            if not new_friends:
                 logger.warning('can not find any friend avatar. friend keyword={}'.format(friend))
                 continue
 
-            print(new_friends_avatar)
-            i = 1
-            add_friends_index = [0]
-            limit = limit if limit < len(new_friends_avatar) else len(new_friends_avatar)-1
-            while i < limit:
-                idx = random.randint(1, 1000) % len(new_friends_avatar)
-                if idx == 0:
-                    continue
-                add_friends_index.append(idx)
-                i += 1
+            # 组装要加的好友列表
+            limit = limit if limit < len(new_friends) else len(new_friends)-1
+            new_friends = new_friends[:limit]
 
-            for idx in add_friends_index:
-                if not new_friends_avatar or idx >= len(new_friends_avatar):
-                    continue
-
+            # 循环加好友
+            for idx in new_friends:
                 # 点击对应好友的图像，进入其profile页面
-                super_click(new_friends_avatar[idx], driver)
+                super_click(idx, driver)
                 time.sleep(3)
 
                 if 'id=' not in driver.current_url:
@@ -457,8 +447,12 @@ if __name__ == '__main__':
     # 登陆
     res, statu = auto_login(driver, user_account, user_password)
     if res:
+
         # 页面浏览
-        add_friends(driver, "老师")
+        #browse_page(driver)
+        # 增加好友
+        add_friends(driver, ["dog"])
+
     time.sleep(300)
 
 
