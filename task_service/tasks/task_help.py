@@ -133,7 +133,7 @@ class TaskHelper:
         if self.last_verify_time:
             dt_last_verify = datetime.strptime(self.last_verify_time, "%Y-%m-%d %H:%M:%S")
             if (datetime.now() - dt_last_verify).total_seconds() < self.verify_interval:
-                logger.warning(logger.error('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verify_time)))
+                logger.warning('Less than {} seconds before the last verify, last verify at: {}'.format(self.verify_interval, self.last_verify_time))
                 return True
 
         return False
@@ -249,7 +249,7 @@ class TaskHelper:
             task_result['status'] = 'succeed'
         else:
             task_result['status'] = 'failed'
-            account_status = fb.FacebookException.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')  # valid, invalid, verifying
+            account_status = fb.FacebookExceptionProcessor.MAP_EXP_PROCESSOR.get(err_code, {}).get('account_status', '')  # valid, invalid, verifying
             task_result['account_status'] = account_status
             if 'verifying' in account_status and not last_verify:
                 last_verify = datetime.now()

@@ -4,4 +4,4 @@
 # Function: 
 
 from .mobile_actions import *
-from .exception import FacebookException
+from .exception import FacebookExceptionProcessor
