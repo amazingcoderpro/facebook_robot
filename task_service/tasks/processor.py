@@ -151,7 +151,7 @@ def send_task_2_worker(task_id):
                 }
             }
 
-            celery_task_name = "tasks.tasks.facebook.{}".format(task_processor)
+            celery_task_name = "tasks.tasks.{}".format(task_processor)
             real_accounts_num += 1
 
             track = app.send_task(

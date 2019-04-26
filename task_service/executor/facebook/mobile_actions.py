@@ -11,9 +11,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from task_service.executor.facebook.exception import FacebookException
-from task_service.config import logger
-from task_service.executor.utils.utils import super_click, super_sendkeys
+from executor.facebook.exception import FacebookException
+from config import logger
+from executor.utils.utils import super_click, super_sendkeys
 
 
 def start_chrome(finger_print, headless=True):
