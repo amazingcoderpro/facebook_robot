@@ -215,8 +215,8 @@ class TaskHelper:
 
         return False
 
-    def screenshots(self, driver, err_code=-1, force=True):
-        if self.headless or force:
+    def screenshots(self, driver, err_code=-1, force=False):
+        if self.headless or force or get_system_args()['screenshots_force']:
             try:
                 screenshots_dir = get_system_args()['screenshots_dir']
                 if not os.path.isdir(screenshots_dir):

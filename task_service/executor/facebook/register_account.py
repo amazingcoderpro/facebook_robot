@@ -11,6 +11,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from scripts.facebook.mobile_exception import FacebookException
+from selenium.webdriver.support.ui import Select
 from config import logger
 from executor.utils.utils import super_sendkeys, super_click
 
@@ -71,67 +73,88 @@ def sign_up(driver:WebDriver, user_account, user_password, gender=1):
     try:
         # 注册名称
         fitst_name = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.ID, 'firstname_input')))
-        super_sendkeys(fitst_name, "xiaoning")
+        super_sendkeys(fitst_name, "XIAONING")
         time.sleep(3)
         last_name = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.ID, 'lastname_input')))
-        super_sendkeys(last_name, "meng")
+        super_sendkeys(last_name, "James")
         time.sleep(3)
         last_name.send_keys(Keys.ENTER)
+        time.sleep(3)
+
 
         # 生日
-        birthday = WebDriverWait(driver, 6).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'button[data-sigil="touchable multi_step_next"]')))
-        super_click(birthday)
+        year_num = random.randint(18, 26)
+        mouth_num = random.randint(1, 12)
+        day_num = random.randint(1, 27)
+        select_mouth = Select(driver.find_element_by_id('month'))
+        select_day = Select(driver.find_element_by_id('day'))
+        select_year = Select(driver.find_element_by_id('year'))
+        select_mouth.select_by_index(mouth_num)
+        time.sleep(1)
+        select_day.select_by_index(day_num)
+        time.sleep(1)
+        select_year.select_by_index(year_num)
+        time.sleep(1)
+        birthday_button = driver.find_element_by_css_selector('button[data-sigil="touchable multi_step_next"]')
+        super_click(birthday_button, driver)
+        time.sleep(3)
 
         # email account
         phone_account = WebDriverWait(driver, 6).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'data-sigil="switch_phone_to_email"')))
-        super_click(phone_account)
-        time.sleep(5)
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'a[data-sigil="switch_phone_to_email"]')))
+        super_click(phone_account, driver)
+        time.sleep(3)
 
         # 邮箱
         email_account = WebDriverWait(driver, 6).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[id="contactpoint_step_input"]')))
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[id="contactpoint_step_input"]')))
         super_sendkeys(email_account, user_account)
         email_account.send_keys(Keys.ENTER)
+        time.sleep(3)
 
         # 性别
         gender = driver.find_elements_by_css_selector('input[name="sex"]')
         n = random.randint(1, 10)
         if n % 2 == 0:
-            super_click(gender[0])
+            super_click(gender[0], driver)
         else:
-            super_click(gender[1])
+            super_click(gender[1], driver)
         gender_button = WebDriverWait(driver, 6).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'button[data-sigil="touchable multi_step_next"]')))
-        super_click(gender_button)
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-sigil="touchable multi_step_next"]')))
+        super_click(gender_button, driver)
+        time.sleep(3)
 
         # 密码
         new_password = WebDriverWait(driver, 6).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[id="password_step_input"]')))
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[id="password_step_input"]')))
         super_sendkeys(new_password, user_password)
-
-
+        new_password.send_keys(Keys.ENTER)
+        time.sleep(3)
     except Exception as e:
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
 
 
-def email_login(driver:WebDriver, account, password):
+def email_login(driver:WebDriver, user_account, user_password):
     """
     126邮箱登录验证
-    :param driver:
+    :param driver:浏览器驱动
     :return:
     """
+    driver.get('https://baidu.com')
+
     url ="https://passport.126.com/ydzj/maildl?product=mail126&pdconf=yddl_mail126_conf&mc=146E1F&curl=https%3A%2F%2Fmail.126.com%2Fentry%2Fcgi%2Fntesdoor%3Ffrom%3Dsmart%26language%3D0%26style%3D11%26destip%3D192.168.202.48%26df%3Dsmart_ios"
-    driver.get(url)
+    js = 'window.open("{}");'.format(url)
+    driver.execute_script(js)
+
     emial_account = WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[name="account"]')))
 
-    super_sendkeys(emial_account, account.split("@")[0])
+    super_sendkeys(emial_account, user_account.split("@")[0])
     time.sleep(5)
     email_password = WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="password"]')))
 
-    super_sendkeys(email_password, password)
+    super_sendkeys(email_password, user_password)
     time.sleep(5)
 
     login_email = WebDriverWait(driver, 6).until(
@@ -167,8 +190,7 @@ if __name__ == '__main__':
             user_account = str(str_info[0]).strip()
             user_password = str(str_info[1]).strip()
             driver, msg = start_chrome({'device': 'iPhone 6'}, headless=False)
-            res, statu = email_login(driver, user_account, user_password)
-            if not res:
-                continue
+            # sign_up(driver, user_account, user_password, 1)
+            email_login(driver, user_account, user_password)
 
 

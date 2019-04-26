@@ -45,7 +45,7 @@ def start_chrome(headless=False):
         return None, str(e)
 
 
-def auto_login(driver, account, password, gender=1, cookies=None):
+def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
     """
      登录facebook平台
     :param driver:  浏览器驱动
@@ -90,7 +90,9 @@ def auto_login(driver, account, password, gender=1, cookies=None):
         password_box.send_keys(Keys.ENTER)
         # old_url = driver.current_url
         time.sleep(3)
+
         retry = 0
+
         # while retry < 3:
         #     now_url = driver.current_url
         #     if now_url == old_url:
@@ -99,6 +101,7 @@ def auto_login(driver, account, password, gender=1, cookies=None):
         #         retry += 1
         #     else:
         #         break
+
 
         # time.sleep(10)
         # dig_alert = driver.switch_to.alert
@@ -109,6 +112,7 @@ def auto_login(driver, account, password, gender=1, cookies=None):
         # dig_alert.accept()
 
         # 检查是否在首页
+        driver.switch_to_alert()
         WebDriverWait(driver, 6).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-testid="search_input"]')))
         logger.info("login success！username={}, password={}".format(account, password))

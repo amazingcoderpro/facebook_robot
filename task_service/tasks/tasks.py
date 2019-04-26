@@ -75,7 +75,7 @@ def fb_auto_feed(self, inputs):
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)
-            tsk_hlp.screenshots(driver, err_code=err_code, force=True)
+            tsk_hlp.screenshots(driver, err_code=err_code)
             return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg)
 
         last_login = datetime.datetime.now()

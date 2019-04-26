@@ -260,7 +260,7 @@ def update_results():
                 dict_res = json.loads(result)
                 status = status_map.get(dict_res.get('status'), dict_res.get('status'))
                 job_res = dict_res.get('result', '')
-                logger.info("update_results job res={}".format(job_res))
+                # logger.info("update_results job res={}".format(job_res))
 
                 # 除了任务本身的成败外,还需要关注实际返回的结果
                 if isinstance(job_res, dict):
