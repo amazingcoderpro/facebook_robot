@@ -90,11 +90,9 @@ def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
         password_box.send_keys(Keys.ENTER)
         # old_url = driver.current_url
         time.sleep(3)
-<<<<<<< HEAD:scripts/facebook/pc_auto_feed.py
-        # retry = 0
-=======
+
         retry = 0
->>>>>>> 70214f25bc494e3af88631c27d1e518def6261d1:task_service/executor/facebook/pc_actions.py
+
         # while retry < 3:
         #     now_url = driver.current_url
         #     if now_url == old_url:
@@ -103,8 +101,7 @@ def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
         #         retry += 1
         #     else:
         #         break
-<<<<<<< HEAD:scripts/facebook/pc_auto_feed.py
-=======
+
 
         # time.sleep(10)
         # dig_alert = driver.switch_to.alert
@@ -113,7 +110,6 @@ def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
         # print(dig_alert.text)
         # # alert对话框属于警告对话框，我们这里只能接受弹窗
         # dig_alert.accept()
->>>>>>> 70214f25bc494e3af88631c27d1e518def6261d1:task_service/executor/facebook/pc_actions.py
 
         # 检查是否在首页
         driver.switch_to_alert()
