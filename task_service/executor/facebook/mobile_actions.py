@@ -134,7 +134,7 @@ def auto_login(driver, account, password, gender=1, cookies=None):
         logger.info("login success！username={}, password={}".format(account, password))
         return True, 0
     except Exception as e:
-        logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
+        logger.warning('auto_login exception, stat process..\r\ne={}'.format(e))
         fb_exp = FacebookExceptionProcessor(driver, env="mobile", account=account, gender=gender)
         return fb_exp.auto_process(4, wait=2)
 
