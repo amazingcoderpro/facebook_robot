@@ -13,8 +13,8 @@ def parse_args():
     :return:
     """
     logger.info('start command={}'.format(sys.argv))
-    env = 'pro'        # new/restart
-    task_start_mode = 'new'
+    env = 'pro'                 # pro/test
+    task_start_mode = 'new'     # new/restart
     if len(sys.argv) >= 3:
         env = sys.argv[1]
         task_start_mode = sys.argv[2]

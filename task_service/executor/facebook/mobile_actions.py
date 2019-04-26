@@ -37,9 +37,10 @@ def start_chrome(finger_print, headless=True):
         chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
         chrome_options.add_argument('lang=en_US')
 
+        logger.info("start_chrome finger_print={}, headless={}".format(finger_print, headless))
         # 移动设备仿真
         mobile_emulation = {
-            'deviceName': finger_print.get("device"),
+            'deviceName': finger_print.get("device", 'iPhone 8'),
             # "deviceMetrics": {"width": 600, "height":800, "pixelRatio": 4.0},
             # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9)"
         }
@@ -85,9 +86,11 @@ def auto_login(driver, account, password, gender=1, cookies=None):
             return True, 0
     except Exception as e:
         logger.exception("login by cookies failed. continue use password, account={}, e={}".format(account, e))
+        driver.delete_all_cookies()
 
     try:
         # FB登录
+        driver.get('https://www.facebook.com/')
         email_box = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
         # email_box.send_keys(account)
         super_sendkeys(email_box, account)

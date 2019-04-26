@@ -59,7 +59,8 @@ def run(task_start_mode='new', update_interval=30):
 
 
 if __name__ == '__main__':
-    run(task_start_mode=task_start_mode, update_interval=interval)
+    # run(task_start_mode=task_start_mode, update_interval=interval)
+    run(task_start_mode="restart", update_interval=30)
 
 # pipenv run python3 start_task.py [test|pro] [new|restart]
 # eg: python3 start_task.py test new
