@@ -13,7 +13,7 @@ from api import clean_environment, update_results, start_all_new_tasks, restart_
 
 def dispatch_test():
     import time
-    from tasks.workers import app
+    from workers import app
     account_list = [("eddykkqf56@outlook.com", "nYGcEXNjGY")]
     for i in range(3):
         for acc in account_list:

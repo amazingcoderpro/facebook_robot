@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from scripts.facebook.mobile_exception import FacebookException
 from config import logger
-from scripts.utils import super_sendkeys, super_click
+from scripts.utils.utils import super_sendkeys, super_click
 
 
 def start_chrome(finger_print, headless=True):

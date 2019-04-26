@@ -19,7 +19,7 @@ environment = 'pro'
 
 
 def load_config(env='pro'):
-    global cfg, facebook_cfg
+    global cfg
     if cfg:
         return True
 
@@ -38,15 +38,21 @@ def load_config(env='pro'):
 
         cfg = load(content, Loader=FullLoader)
 
-        facebook_json = os.path.join(os.path.dirname(__file__), 'facebook.json')
-        with open(facebook_json, encoding='utf-8') as f:
-            fb_json = f.read()
-        facebook_cfg = json.loads(fb_json)
+        load_facebook_json()
+
     except Exception as e:
         logger.exception('load config catch exception, e={}'.format(e))
         return False
 
     return True
+
+
+def load_facebook_json():
+    global facebook_cfg
+    facebook_json = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'resource//facebook.json')
+    with open(facebook_json, encoding='utf-8') as f:
+        fb_json = f.read()
+    facebook_cfg = json.loads(fb_json)
 
 
 def get_redis_args():

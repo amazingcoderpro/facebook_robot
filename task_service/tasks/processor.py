@@ -4,7 +4,7 @@
 # Function: 任务的处理器，任务经由各处理器再发往任务队列, 处理器会被定时程序调用
 import json
 import datetime
-from .workers import app
+from workers import app
 from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler, FingerPrint, Area
 from config import logger, get_environment
 from db.basic import ScopedSession
@@ -152,7 +152,7 @@ def send_task_2_worker(task_id):
                 }
             }
 
-            celery_task_name = "tasks.tasks.{}".format(task_processor)
+            celery_task_name = "tasks.tasks.facebook.{}".format(task_processor)
             real_accounts_num += 1
 
             track = app.send_task(

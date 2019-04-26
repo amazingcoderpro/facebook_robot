@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from scripts.facebook.mobile_exception import FacebookException
 from config import logger
-from scripts.utils import super_click, super_sendkeys
+from scripts.utils.utils import super_click, super_sendkeys
 
 
 def start_chrome(finger_print, headless=True):
@@ -26,11 +26,11 @@ def start_chrome(finger_print, headless=True):
     try:
         # 定制浏览器启动项
         chrome_options = webdriver.ChromeOptions()
-        # if headless:
-        #     chrome_options.add_argument('--headless')
-        #     chrome_options.add_argument('--no-sandbox')
-        #     chrome_options.add_argument('--disable-extensions')
-        #     chrome_options.add_argument('--disable-gpu')
+        if headless:
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--disable-infobars')
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
         # chrome_options.add_argument('--user-agent=iphone')

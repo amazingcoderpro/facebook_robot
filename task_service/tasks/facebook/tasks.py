@@ -9,10 +9,10 @@ import random
 import subprocess
 import re
 from celery import Task
-from .workers import app
+from workers import app
 from config import logger
 import scripts.facebook as fb
-from utils.task_help import TaskHelper
+from tasks.facebook.task_help import TaskHelper
 
 
 class BaseTask(Task):
