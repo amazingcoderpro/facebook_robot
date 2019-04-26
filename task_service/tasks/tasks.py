@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Created by Charles on 19-3-15
-# Function: 养号任务入口
+# Function: 相关任务响应函数
+
+
+"""
+所有任务响应函数入口在此定义
+"""
 
 import time
 import datetime
@@ -9,10 +14,10 @@ import random
 import subprocess
 import re
 from celery import Task
-from workers import app
-from config import logger
-import scripts.facebook as fb
-from tasks.facebook.task_help import TaskHelper
+from task_service.workers import app
+from task_service.config import logger
+import task_service.scripts.facebook as fb
+from task_service.tasks.task_help import TaskHelper
 
 
 class BaseTask(Task):

@@ -36,7 +36,6 @@ def find_optimal_agent(area, agents=None):
         db_scoped_session = ScopedSession()
         agents = db_scoped_session.query(Agent.id, Agent.active_area).filter(Agent.status != -1).order_by(Agent.status).all()
 
-
     for agent_id, agent_area in agents:
         if area == agent_area:
             return agent_id, agent_area

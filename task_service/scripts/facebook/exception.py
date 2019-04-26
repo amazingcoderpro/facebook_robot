@@ -10,8 +10,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from config import logger, get_account_args
-from scripts.utils.facebook_captcha import CaptchaVerify
+from task_service.config import logger, get_account_args
+from task_service.scripts.utils.facebook_captcha import CaptchaVerify
 
 
 class FacebookException(BaseException):

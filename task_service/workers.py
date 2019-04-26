@@ -8,10 +8,9 @@
 """
 import os
 import sys
-from datetime import timedelta
 from celery import Celery, platforms
 from kombu import Exchange, Queue
-from config import load_config, get_broker_and_backend
+from task_service.config import load_config, get_broker_and_backend
 
 # platforms.C_FORCE_ROOT = True
 
@@ -26,7 +25,7 @@ for idx, arg in enumerate(sys.argv):
 load_config(env=env)
 
 tasks = [
-    'tasks.tasks'
+    'task_service.tasks.tasks'
 ]
 
 broker, backend = get_broker_and_backend()

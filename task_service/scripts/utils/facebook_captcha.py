@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from config import get_support_args
+from task_service.config import get_support_args
 import time
 from urllib import parse
 import requests

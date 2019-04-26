@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from scripts.facebook.mobile_exception import FacebookException
+from scripts.facebook.exception import FacebookException
 from config import logger
 from scripts.utils.utils import super_sendkeys, super_click
 
