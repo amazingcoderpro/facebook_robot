@@ -12,7 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from config import logger
-from scripts.utils.utils import super_sendkeys, super_click
+from executor.utils.utils import super_sendkeys, super_click
 
 
 def start_chrome(finger_print, headless=True):

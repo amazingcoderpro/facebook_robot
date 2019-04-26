@@ -16,7 +16,7 @@ import re
 from celery import Task
 from task_service.start_worker import app
 from task_service.config import logger
-import task_service.scripts.facebook as fb
+import task_service.executor.facebook as fb
 from task_service.tasks.task_help import TaskHelper
 
 

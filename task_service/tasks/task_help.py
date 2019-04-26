@@ -8,7 +8,7 @@ import time
 import random
 from datetime import datetime, timedelta
 from task_service.config import logger, get_account_args, get_fb_friend_keys, get_fb_posts, get_fb_chat_msgs, get_system_args
-import task_service.scripts.facebook as fb
+import task_service.executor.facebook as fb
 
 
 class TaskHelper:

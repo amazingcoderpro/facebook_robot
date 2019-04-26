@@ -10,9 +10,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from scripts.facebook.exception import FacebookException
+from executor.facebook.exception import FacebookException
 from config import logger
-from scripts.utils import super_click, super_sendkeys
+from executor.utils import super_click, super_sendkeys
 
 
 def start_chrome(headless=False):
