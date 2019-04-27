@@ -100,7 +100,7 @@ def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
         return True, 0
     except Exception as e:
         logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
-        fb_exp = FacebookExceptionProcessor(driver, env="pc", account=account, )
+        fb_exp = FacebookExceptionProcessor(driver, env="pc", account=account, gender=gender)
         return fb_exp.auto_process(4, wait=2)
 
 
@@ -409,26 +409,6 @@ def post_status(driver):
 
 if __name__ == '__main__':
 
-    user_account = str(17610069110)
-    user_password = str("").strip()
-
-    # 启动浏览器
-    driver, msg = start_chrome(headless=False)
-    # 登陆
-    res, statu = auto_login(driver, user_account, user_password)
-    if res:
-
-        # 页面浏览
-        #browse_page(driver)
-        # 增加好友
-        # add_friends(driver, ["pig"],10)
-        # 好友聊天
-        send_messages(driver, ["Hi"], 2)
-
-    time.sleep(300)
-
-
-
 
     # filename = '../../resource/facebook_account.txt'
     # with open(filename, 'r') as line:
@@ -437,21 +417,24 @@ if __name__ == '__main__':
     #         str_info = date.split('---')
     #         user_account = str(str_info[0]).strip()
     #         user_password = str(str_info[1]).strip()
-    #
-    #         # 启动浏览器
-    #         driver, msg = start_chrome(headless=False)
-    #         # 登陆
-    #         res, statu = auto_login(driver, user_account, user_password)
-    #         if res:
-    #
-    #             # 页面浏览
-    #             #browse_page(driver)
-    #             # 增加好友
-    #             # add_friends(driver, ["dog"])
-    #             # 好友聊天
-    #             send_messages(driver, ["Hi"], 2)
-    #
-    #         time.sleep(5)
+
+
+    user_account = str(17610069110)
+    user_password = str("").strip()
+
+    # 启动浏览器
+    driver, msg = start_chrome(headless=False)
+    # 登陆
+    res, statu = auto_login(driver, user_account, user_password)
+    if res:
+        # 页面浏览
+        #browse_page(driver)
+        # 增加好友
+        # add_friends(driver, ["pig"],10)
+        # 好友聊天
+        send_messages(driver, ["Hi"], 2)
+
+    time.sleep(300)
 
 
 
