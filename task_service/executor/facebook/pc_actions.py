@@ -319,8 +319,6 @@ def send_facebook_state(driver:WebDriver, keywords):
     :return:
     """
     try:
-        # 1.检查该账号是否存在好友
-        # 2.向好友发送消息
         logger.info("start send_facebook_state, keywords={}".format(keywords))
         message_url = "https://m.facebook.com/home.php?sk=h_chr&ref=bookmarks"
         driver.get(message_url)

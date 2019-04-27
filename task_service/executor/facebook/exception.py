@@ -65,12 +65,12 @@ class FacebookExceptionProcessor(BaseException):
                           "pc": {"css": []}},
             'account_status': 'invalid'},
         6: {'name': 'auth_button_two_verify',
-            'key_words': {"mobile": {"css": ['button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]']},
+            'key_words': {"mobile": {"css": ('button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]')},
                           "pc": {"css": []}},
             'account_status': 'verifying_auth_button_two'},
         7: {'name': 'phone_sms_verify',
             'key_words': {"mobile": {"css": ['option[value="US"]']},
-                          "pc": {"css": ['input[name="phone-name"]']}},
+                          "pc": {"css": ('input[name="phone-name"]', 'input[name="p_c"]')}},
             'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify',
             'key_words': {"mobile": {"css": ['input[name="photo-input"]', 'input[id="photo-input"]']},
@@ -409,6 +409,13 @@ class FacebookExceptionProcessor(BaseException):
         """
         try:
             logger.info("手机短信验证处理中")
+            try:
+                tel_code = self.driver.find_element_by_css_selector(self.get_key_words(7, "css", 1))
+                if tel_code:
+                    sub_button = self.driver.find_element_by_css_selector('button[id="checkpointSecondaryButton"]')
+                    sub_button.click()
+            except:
+                pass
             rtime = random.randint(2, 4)
             tel_button = self.driver.find_elements_by_css_selector('a[role="button"]')
             super_click(tel_button[0], self.driver)
@@ -417,12 +424,18 @@ class FacebookExceptionProcessor(BaseException):
 
             time.sleep(rtime)
             send_tel = self.driver.find_element_by_css_selector('input[type="tel"]')
-            super_sendkeys(send_tel, "18000000000")
+            super_sendkeys(send_tel, "16500000000")
 
             time.sleep(rtime)
             submit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
             super_click(submit_button, self.driver)
 
+            # 提交失败
+            submit_error = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-xui-error-position="above"]')))
+            if submit_error:
+                logger.error("请填写正确的手机号码")
+                return False, 7
             # 短信验证码
             time.sleep(rtime)
             tel_code = self.driver.find_element_by_css_selector('input[name="p_c"]')
