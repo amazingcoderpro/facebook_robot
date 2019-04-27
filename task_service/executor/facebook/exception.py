@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from config import logger
 from executor.utils.facebook_captcha import CaptchaVerify
 from executor.utils.utils import get_photo
-from executor.utils.utils import super_click, super_sendkeys
+
 
 
 class FacebookExceptionProcessor(BaseException):
