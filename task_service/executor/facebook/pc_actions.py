@@ -34,6 +34,9 @@ def start_chrome(headless=False):
         chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
         chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
         chrome_options.add_argument('lang=en_US')
+
+        prefs = {'profile.default_content_setting_values':{'notifications': 2}}
+        chrome_options.add_experimental_option('prefs', prefs)
         logger.info('chrome options={}'.format(chrome_options.arguments))
         driver = webdriver.Chrome(chrome_options=chrome_options)
         time.sleep(1)
@@ -226,88 +229,87 @@ def add_friends(driver:WebDriver, search_keys, limit=5):
         time.sleep(5)
         return True, 0
     except Exception as e:
-        logger.error('add friends failed, page url={}, e={}'.format(page_url, e))
+        logger.error("增加好友功能: 出现异常，开始异常检测-->{}".format(str(e)))
         fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
 
-def send_messages(driver:WebDriver, keywords, limit=2):
+def send_messages(driver:WebDriver, keywords_list, limit=2):
     """
-    跟好友聊天功能
+    好友聊天功能
     :param driver:
-    :param keywords: ；聊天内容
-    :param limit: 一共跟好友聊多少条
+    :param keywords: list 聊天内容
+    :param limit: int  一共和几个好友聊天
     :return:
     """
     try:
-        # 1.检查该账号是否存在好友
-        # 2.向好友发送消息
-        logger.info('start send_messages, limit={}, chat content={}'.format(limit, keywords))
-        for i in range(1, limit + 1):
-            message_url = "https://www.facebook.com/profile.php?sk=friends"
-            driver.get(message_url)
 
-            # 检查是否进入好友列表页面
-            fridens_page = WebDriverWait(driver, 4).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="pagelet_main_column_personal"]')))
-            if fridens_page:
-                logger.info('enter friends list page.')
-                # 查找所有相关好友的属性
-                list_fridens = driver.find_elements_by_css_selector('div[id="pagelet_main_column_personal"] a img')
-                if not list_fridens:
-                    logger.warning('can not find any friend')
-                    continue
-                logger.info(list_fridens)
+        # 打开好友界面
+        logger.info('好友聊天功能: begning limit={}, chat content={}'.format(limit, keywords_list))
+        message_url = "https://www.facebook.com/profile.php?sk=friends"
+        driver.get(message_url)
+        time.sleep(5)
 
-                idx_friends = random.randint(0, len(list_fridens)-1 if len(list_fridens) >1 else 0)
+        # 检查是否进入好友列表页面
+        fridens_page = WebDriverWait(driver, 4).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="pagelet_main_column_personal"]')))
+        if not fridens_page:
+            logger.error("好友聊天功能: 该账户未进入好友界面")
+            return None
 
-                list_fridens[idx_friends].click()
-                # 打开聊天 注意：这里内容加载较慢需要时间等待
-                time.sleep(3)
-                message_page = driver.find_elements_by_css_selector("span[data-sigil='m-profile-action-button-label']")[2]
-                super_click(message_page, driver)
-                time.sleep(3)
-                # 出现下载Messenager 选择关闭
+        # 找到该用户的好友
+        list_fridens = driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
+        if not list_fridens:
+            logger.error("好友聊天功能: 该账户没有好友")
+            return None
+
+        # 列表打乱顺序后重新组装好友列表
+        random.shuffle(list_fridens)
+        list_fridens = list_fridens[:limit] if limit < len(list_fridens) else len(list_fridens)
+
+        # 进入好友界面，开启聊天
+        for friend_instance in list_fridens:
+
+            # 进入某个好友页面
+            friend_instance.click()
+            time.sleep(3)
+
+            # 打开聊天窗口
+            message_page = driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
+            super_click(message_page, driver)
+            time.sleep(3)
+
+            # 定位聊天内容窗口最上层的div属性
+            message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
+            for item in message_info:
+                if item.text == 'Type a message...\n\nThumbs Up Sign':
+                    message_instance = item
+            if not message_instance:
+                break
+
+            # 循环div，聊天，如果有异常证明当前的div不是聊天的div，如果是跳出循环
+            div_list = message_instance.find_elements_by_css_selector('div')
+            for div_instance in div_list:
                 try:
-                    install_messenger = driver.find_element_by_css_selector('div[data-sigil="m-promo-interstitial"]')
-                    if install_messenger:
-                        close_btn = driver.find_element_by_css_selector('img[data-nt^="NT:IMAGE"]')
-                        super_click(close_btn, driver)
-                except:
+                    # div.send_keys(keywords)
+                    super_sendkeys(div_instance, keywords_list[0])
+                    msg_instance = div_instance
+                    break
+                except Exception as e:
                     pass
-
-                logger.info('start chat.')
-                for keys in keywords:
-                    # 输入聊天内容
-                    browse_page(driver, 3, distance=50, interval=2, back_top=False)
-                    time.sleep(1)
-                    message_info = driver.find_element_by_css_selector('textarea[data-sigil^="m-textarea-input"]')
-                    # message_info.send_keys(keys)
-                    super_sendkeys(message_info, keys)
-                    time.sleep(2)
-
-                    # 发送聊天内容
-                    send_info = driver.find_element_by_css_selector('button[name$="end"]')
-
-                    super_click(send_info, driver, double=True)
-                    time.sleep(3)
-
-                    try:
-                        install_messenger = driver.find_element_by_css_selector(
-                            'div[data-sigil="m-promo-interstitial"]')
-                        if install_messenger:
-                            close_btn = driver.find_element_by_css_selector('img[data-nt^="NT:IMAGE"]')
-                            super_click(close_btn, driver)
-                    except Exception as e:
-                        pass
+            # 开始发送消息
+            for word in keywords_list:
+                super_sendkeys(msg_instance, word)
+                send_button = message_instance.find_element_by_css_selector('a[label="send"]')
+                send_button.click()
 
         driver.get('https://m.facebook.com')
         time.sleep(5)
-        logger.info('send_messages succeed, limit={}, chat content={}'.format(limit, keywords))
+        logger.error("好友聊天功能: send_messages succeed, limit={}, chat content={}".format(limit, keywords_list))
         return True, 0
     except Exception as e:
-        logger.exception('send_messages failed, limit={}, chat content={}'.format(limit, keywords))
-        fbexcept = FacebookExceptionProcessor(driver, env='pc')
+        logger.error("好友聊天功能: 出现异常，开始异常检测-->{}".format(str(e)))
+        fbexcept = FacebookExceptionProcessor(driver, env="pc")
         return fbexcept.auto_process(3)
 
 
@@ -408,7 +410,7 @@ def post_status(driver):
 if __name__ == '__main__':
 
     user_account = str(17610069110)
-    user_password = str("sanmang111..fb").strip()
+    user_password = str("").strip()
 
     # 启动浏览器
     driver, msg = start_chrome(headless=False)
@@ -421,7 +423,7 @@ if __name__ == '__main__':
         # 增加好友
         # add_friends(driver, ["pig"],10)
         # 好友聊天
-        send_messages(driver, "Hi", 2)
+        send_messages(driver, ["Hi"], 2)
 
     time.sleep(300)
 
@@ -447,7 +449,7 @@ if __name__ == '__main__':
     #             # 增加好友
     #             # add_friends(driver, ["dog"])
     #             # 好友聊天
-    #             send_messages(driver, "Hi", 2)
+    #             send_messages(driver, ["Hi"], 2)
     #
     #         time.sleep(5)
 
