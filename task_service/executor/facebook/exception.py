@@ -89,8 +89,10 @@ class FacebookExceptionProcessor(BaseException):
         14: {'name': 'policy_clause', 'key_words': {"mobile": {"css": ['button[value="J’accepte"]']},
                                                     "pc": {"css": []}},
              'account_status': 'verifying_policy_clause'},
-        15: {"name": 'robot_verify', 'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'], 'iframe': "captcha-recaptcha"},
-                                                    "pc": {"css": ['div[class="recaptcha-checkbox-checkmark"]'], "iframe": 1}}}
+        15: {"name": 'robot_verify', 'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'],
+                                                              'iframe': ["captcha-recaptcha"]},
+                                                   "pc": {"css": ['div[class="recaptcha-checkbox-checkmark"]'],
+                                                          "iframe": ["captcha-recaptcha", 0]}}}
     }
 
     def __init__(self, driver: WebDriver, env="mobile", account="", gender=1):
@@ -113,11 +115,21 @@ class FacebookExceptionProcessor(BaseException):
         return self.MAP_EXP_PROCESSOR.get(self.exception_type, {}).get('account_status', '')
 
     def get_key_words(self, code, category='css', index=0):
-        keywords = self.MAP_EXP_PROCESSOR.get(code, {}).get('key_words', {}).get(self.env, {}).get(category, [])
-        if index < 0 or not keywords or not isinstance(keywords, (list, tuple)):
-            return keywords
+        """
+        根据异常码返回其关键字，
+        :param code: 异常码
+        :param category: 关键字类别， 可以为空，为空时返回正个keywords字典.
+        :param index: 关键字索引， 小于零时反回整个关键字列表
+        :return: 关键字（列表）
+        """
+        keywords_dict = self.MAP_EXP_PROCESSOR.get(code, {}).get('key_words', {}).get(self.env, {})
+        if category:
+            if index >= 0:
+                return keywords_dict.get(category, [])[index]
+            else:
+                return keywords_dict.get(category, [])
         else:
-            return keywords[index]
+            return keywords_dict
 
     def auto_process(self, retry=1, wait=3):
         """
@@ -200,7 +212,7 @@ class FacebookExceptionProcessor(BaseException):
         """
         css_keywords = key_words.get("css", [])
         xpath_keywords = key_words.get("xpath", [])
-        iframe = key_words.get("iframe", None)  # 查找关键字之前需要切换至的iframe, 类型可以为int或str, int代表iframe的索引, str-代表iframe的id.
+        iframe = key_words.get("iframe", None)  # 查找关键字之前需要切换至的iframe, 类型为list, 其中元素可以为int或str, int代表iframe的索引, str-代表iframe的id.
         if not any([css_keywords, xpath_keywords]):
             self.exception_type = -1
             logger.error("check func keywords is empty.")
@@ -216,10 +228,9 @@ class FacebookExceptionProcessor(BaseException):
         is_and_relation = isinstance(key_words, list)
         for key in key_words:
             try:
-                if iframe is not None:
-                    if isinstance(iframe, (str, int)):
-                        self.driver.switch_to.frame("captcha-recaptcha")
-                        self.driver.switch_to.frame(0)
+                if iframe:
+                    for ifa in iframe:
+                        self.driver.switch_to.frame(ifa)
                         time.sleep(1)
 
                 WebDriverWait(self.driver, wait).until(
