@@ -89,9 +89,8 @@ class FacebookExceptionProcessor(BaseException):
         14: {'name': 'policy_clause', 'key_words': {"mobile": {"css": ['button[value="J’accepte"]']},
                                                     "pc": {"css": []}},
              'account_status': 'verifying_policy_clause'},
-        15: {"name": 'robot_verify',
-             'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'], 'iframe': "captcha-recaptcha"},
-                           "pc": {"css": {}}}}
+        15: {"name": 'robot_verify', 'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'], 'iframe': "captcha-recaptcha"},
+                                                    "pc": {"css": ['div[class="recaptcha-checkbox-checkmark"]'], "iframe": 1}}}
     }
 
     def __init__(self, driver: WebDriver, env="mobile", account="", gender=1):
@@ -115,7 +114,7 @@ class FacebookExceptionProcessor(BaseException):
 
     def get_key_words(self, code, category='css', index=0):
         keywords = self.MAP_EXP_PROCESSOR.get(code, {}).get('key_words', {}).get(self.env, {}).get(category, [])
-        if index < 0 or not keywords:
+        if index < 0 or not keywords or not isinstance(keywords, (list, tuple)):
             return keywords
         else:
             return keywords[index]
@@ -192,16 +191,16 @@ class FacebookExceptionProcessor(BaseException):
                                                                               self.trace_info))
         return self.exception_type
 
-    def check_func(self, key_words, iframe=None, wait=3):
+    def check_func(self, key_words, wait=3):
         """
         通用检测函数, 判断当前页面是存在指定的关键字集合
         :param key_words: 关键字集合, 字典类型, 目前支持css和xpath, css或xpath内部为list或tuple, list代表各关键字之间是且的关系， tuple代表各关键字之间是或的关系
-        :param iframe: 查找关键字之前需要切换至的iframe, 类型可以为int或str, int代表iframe的索引, str-代表iframe的id.
         :param wait: 查找关键字时的最大等待时间， 默认3秒
         :return: 成功返回 True, 失败返回 False
         """
         css_keywords = key_words.get("css", [])
         xpath_keywords = key_words.get("xpath", [])
+        iframe = key_words.get("iframe", None)  # 查找关键字之前需要切换至的iframe, 类型可以为int或str, int代表iframe的索引, str-代表iframe的id.
         if not any([css_keywords, xpath_keywords]):
             self.exception_type = -1
             logger.error("check func keywords is empty.")
@@ -218,8 +217,9 @@ class FacebookExceptionProcessor(BaseException):
         for key in key_words:
             try:
                 if iframe is not None:
-                    if isinstance(iframe, [str, int]):
-                        self.driver.switch_to.frame(iframe)
+                    if isinstance(iframe, (str, int)):
+                        self.driver.switch_to.frame("captcha-recaptcha")
+                        self.driver.switch_to.frame(0)
                         time.sleep(1)
 
                 WebDriverWait(self.driver, wait).until(
@@ -524,7 +524,6 @@ class FacebookExceptionProcessor(BaseException):
         logger.info("条款和使用政策验证处理完成")
         return True, 14
 
-
     def process_robot_verify_mobile(self):
         """
         机器人验证
@@ -542,11 +541,29 @@ class FacebookExceptionProcessor(BaseException):
             return False, 15
         return True, 15
 
+    def process_robot_verify_pc(self):
+        """
+        PC端机器人验证
+        :param kwargs:
+        :return:
+        """
+        try:
+            logger.info("机器人验证开始")
+            result = CaptchaVerify(self.driver).handle_verify()
+            logger.info("机器人验证: endding")
+        except Exception as e:
+            logger.error("机器人验证: 异常-->{}".format(str))
+            return False, 15
+        if not result:
+            return False, 15
+        return True, 15
+
 
 def test():
     fbe = FacebookExceptionProcessor(None, env='pc', account="a@b.com", gender=1)
     print(fbe.caller)
     print(fbe.exception_name)
+
 
 if __name__ == '__main__':
     test()
