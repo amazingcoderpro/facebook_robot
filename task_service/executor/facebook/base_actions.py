@@ -230,3 +230,12 @@ class FacebookActions(WebActions):
 
     def add_friends(self, search_keys, limit=2):
         raise NotImplementedError("add_friends must be implemented!")
+
+    def chat(self, contents=["How are you?"], friends=2):
+        pass
+
+    def post_status(self, contents):
+        pass
+
+    def browse_user_center(self, limit=3):
+        pass
