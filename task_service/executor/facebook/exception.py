@@ -6,6 +6,7 @@ import os
 import traceback
 import shutil
 import time
+import random
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
@@ -13,6 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from config import logger
 from executor.utils.facebook_captcha import CaptchaVerify
 from executor.utils.utils import get_photo
+from executor.utils.utils import super_click, super_sendkeys
 
 
 class FacebookExceptionProcessor(BaseException):
@@ -43,26 +45,32 @@ class FacebookExceptionProcessor(BaseException):
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
-        0: {'name': 'home', 'key_words': {'mobile': {"css": ['div[id="MComposer"]'], "xpath": []},
-                                          "pc": {"css": ['div[id="MComposerPC"]']}}},
+        0: {'name': 'home',
+            'key_words': {'mobile': {"css": ['div[id="MComposer"]'], "xpath": []},
+                          "pc": {"css": ['div[id="MComposerPC"]']}}},
         1: {'name': 'remember_password',
             'key_words': {"mobile": {"css": ['a[href^="/login/save-device/cancel/?"]', 'button[type="submit"]']},
                           "pc": {"css": []}}},
-        2: {'name': 'save_phone_number', 'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
-                                                       "pc": {"css": []}}},
-        3: {'name': 'upload_photo', 'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
-                                                  "pc": {"css": []}}},
-        4: {'name': 'download_app', 'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
-                                                  "pc": {"css": []}}},
-        5: {'name': 'account_invalid', 'key_words': {"mobile": {"css": ['div[class^="mvm uiP fsm"]']},
-                                                     "pc": {"css": []}},
+        2: {'name': 'save_phone_number',
+            'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
+                          "pc": {"css": []}}},
+        3: {'name': 'upload_photo',
+            'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
+                          "pc": {"css": []}}},
+        4: {'name': 'download_app',
+            'key_words': {"mobile": {"css": ['div[data-sigil="mChromeHeaderRight"]']},
+                          "pc": {"css": []}}},
+        5: {'name': 'account_invalid',
+            'key_words': {"mobile": {"css": ['div[class^="mvm uiP fsm"]']},
+                          "pc": {"css": []}},
             'account_status': 'invalid'},
         6: {'name': 'auth_button_two_verify',
             'key_words': {"mobile": {"css": ['button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]']},
                           "pc": {"css": []}},
             'account_status': 'verifying_auth_button_two'},
-        7: {'name': 'phone_sms_verify', 'key_words': {"mobile": {"css": ['option[value="US"]']},
-                                                      "pc": {"css": []}},
+        7: {'name': 'phone_sms_verify',
+            'key_words': {"mobile": {"css": ['option[value="US"]']},
+                          "pc": {"css": ['input[name="phone-name"]']}},
             'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify',
             'key_words': {"mobile": {"css": ['input[name="photo-input"]', 'input[id="photo-input"]']},
@@ -72,11 +80,13 @@ class FacebookExceptionProcessor(BaseException):
             'key_words': {"mobile": {"css": ['button[name="submit[Secure Account]"]']},
                           "pc": {"css": []}},
             'account_status': 'verifying_auth_button_one'},
-        10: {'name': 'email_verify', 'key_words': {"mobile": {"css": ['input[placeholder="######"]']},
-                                                   "pc": {"css": []}},
+        10: {'name': 'email_verify',
+             'key_words': {"mobile": {"css": ['input[placeholder="######"]']},
+                           "pc": {"css": []}},
              'account_status': 'verifying_email_code'},
-        11: {'name': 'sms_verify', 'key_words': {"mobile": {"css": ['input[name="p_c"]']},
-                                                 "pc": {"css": []}},
+        11: {'name': 'sms_verify',
+             'key_words': {"mobile": {"css": ['input[name="p_c"]']},
+                           "pc": {"css": []}},
              'account_status': 'verifying_sms_code'},
         12: {'name': 'wrong_password',
              'key_words': {"mobile": {"css": ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]']},
@@ -86,13 +96,14 @@ class FacebookExceptionProcessor(BaseException):
              'key_words': {"mobile": {"css": ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]']},
                            "pc": {"css": []}},
              'account_status': 'verifying_shared_login'},
-        14: {'name': 'policy_clause', 'key_words': {"mobile": {"css": ['button[value="J’accepte"]']},
-                                                    "pc": {"css": []}},
+        14: {'name': 'policy_clause',
+             'key_words': {"mobile": {"css": ['button[value="J’accepte"]']},
+                           "pc": {"css": []}},
              'account_status': 'verifying_policy_clause'},
-        15: {"name": 'robot_verify', 'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'],
-                                                              'iframe': ["captcha-recaptcha"]},
-                                                   "pc": {"css": ['div[class="recaptcha-checkbox-checkmark"]'],
-                                                          "iframe": ["captcha-recaptcha", 0]}}}
+        15: {"name": 'robot_verify',
+             'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'],'iframe': ["captcha-recaptcha"]},
+                           "pc": {"css": ['div[class="recaptcha-checkbox-checkmark"]'], "iframe": ["captcha-recaptcha", 0]}},
+             'account_status': 'verifying_robot'},
     }
 
     def __init__(self, driver: WebDriver, env="mobile", account="", gender=1):
@@ -382,6 +393,44 @@ class FacebookExceptionProcessor(BaseException):
             # if email_code:
             #     logger.info("The mailbox verification code has been sent successfully")
             #     email_code.send_keys('456895')
+
+        except Exception as e:
+            logger.exception("处理手机短信验证处理异常, e={}".format(e))
+            return False, 7
+        logger.info("处理手机短信验证处理完成")
+        return False, 7
+
+    def process_phone_sms_verify_pc(self):
+        """
+        # 手机短信验证码验证
+        :param kwargs:
+        :return: 成功返回 True, 失败返回 False
+        提示  为了调试方便 调整为FALSE
+        """
+        try:
+            logger.info("手机短信验证处理中")
+            rtime = random.randint(2, 4)
+            tel_button = self.driver.find_elements_by_css_selector('a[role="button"]')
+            super_click(tel_button[0], self.driver)
+            tel_stutas = self.driver.find_elements_by_css_selector('a[role="menuitemcheckbox"]')
+            super_click(tel_stutas[45], self.driver)
+
+            time.sleep(rtime)
+            send_tel = self.driver.find_element_by_css_selector('input[type="tel"]')
+            super_sendkeys(send_tel, "18000000000")
+
+            time.sleep(rtime)
+            submit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
+            super_click(submit_button, self.driver)
+
+            # 短信验证码
+            time.sleep(rtime)
+            tel_code = self.driver.find_element_by_css_selector('input[name="p_c"]')
+            super_sendkeys(tel_code, "414141")
+
+            time.sleep(rtime)
+            submit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
+            super_click(submit_button, self.driver)
 
         except Exception as e:
             logger.exception("处理手机短信验证处理异常, e={}".format(e))
