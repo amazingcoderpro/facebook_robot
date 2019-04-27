@@ -62,7 +62,7 @@ class FacebookExceptionProcessor(BaseException):
                           "pc": {"css": []}},
             'account_status': 'verifying_auth_button_two'},
         7: {'name': 'phone_sms_verify', 'key_words': {"mobile": {"css": ['option[value="US"]']},
-                                                      "pc": {"css": []}},
+                                                      "pc": {"css": ['div[id="checkpointBottomBar"]']}},
             'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify',
             'key_words': {"mobile": {"css": ['input[name="photo-input"]', 'input[id="photo-input"]']},
