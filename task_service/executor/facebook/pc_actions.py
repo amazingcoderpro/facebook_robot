@@ -313,32 +313,55 @@ def send_messages(driver:WebDriver, keywords_list, limit=2):
         return fbexcept.auto_process(3)
 
 
-def send_facebook_state(driver:WebDriver, keywords):
+def send_facebook_state(driver:WebDriver, sentence):
     """
     发送facebook状态
+
     :param driver:
-    :keyword 发送的内容
+    :keyword    发送的内容
     :return:
     """
     try:
-        # 1.检查该账号是否存在好友
-        # 2.向好友发送消息
-        logger.info("start send_facebook_state, keywords={}".format(keywords))
-        message_url = "https://m.facebook.com/home.php?sk=h_chr&ref=bookmarks"
+        logger.info("发送状态功能: sentence={},".format(sentence,))
+        message_url = "https://www.facebook.com/home.php?sk=h_chr&ref=bookmarks"
         driver.get(message_url)
+
         # 检查发送状态的页面存在
         send_state = WebDriverWait(driver, 3).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[class="linkWrap noCount"]')))
         if not send_state:
-            logger.warning('can not find send state page')
+            logger.warning("发送状态功能: 没有进入到个人中心页面")
             return False, -1
 
-        # 查找输入框
-        time.sleep(6)
-        send_state_page = driver.find_element_by_css_selector('div[role="textbox"]')
+        # 查找输入框单击弹出消息框
+        time.sleep(2)
+        send_state_page = driver.find_element_by_css_selector('div[id="feedx_sprouts_container"]')
         send_state_page.click()
         # 输入需要发送的文本
-        time.sleep(10)
+        time.sleep(1)
+
+        # 找到输入框的对象
+        message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
+        for item in message_info:
+            print(item.text)
+            if "What\'s on your mind" in item.text:
+                message_instance = item
+                break
+
+        # 循环div，聊天，如果有异常证明当前的div不是聊天的div，如果是跳出循环
+        div_list = message_instance.find_elements_by_css_selector('div')
+        for div_instance in div_list:
+            try:
+                # div.send_keys(keywords)
+                super_sendkeys(div_instance, sentence)
+                break
+            except Exception as e:
+                pass
+
+
+
+
+
         send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
 
         post_content = keywords.get('post')
@@ -351,8 +374,8 @@ def send_facebook_state(driver:WebDriver, keywords):
         driver.get('https://m.facebook.com')
         time.sleep(5)
         return True, 0
-    except:
-        logger.exception('send post failed, post={}'.format(post_content))
+    except Exception as e:
+        logger.exception('send post failed, post={}'.format(str(e)))
         fbexcept = FacebookExceptionProcessor(driver, env='pc')
         return fbexcept.auto_process(3)
 
@@ -408,8 +431,6 @@ def post_status(driver):
 
 
 if __name__ == '__main__':
-
-
     # filename = '../../resource/facebook_account.txt'
     # with open(filename, 'r') as line:
     #     all_readline = line.readlines()
@@ -418,21 +439,22 @@ if __name__ == '__main__':
     #         user_account = str(str_info[0]).strip()
     #         user_password = str(str_info[1]).strip()
 
-
     user_account = str(17610069110)
-    user_password = str("").strip()
+    user_password = str("sanmang111..fb").strip()
 
-    # 启动浏览器
+    # 1.启动浏览器
     driver, msg = start_chrome(headless=False)
-    # 登陆
+    # 2.登陆
     res, statu = auto_login(driver, user_account, user_password)
     if res:
-        # 页面浏览
+        # 3.页面浏览
         #browse_page(driver)
-        # 增加好友
+        # 4.增加好友
         # add_friends(driver, ["pig"],10)
-        # 好友聊天
-        send_messages(driver, ["Hi"], 2)
+        # 5.好友聊天
+        # send_messages(driver, ["Hi"], 2)
+        # 6.发送状态
+        send_facebook_state(driver, "今天天气好好哟!!!")
 
     time.sleep(300)
 
