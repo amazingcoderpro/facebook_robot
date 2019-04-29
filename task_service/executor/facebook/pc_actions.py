@@ -299,33 +299,20 @@ class FacebookPCActions(FacebookActions):
         :return:
         """
         try:
-            logger.info("user_home start, limit={}".format(limit))
-            self.driver.get(self.start_url)
-            # browse_page(driver)
-            user_news = self.driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-            self.click(user_news)
+            logger.info("用户中心浏览功能: browsing beginning")
+            message_url = "https://www.facebook.com/profile.php"
+            self.driver.get(message_url)
 
-            self.sleep(3, 6)
-            self.browse_page(browse_times=random.randint(1, 3))
-            # 个人中心全部的菜单栏
-            user_list = self.driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
-            list_rang = range(len(user_list))
-            # 随机浏览limit个个人中心页面
-            slice = random.sample(list_rang, limit)
-            for i in slice:
-                user_list = self.driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
-                # user_list[i].click()
-                self.click(user_list[i])
-                self.browse_page(browse_times=random.randint(3, 5))
-                self.driver.back()
-                self.browse_page(browse_times=random.randint(1, 3))
-                user_news = self.driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-                self.click(user_news)
-                self.browse_page(browse_times=random.randint(3, 5))
-            logger.info("user_home browsing completed")
+            user_lines = self.driver.find_elements_by_css_selector('div[id="fbTimelineHeadline"] li a')[1:4]
+            random.shuffle(user_lines)
+            for row in user_lines:
+                self.click(row)
+                self.browse_page()
+                self.sleep()
+            logger.info("用户中心浏览功能: browsing completed")
             return True, 0
         except Exception as e:
-            logger.exception("user_home browsing failed  error ={}".format(e))
+            logger.exception("用户中心浏览功能: browsing failed error-->{}".format(e))
             return self.fb_exp.auto_process(3)
 
     def browse_page(self, browse_times=0, distance=0, interval=0, back_top=True):
@@ -366,52 +353,53 @@ class FacebookPCActions(FacebookActions):
             return self.fb_exp.auto_process(3)
 
 
-if __name__ == '__main__':
-    filename = '../../resource/facebook_account.txt'
-    with open(filename, 'r') as line:
-        all_readline = line.readlines()
-        for date in all_readline:
-            str_info = date.split('---')
-            user_account = str(str_info[0]).strip()
-            user_password = str(str_info[1]).strip()
-
-            # 登陆
-            fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
-            if not fma.start_chrome():
-                print("start chrome failed")
-            fma.set_exception_processor(
-                FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
-            # fma.set_exception_processor()
-            res, status = fma.login()
-            if not res:
-                continue
-            cookies = fma.get_cookies()
-            print(cookies)
-            fma.browse_user_center(3)
-            time.sleep(100)
-
-
 # if __name__ == '__main__':
-#     user_account = str(17610069110)
-#     user_password = str("sanmang111..fb").strip()
+#     filename = '../../resource/facebook_account.txt'
+#     with open(filename, 'r') as line:
+#         all_readline = line.readlines()
+#         for date in all_readline:
+#             str_info = date.split('---')
+#             user_account = str(str_info[0]).strip()
+#             user_password = str(str_info[1]).strip()
 #
-#     # 初始化
-#     cookies=[{'domain': '.facebook.com', 'httpOnly': False, 'name': 'presence', 'path': '/', 'secure': True, 'value': 'EDvF3EtimeF1556521496EuserFA21B35381807782A2EstateFDt3F_5b_5dG556521496536CEchFDp_5f1B35381807782F2CC'}, {'domain': '.facebook.com', 'expiry': 1564297494.289986, 'httpOnly': True, 'name': 'fr', 'path': '/', 'secure': True, 'value': '14Cgytn5XS9ADvrMS.AWWAmG4Z8RUATBEoDXsVDoRqB1g.BcxqHO.Is.FzG.0.0.BcxqIW.AWVueXRy'}, {'domain': '.facebook.com', 'expiry': 1564297485.612012, 'httpOnly': True, 'name': 'xs', 'path': '/', 'secure': True, 'value': '31%3AzbNHAuA7vvOB-Q%3A2%3A1556521482%3A-1%3A-1'}, {'domain': '.facebook.com', 'expiry': 1557126281, 'httpOnly': False, 'name': 'dpr', 'path': '/', 'secure': True, 'value': '2'}, {'domain': '.facebook.com', 'expiry': 1619593469.742837, 'httpOnly': True, 'name': 'datr', 'path': '/', 'secure': True, 'value': 'zqHGXKNTrxN8ELHDhr2hXAEo'}, {'domain': '.facebook.com', 'expiry': 1564297485.611967, 'httpOnly': False, 'name': 'c_user', 'path': '/', 'secure': True, 'value': '100035381807782'}, {'domain': '.facebook.com', 'expiry': 1556611487.566037, 'httpOnly': True, 'name': 'spin', 'path': '/', 'secure': True, 'value': 'r.1000651590_b.trunk_t.1556521485_s.1_v.2_'}, {'domain': '.facebook.com', 'expiry': 1557126293, 'httpOnly': False, 'name': 'wd', 'path': '/', 'secure': True, 'value': '1200x754'}, {'domain': '.facebook.com', 'expiry': 1619593485.611922, 'httpOnly': True, 'name': 'sb', 'path': '/', 'secure': True, 'value': 'zqHGXDSVQ0-0sXJTMh0cHnju'}]
-#
-#     fma = FacebookPCActions(account_info={"account": user_account, "password": user_password, "cookies": cookies}, finger_print={"user_agent": ""}, headless=False)
-#     if not fma.start_chrome():
-#         print("start chrome failed")
-#     fma.set_exception_processor(
-#         FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
-#     # 登陆
-#     res, status = fma.login()
+#             # 登陆
+#             fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
+#             if not fma.start_chrome():
+#                 print("start chrome failed")
+#             fma.set_exception_processor(
+#                 FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
+#             # fma.set_exception_processor()
+#             res, status = fma.login()
+#             if not res:
+#                 continue
+#             cookies = fma.get_cookies()
+#             print(cookies)
+#             fma.browse_user_center(3)
+#             time.sleep(100)
+
+
+if __name__ == '__main__':
+    user_account = str(17610069110)
+    user_password = str("sanmang111..fb").strip()
+
+    # 初始化
+    cookies=[{'domain': '.facebook.com', 'httpOnly': False, 'name': 'presence', 'path': '/', 'secure': True, 'value': 'EDvF3EtimeF1556521496EuserFA21B35381807782A2EstateFDt3F_5b_5dG556521496536CEchFDp_5f1B35381807782F2CC'}, {'domain': '.facebook.com', 'expiry': 1564297494.289986, 'httpOnly': True, 'name': 'fr', 'path': '/', 'secure': True, 'value': '14Cgytn5XS9ADvrMS.AWWAmG4Z8RUATBEoDXsVDoRqB1g.BcxqHO.Is.FzG.0.0.BcxqIW.AWVueXRy'}, {'domain': '.facebook.com', 'expiry': 1564297485.612012, 'httpOnly': True, 'name': 'xs', 'path': '/', 'secure': True, 'value': '31%3AzbNHAuA7vvOB-Q%3A2%3A1556521482%3A-1%3A-1'}, {'domain': '.facebook.com', 'expiry': 1557126281, 'httpOnly': False, 'name': 'dpr', 'path': '/', 'secure': True, 'value': '2'}, {'domain': '.facebook.com', 'expiry': 1619593469.742837, 'httpOnly': True, 'name': 'datr', 'path': '/', 'secure': True, 'value': 'zqHGXKNTrxN8ELHDhr2hXAEo'}, {'domain': '.facebook.com', 'expiry': 1564297485.611967, 'httpOnly': False, 'name': 'c_user', 'path': '/', 'secure': True, 'value': '100035381807782'}, {'domain': '.facebook.com', 'expiry': 1556611487.566037, 'httpOnly': True, 'name': 'spin', 'path': '/', 'secure': True, 'value': 'r.1000651590_b.trunk_t.1556521485_s.1_v.2_'}, {'domain': '.facebook.com', 'expiry': 1557126293, 'httpOnly': False, 'name': 'wd', 'path': '/', 'secure': True, 'value': '1200x754'}, {'domain': '.facebook.com', 'expiry': 1619593485.611922, 'httpOnly': True, 'name': 'sb', 'path': '/', 'secure': True, 'value': 'zqHGXDSVQ0-0sXJTMh0cHnju'}]
+
+    fma = FacebookPCActions(account_info={"account": user_account, "password": user_password, "cookies": cookies}, finger_print={"user_agent": ""}, headless=False)
+    if not fma.start_chrome():
+        print("start chrome failed")
+    fma.set_exception_processor(
+        FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
+    # 登陆
+    res, status = fma.login()
 
     # 浏览页面
-    #fma.browse_home()
+    # fma.browse_home()
     # 增加好友
-    #fma.add_friends(["pig","dog"], 2)
+    # fma.add_friends(["pig","dog"], 2)
     # 发送状态
-    #fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
-    # 
+    # fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
+    # 用户中心浏览
+    fma.browse_user_center()
 
 
