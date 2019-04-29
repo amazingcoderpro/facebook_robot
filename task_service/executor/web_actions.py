@@ -37,6 +37,10 @@ class WebActions:
             chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
             chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
             chrome_options.add_argument('lang=en_US')
+
+            prefs = {'profile.default_content_setting_values':{'notifications': 2}}
+            chrome_options.add_experimental_option('prefs', prefs)
+
             if self.user_agent:
                 chrome_options.add_argument('--user-agent={}'.format(self.user_agent))
 
