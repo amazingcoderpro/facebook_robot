@@ -5,6 +5,7 @@
 import time
 import random
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from config import logger
@@ -52,6 +53,29 @@ class FacebookPCActions(FacebookActions):
         except Exception as e:
             logger.exception("login by cookies failed. continue use password, account={}, e={}".format(self.account, e))
             self.driver.delete_all_cookies()
+
+        try:
+            # FB登录
+            email_box = WebDriverWait(self.driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
+            # email_box.send_keys(account)
+            self.send_keys(email_box, self.account)
+            self.sleep()
+
+            password_box = self.driver.find_element_by_name("pass")
+            # password_box.send_keys(password)
+            self.send_keys(password_box, self.password)
+
+            self.sleep()
+            password_box.send_keys(Keys.ENTER)
+
+            # 检查是否在首页
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
+            logger.info("login success！username={}, password={}".format(self.account, self.password))
+            return True, 0
+        except Exception as e:
+            logger.warning('auto_login exception, stat process..\r\ne={}'.format(e))
+            return self.fb_exp.auto_process(4, wait=2)
 
     def browse_home(self):
         """
