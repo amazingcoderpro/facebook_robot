@@ -10,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from config import logger
 from executor.facebook.base_actions import FacebookActions
+from executor.facebook.exception import FacebookExceptionProcessor
 
 
 class FacebookPCActions(FacebookActions):
@@ -126,7 +127,7 @@ class FacebookPCActions(FacebookActions):
             limit = 1 if limit <= 0 else limit
             logger.info('start add friends, friends={}, limit={}'.format(search_keys, limit))
             for friend in search_keys:
-                page_url = "https://m.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend)
+                page_url = "https://www.facebook.com/search/people/?q={}&source=filter&isTrending=0".format(friend)
                 self.driver.get(page_url)
 
                 # 判断是否进入了加好友页面
@@ -352,7 +353,11 @@ if __name__ == '__main__':
 
             # 登陆
             fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
-            fma.start_chrome()
+            if not fma.start_chrome():
+                print("start chrome failed")
+            fma.set_exception_processor(
+                FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
+            # fma.set_exception_processor()
             res, status = fma.login()
             if not res:
                 continue

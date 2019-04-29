@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from config import logger
 from executor.facebook.base_actions import FacebookActions
+from executor.facebook.exception import FacebookExceptionProcessor
 
 
 class FacebookMobileActions(FacebookActions):
@@ -352,7 +353,10 @@ if __name__ == '__main__':
             user_account = str(str_info[0]).strip()
             user_password = str(str_info[1]).strip()
             fma = FacebookMobileActions(account_info={"account": user_account, "password": user_password}, finger_print={"device":"iPhone 6"}, headless=False)
-            fma.start_chrome()
+            if not fma.start_chrome():
+                print("start chrome failed")
+
+            fma.set_exception_processor(FacebookExceptionProcessor(fma.driver, env="mobile", account=fma.account, gender=fma.gender))
 
             res, status = fma.login()
             if not res:

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Created by charles on 2019-04-27
 # Function: 
-from executor.facebook.exception import FacebookExceptionProcessor
+
 from config import logger
 from executor.web_actions import WebActions
 
@@ -34,12 +34,8 @@ class FacebookActions(WebActions):
         logger.info("FacebookActions init, account_info={}, device={}, user_agent={}, headless={}, "
                     "start_url={}".format(account_info, self.device, self.user_agent, headless, start_url))
 
-    def start_chrome(self):
-        if super(FacebookActions, self).start_chrome():
-            self.fb_exp = FacebookExceptionProcessor(self.driver, env="mobile", account=self.account, gender=self.gender)
-            return True
-        else:
-            return False
+    def set_exception_processor(self, exp):
+        self.fb_exp = exp
 
     def login(self):
         raise NotImplementedError("login must be implemented!")

@@ -66,7 +66,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             'account_status': 'invalid'},
         6: {'name': 'auth_button_two_verify',
             'key_words': {"mobile": {"css": ('button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]')},
-                          "pc": {"css": ['button[name="submit[Continue]']}},
+                          "pc": {"css": []}},
             'account_status': 'verifying_auth_button_two'},
         7: {'name': 'phone_sms_verify',
             'key_words': {"mobile": {"css": ['option[value="US"]']},

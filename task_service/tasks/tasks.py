@@ -17,6 +17,7 @@ from celery import Task
 from start_worker import app
 from config import logger
 from executor.facebook.mobile_actions import FacebookMobileActions
+from executor.facebook.exception import FacebookExceptionProcessor
 from tasks.task_help import TaskHelper
 
 
@@ -70,6 +71,7 @@ def fb_auto_feed(self, inputs):
             logger.error('start chrome failed.')
             return tsk_hlp.make_result()
 
+        facebook_mobile.set_exception_processor(FacebookExceptionProcessor(facebook_mobile.driver, env="mobile", account=facebook_mobile.account, gender=facebook_mobile.gender))
         account = tsk_hlp.account
         password = tsk_hlp.password
         ret, err_code = facebook_mobile.login()
