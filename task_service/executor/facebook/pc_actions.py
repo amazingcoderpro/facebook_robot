@@ -5,7 +5,6 @@
 import time
 import random
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from config import logger
@@ -54,90 +53,6 @@ class FacebookPCActions(FacebookActions):
             logger.exception("login by cookies failed. continue use password, account={}, e={}".format(self.account, e))
             self.driver.delete_all_cookies()
 
-        try:
-            # FB登录
-            email_box = WebDriverWait(self.driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
-            # email_box.send_keys(account)
-            self.send_keys(email_box, self.account)
-            self.sleep()
-
-            password_tabindex = self.driver.find_elements_by_css_selector('input[tabindex^="-"]')
-            # 代表没有密码输入框
-            if password_tabindex:
-                login_btn = self.driver.find_element_by_css_selector('button[type="button"]')
-                login_btn.send_keys(Keys.ENTER)
-                self.sleep()
-
-            password_box = self.driver.find_element_by_name("pass")
-            # password_box.send_keys(password)
-            self.send_keys(password_box, self.password)
-
-            self.sleep()
-            password_box.send_keys(Keys.ENTER)
-            old_url = self.driver.current_url
-            self.sleep()
-            retry = 0
-            # wrong_password = driver.find_elements_by_css_selector('a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
-            while retry < 3:
-                now_url = self.driver.current_url
-                if now_url == old_url:
-                    password_box.send_keys(Keys.ENTER)
-                    self.sleep()
-                    wrong_password = self.driver.find_elements_by_css_selector(
-                        'a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
-                    if wrong_password:
-                        break
-                    retry += 1
-                else:
-                    break
-
-            # 检查是否在首页
-            WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
-            logger.info("login success！username={}, password={}".format(self.account, self.password))
-            return True, 0
-
-
-def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
-    """
-    浏览页面
-    :param driver: 浏览器驱动
-    :param browse_times: 浏览次数
-    :param distance: 每次间隔距离，默认为零，代表使用随机距离
-    :param interval: 间隔时间， 单位秒, 默认为零，代表使用随机停顿时间
-    :param back_top: 是否回到顶点
-    :return:
-    """
-    # 浏览页面js
-    try:
-        logger.info('browse_page start.')
-        y_dis = 0
-        if browse_times <= 0:
-            browse_times = random.randint(3, 15)
-
-        for i in range(browse_times):
-            if interval <= 0:
-                time.sleep(random.randint(1, 10))
-            else:
-                time.sleep(interval)
-
-            if distance > 0:
-                y_dis += distance
-            else:
-                y_dis += random.randint(20, 200)
-
-            driver.execute_script("window.scrollTo(0,{})".format(y_dis))
-
-        if back_top:
-            driver.execute_script("window.scrollTo(0,0)")
-
-        return True
-    except Exception as e:
-        logger.exception('browse_page exception. e={}'.format(e))
-        fb_exp = FacebookExceptionProcessor(driver, env='pc')
-        return fb_exp.auto_process(3, wait=5)
-
-
     def browse_home(self):
         """
         首页内容浏览
@@ -169,12 +84,12 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
                 self.driver.get(page_url)
 
                 # 判断是否进入了加好友页面
-                search_inputs = WebDriverWait(driver, 5).until(
+                search_inputs = WebDriverWait(self.driver, 5).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[class='FriendButton'")))
 
                 # 找到新的好友列表
-                browse_page(driver, browse_times=5, distance=0, interval=5, back_top=True)
-                new_friends = driver.find_elements_by_css_selector("button[aria-label='Add Friend'")
+                self.browse_home(self.driver, browse_times=5, distance=0, interval=5, back_top=True)
+                new_friends = self.driver.find_elements_by_css_selector("button[aria-label='Add Friend'")
                 if not new_friends:
                     logger.warning('增加好友: can not find any friend. friend keyword={}'.format(friend))
                     continue
@@ -192,7 +107,7 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
                         logger.info(str(e))
                         pass
                     finally:
-                        self.click(idx, driver)
+                        self.click(idx, self.driver)
                         time.sleep(3)
             logger.info("增加好友: add friend succeed.")
             self.driver.get(self.start_url)
@@ -201,7 +116,6 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
         except Exception as e:
             logger.error("增加好友功能: 出现异常，开始异常检测-->{}".format(str(e)))
             return self.fb_exp.auto_process(3)
-
 
     def chat(self, contents=["How are you?"], friends=2):
         """
@@ -219,14 +133,14 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
             time.sleep(5)
 
             # 检查是否进入好友列表页面
-            fridens_page = WebDriverWait(driver, 4).until(
+            fridens_page = WebDriverWait(self.driver, 4).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="pagelet_main_column_personal"]')))
             if not fridens_page:
                 logger.error("好友聊天功能: 该账户未进入好友界面")
                 return None
 
             # 找到该用户的好友
-            list_fridens = driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
+            list_fridens = self.driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
             if not list_fridens:
                 logger.error("好友聊天功能: 该账户没有好友")
                 return None
@@ -243,12 +157,12 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
                 time.sleep(3)
 
                 # 打开聊天窗口
-                message_page = driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
-                self.click(message_page,driver)
+                message_page = self.driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
+                self.click(message_page,self.driver)
                 time.sleep(3)
 
                 # 定位聊天内容窗口最上层的div属性
-                message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
+                message_info = self.driver.find_elements_by_xpath('//div[@role="presentation"]')
                 for item in message_info:
                     if item.text == 'Type a message...\n\nThumbs Up Sign':
                         message_instance = item
@@ -261,7 +175,6 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
                     try:
                         # div.send_keys(keywords)
                         self.send_keys(div_instance, contents[0])
-                        self.sendkey
                         msg_instance = div_instance
                         break
                     except Exception as e:
@@ -280,7 +193,6 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
             logger.exception('send_messages failed, friends={}, chat content={}'.format(friends, contents))
             return self.fb_exp.auto_process(3)
 
-
     def post_status(self, contents):
         """
         发送facebook状态
@@ -295,7 +207,7 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
             self.driver.get(message_url)
 
             # 检查发送状态的页面存在
-            send_state = WebDriverWait(driver, 3).until(
+            send_state = WebDriverWait(self.driver, 3).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[class="linkWrap noCount"]')))
             if not send_state:
                 logger.warning("发送状态功能: 没有进入到个人中心页面")
@@ -303,13 +215,13 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
 
             # 查找输入框单击弹出消息框
             time.sleep(2)
-            send_state_page = driver.find_element_by_css_selector('div[id="feedx_sprouts_container"]')
+            send_state_page = self.driver.find_element_by_css_selector('div[id="feedx_sprouts_container"]')
             self.click(send_state_page)
             # 输入需要发送的文本
             time.sleep(1)
 
             # 找到输入框的对象
-            message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
+            message_info = self.driver.find_elements_by_xpath('//div[@role="presentation"]')
             for item in message_info:
                 if "What\'s on your mind" in item.text:
                     div_info = item.find_elements_by_css_selector('div')
@@ -344,7 +256,6 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
         except Exception as e:
             logger.exception('send post failed, post={}'.format(contents))
             return self.fb_exp.auto_process(3)
-
 
     def browse_user_center(self, limit=3):
         """
