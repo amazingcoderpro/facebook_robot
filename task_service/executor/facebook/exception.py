@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from config import logger
 from executor.utils.facebook_captcha import CaptchaVerify
 from executor.utils.utils import get_photo
-from executor.facebook.base_actions import WebActions
+from executor.web_actions import WebActions
 
 
 class FacebookExceptionProcessor(BaseException, WebActions):
@@ -62,11 +62,11 @@ class FacebookExceptionProcessor(BaseException, WebActions):
                           "pc": {"css": []}}},
         5: {'name': 'account_invalid',
             'key_words': {"mobile": {"css": ['div[class^="mvm uiP fsm"]']},
-                          "pc": {"css": []}},
+                          "pc": {"css": ['div[class^="mvm uiP fsm"]']}},
             'account_status': 'invalid'},
         6: {'name': 'auth_button_two_verify',
             'key_words': {"mobile": {"css": ('button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]')},
-                          "pc": {"css": []}},
+                          "pc": {"css": ['button[name="submit[Continue]']}},
             'account_status': 'verifying_auth_button_two'},
         7: {'name': 'phone_sms_verify',
             'key_words': {"mobile": {"css": ['option[value="US"]']},
