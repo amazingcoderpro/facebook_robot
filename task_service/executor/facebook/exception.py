@@ -221,6 +221,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         :param wait: 查找关键字时的最大等待时间， 默认3秒
         :return: 成功返回 True, 失败返回 False
         """
+        print(key_words)
         css_keywords = key_words.get("css", [])
         xpath_keywords = key_words.get("xpath", [])
         iframe = key_words.get("iframe", None)  # 查找关键字之前需要切换至的iframe, 类型为list, 其中元素可以为int或str, int代表iframe的索引, str-代表iframe的id.
@@ -417,8 +418,13 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             except:
                 pass
             rtime = random.randint(2, 4)
-            tel_button = self.driver.find_elements_by_css_selector('a[role="button"]')
-            self.click(tel_button[0])
+            try:
+                tel_button = self.driver.find_elements_by_css_selector('i[class^="img sp_"]')
+                if not tel_button:
+                    return False, -1
+            except:
+                pass
+            self.click(tel_button[3])
             tel_stutas = self.driver.find_elements_by_css_selector('a[role="menuitemcheckbox"]')
             self.click(tel_stutas[45])
 
@@ -431,11 +437,14 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             self.click(submit_button)
 
             # 提交失败
-            submit_error = WebDriverWait(self.driver, 6).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-xui-error-position="above"]')))
-            if submit_error:
-                logger.error("请填写正确的手机号码")
-                return False, 7
+            try:
+                submit_error = WebDriverWait(self.driver, 6).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-xui-error-position="above"]')))
+                if submit_error:
+                    logger.error("请填写正确的手机号码")
+                    return False, 7
+            except:
+               pass
             # 短信验证码
             time.sleep(rtime)
             tel_code = self.driver.find_element_by_css_selector('input[name="p_c"]')
@@ -629,7 +638,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         :return:
         """
         try:
-            logger.info("机器人验证开始")
+            logger.info("机器人验证begning")
             result = CaptchaVerify(self.driver).handle_verify()
             logger.info("机器人验证: endding")
         except Exception as e:

@@ -33,7 +33,7 @@ class CaptchaVerify:
         机器人验证，获取页面的特定字符串，向2captcha的API发送两次请求，最终将获取到的字符串提交到页面提交。
         """
         try:
-            ele = self.driver.find_element_by_css_selector(self.element_class)
+            ele = self.driver.find_element_by_css_selector(CaptchaVerify.element_class)
             value = ele.get_attribute(CaptchaVerify.key_str)
             captcha_id = CaptchaVerify.get_captcha_id(value)
             captcha_str = CaptchaVerify.get_captcha_str(captcha_id)

@@ -62,8 +62,14 @@ class FacebookPCActions(FacebookActions):
             self.send_keys(email_box, self.account)
             self.sleep()
 
+            password_tabindex = self.driver.find_elements_by_css_selector('input[tabindex^="-"]')
+            # 代表没有密码输入框
+            if password_tabindex:
+                login_btn = self.driver.find_element_by_css_selector('button[type="button"]')
+                login_btn.send_keys(Keys.ENTER)
+                self.sleep()
+
             password_box = self.driver.find_element_by_name("pass")
-            # password_box.send_keys(password)
             self.send_keys(password_box, self.password)
 
             self.sleep()
@@ -76,9 +82,8 @@ class FacebookPCActions(FacebookActions):
             logger.info("login success！username={}, password={}".format(self.account, self.password))
             return True, 0
         except Exception as e:
-            logger.exception("login by cookies failed. continue use password, account={}, e={}".format(self.account, e))
+            logger.warning('auto_login exception, stat process..\r\ne={}'.format(e))
             return self.fb_exp.auto_process(4, wait=2)
-
 
     def browse_home(self):
         """
@@ -185,7 +190,7 @@ class FacebookPCActions(FacebookActions):
 
                 # 打开聊天窗口
                 message_page = self.driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
-                self.click(message_page,self.driver)
+                self.click(message_page, self.driver)
                 time.sleep(3)
 
                 # 定位聊天内容窗口最上层的div属性
@@ -321,38 +326,38 @@ class FacebookPCActions(FacebookActions):
             return self.fb_exp.auto_process(3)
 
 
-# if __name__ == '__main__':
-    # filename = '../../resource/facebook_account.txt'
-    # with open(filename, 'r') as line:
-    #     all_readline = line.readlines()
-    #     for date in all_readline:
-    #         str_info = date.split('---')
-    #         user_account = str(str_info[0]).strip()
-    #         user_password = str(str_info[1]).strip()
-    #
-    #         # 登陆
-    #         fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
-    #         if not fma.start_chrome():
-    #             print("start chrome failed")
-    #         fma.set_exception_processor(
-    #             FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
-    #         # fma.set_exception_processor()
-    #         res, status = fma.login()
-    #         if not res:
-    #             continue
-    #         cookies = fma.get_cookies()
-    #         print(cookies)
-    #         fma.browse_user_center(3)
-    #         time.sleep(100)
-
 if __name__ == '__main__':
-    user_account = str(17610069110)
-    user_password = str("sanmang111..fb").strip()
+    filename = '../../resource/facebook_account.txt'
+    with open(filename, 'r') as line:
+        all_readline = line.readlines()
+        for date in all_readline:
+            str_info = date.split('---')
+            user_account = str(str_info[0]).strip()
+            user_password = str(str_info[1]).strip()
 
-    # 登陆
-    fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
-    if not fma.start_chrome():
-        print("start chrome failed")
-    fma.set_exception_processor(
-        FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
-    res, status = fma.login()
+            # 登陆
+            fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
+            if not fma.start_chrome():
+                print("start chrome failed")
+            fma.set_exception_processor(
+                FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
+            # fma.set_exception_processor()
+            res, status = fma.login()
+            if not res:
+                continue
+            cookies = fma.get_cookies()
+            print(cookies)
+            fma.browse_user_center(3)
+            time.sleep(100)
+
+# if __name__ == '__main__':
+#     user_account = str(17610069110)
+#     user_password = str("sanmang111..fb").strip()
+#
+#     # 登陆
+#     fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
+#     if not fma.start_chrome():
+#         print("start chrome failed")
+#     fma.set_exception_processor(
+#         FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
+#     res, status = fma.login()
