@@ -14,10 +14,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from config import logger
 from executor.utils.facebook_captcha import CaptchaVerify
 from executor.utils.utils import get_photo
+from executor.facebook.base_actions import WebActions
 
 
-
-class FacebookExceptionProcessor(BaseException):
+class FacebookExceptionProcessor(BaseException, WebActions):
     """
     Facebook异常处理类, 包括异常码的定义、异常检测与处理
     """
@@ -272,7 +272,7 @@ class FacebookExceptionProcessor(BaseException):
             logger.info("忽略保存账号密码处理中")
             no_password = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(1, index=1))))
-            no_password.click()
+            self.click(no_password)
         except Exception as e:
             logger.exception("忽略保存账号密码处理异常, e={}".format(e))
             return False, 1
@@ -290,7 +290,7 @@ class FacebookExceptionProcessor(BaseException):
             logger.info("忽略输入电话号码处理中")
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(2))))
-            tel_number.click()
+            self.click(tel_number)
             time.sleep(3)
         except Exception as e:
             logger.exception("忽略输入电话号码处理异常, e={}".format(e))
@@ -308,7 +308,7 @@ class FacebookExceptionProcessor(BaseException):
             logger.info('忽略上传图像处理中')
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(3))))
-            tel_number.click()
+            self.click(tel_number)
         except Exception as e:
             logger.info('忽略上传图像处理异常， e={}'.format(e))
             return False, 3
@@ -327,7 +327,7 @@ class FacebookExceptionProcessor(BaseException):
             logger.info('忽略下载app处理中')
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(4))))
-            never_save_number.click()
+            self.click(never_save_number)
         except Exception as e:
             logger.exception("忽略下载app提示处理异常, e={}".format(e))
             return False, 4
@@ -344,7 +344,7 @@ class FacebookExceptionProcessor(BaseException):
             logger.info('账号被封杀处理中')
             never_save_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(5))))
-            never_save_number.click()
+            self.click(never_save_number)
         except Exception as e:
             logger.exception("账号被封杀处理异常, e={}".format(e))
             return False, 5
@@ -413,22 +413,22 @@ class FacebookExceptionProcessor(BaseException):
                 tel_code = self.driver.find_element_by_css_selector(self.get_key_words(7, "css", 1))
                 if tel_code:
                     sub_button = self.driver.find_element_by_css_selector('button[id="checkpointSecondaryButton"]')
-                    sub_button.click()
+                    self.click(sub_button)
             except:
                 pass
             rtime = random.randint(2, 4)
             tel_button = self.driver.find_elements_by_css_selector('a[role="button"]')
-            super_click(tel_button[0], self.driver)
+            self.click(tel_button[0])
             tel_stutas = self.driver.find_elements_by_css_selector('a[role="menuitemcheckbox"]')
-            super_click(tel_stutas[45], self.driver)
+            self.click(tel_stutas[45])
 
             time.sleep(rtime)
             send_tel = self.driver.find_element_by_css_selector('input[type="tel"]')
-            super_sendkeys(send_tel, "16500000000")
+            self.send_keys(send_tel, "16500000000")
 
             time.sleep(rtime)
             submit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
-            super_click(submit_button, self.driver)
+            self.click(submit_button)
 
             # 提交失败
             submit_error = WebDriverWait(self.driver, 6).until(
@@ -439,11 +439,11 @@ class FacebookExceptionProcessor(BaseException):
             # 短信验证码
             time.sleep(rtime)
             tel_code = self.driver.find_element_by_css_selector('input[name="p_c"]')
-            super_sendkeys(tel_code, "414141")
+            self.send_keys(tel_code, "414141")
 
             time.sleep(rtime)
             submit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
-            super_click(submit_button, self.driver)
+            self.click(submit_button)
 
         except Exception as e:
             logger.exception("处理手机短信验证处理异常, e={}".format(e))
@@ -468,11 +468,12 @@ class FacebookExceptionProcessor(BaseException):
                 return False, 8
             # photo_path = 'E:\\IMG_3563.JPG'
             # 上传图片
-            photo_upload.send_keys(photo_path)
+            self.send_keys(photo_upload, photo_path)
+            # photo_upload.send_keys(photo_path)
             # 点击继续
             phone_button = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]')))
-            phone_button.click()
+            self.click(phone_button)
             # 重新检查页面
             photo_btn = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
@@ -499,9 +500,10 @@ class FacebookExceptionProcessor(BaseException):
         """
         try:
             logger.info("身份验证类型一，跳转按钮处理中")
-            WebDriverWait(self.driver, 6).until(
+            check_button = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, self.get_key_words(9)))).click()
+                    (By.CSS_SELECTOR, self.get_key_words(9))))
+            self.click(check_button)
         except Exception as e:
             logger.exception("身份验证类型一，跳转按钮处理异常, e={}".format(e))
             return False, 9
@@ -516,9 +518,10 @@ class FacebookExceptionProcessor(BaseException):
         """
         try:
             logger.info("登录邮箱数字验证码验证处理中")
-            WebDriverWait(self.driver, 6).until(
+            check_button =WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, self.get_key_words(10)))).click()
+                    (By.CSS_SELECTOR, self.get_key_words(10))))
+            self.click(check_button)
         except Exception as e:
             logger.exception("登录邮箱数字验证码验证处理异常, e={}".format(e))
             return False, 10
@@ -535,8 +538,9 @@ class FacebookExceptionProcessor(BaseException):
             logger.info("登录短信验证码验证处理中")
             WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, self.MAP_EXP_PROCESSOR.get(11)['key_words'][0])))
-            WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
-                (By.CSS_SELECTOR, 'button[name="submit[Back]"]'))).click()
+            check_button = WebDriverWait(self.driver, 6).until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'button[name="submit[Back]"]')))
+            self.click(check_button)
         except Exception as e:
             logger.exception("手机短信验证码验证处理异常, e={}".format(e))
             return False, 11
@@ -569,8 +573,10 @@ class FacebookExceptionProcessor(BaseException):
             logger.info("移动端共享登录验证处理中")
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(13))))
-            WebDriverWait(self.driver, 3).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'a[data-sigil="MBackNavBarClick"]'))).click()
+            check_button = WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'a[data-sigil="MBackNavBarClick"]')))
+            self.click(check_button)
+
         except Exception as e:
             logger.exception("移动端手机共享登录验证处理异常, e={}".format(e))
             return False, 13
@@ -586,10 +592,12 @@ class FacebookExceptionProcessor(BaseException):
             logger.info("条款和使用政策验证处理中")
             WebDriverWait(self.driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(14))))
-            WebDriverWait(self.driver, 3).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="J’accepte"]'))).click()
-            WebDriverWait(self.driver, 3).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="Revenir au fil d’actualité"]'))).click()
+            check_button = WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="J’accepte"]')))
+            self.click(check_button)
+            check_revenir = WebDriverWait(self.driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[value="Revenir au fil d’actualité"]')))
+            self.click(check_revenir)
         except Exception as e:
             logger.exception("条款和使用政策验证处理异常, e={}".format(e))
             return False, 14
