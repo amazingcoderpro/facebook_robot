@@ -102,7 +102,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
              'account_status': 'verifying_policy_clause'},
         15: {"name": 'robot_verify',
              'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'],'iframe': ["captcha-recaptcha"]},
-                           "pc": {"css": ['div[class="recaptcha-checkbox-checkmark"]'], "iframe": ["captcha-recaptcha", 0]}},
+                           "pc": {"css": ['div[class="g-recaptcha"]'],'iframe': ["captcha-recaptcha"]}},
              'account_status': 'verifying_robot'},
     }
 
@@ -221,7 +221,6 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         :param wait: 查找关键字时的最大等待时间， 默认3秒
         :return: 成功返回 True, 失败返回 False
         """
-        print(key_words)
         css_keywords = key_words.get("css", [])
         xpath_keywords = key_words.get("xpath", [])
         iframe = key_words.get("iframe", None)  # 查找关键字之前需要切换至的iframe, 类型为list, 其中元素可以为int或str, int代表iframe的索引, str-代表iframe的id.
