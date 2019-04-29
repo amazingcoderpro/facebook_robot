@@ -343,35 +343,34 @@ def send_facebook_state(driver:WebDriver, sentence):
         # 找到输入框的对象
         message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
         for item in message_info:
-            print(item.text)
             if "What\'s on your mind" in item.text:
-                message_instance = item
+                div_info = item.find_elements_by_css_selector('div')
+                for row in div_info:
+                    try:
+                        if "What's on your mind" in row.text:
+                            try:
+                                super_sendkeys(row,sentence)
+                            except Exception as e:
+                                continue
+                            else:
+                                message_instance = row
+                                break
+                    except:
+                        continue
                 break
 
-        # 循环div，聊天，如果有异常证明当前的div不是聊天的div，如果是跳出循环
-        div_list = message_instance.find_elements_by_css_selector('div')
-        for div_instance in div_list:
+        time.sleep(1)
+        submit = None
+        for i in message_info:
             try:
-                # div.send_keys(keywords)
-                super_sendkeys(div_instance, sentence)
+                submit = i.find_element_by_css_selector('button[type="submit"]')
                 break
-            except Exception as e:
-                pass
+            except:
+                continue
+        time.sleep(2)
+        submit.click()
 
-
-
-
-
-        send_info_state = driver.find_element_by_css_selector('textarea[class="composerInput mentions-input"]')
-
-        post_content = keywords.get('post')
-        # send_info_state.send_keys(post_content)
-        super_sendkeys(send_info_state, post_content)
-        time.sleep(10)
-        release_state_button = driver.find_element_by_css_selector('button[data-sigil="touchable submit_composer"]')
-        release_state_button.click()
-        logger.info('send post success, post={}'.format(post_content))
-        driver.get('https://m.facebook.com')
+        driver.get('https://www.facebook.com')
         time.sleep(5)
         return True, 0
     except Exception as e:
@@ -454,7 +453,7 @@ if __name__ == '__main__':
         # 5.好友聊天
         # send_messages(driver, ["Hi"], 2)
         # 6.发送状态
-        send_facebook_state(driver, "今天天气好好哟!!!")
+        send_facebook_state(driver, "I learn English")
 
     time.sleep(300)
 
