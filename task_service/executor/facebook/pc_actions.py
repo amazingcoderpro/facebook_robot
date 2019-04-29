@@ -4,104 +4,98 @@
 
 import time
 import random
-from selenium import webdriver
-from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from executor.facebook.exception import FacebookExceptionProcessor
 from config import logger
-from executor.utils.utils import super_click, super_sendkeys
+from executor.facebook.base_actions import FacebookActions
+from executor.facebook.exception import FacebookExceptionProcessor
 
 
-def start_chrome(headless=False):
+class FacebookPCActions(FacebookActions):
     """
-    启动 配置浏览器
-    :param finger_print: 指定浏览器的devices
-    :param headless: 是否指定浏览为无头浏览器
-    :return:
+    Facebook m站操作类
     """
-    try:
-        # 定制浏览器启动项
-        chrome_options = webdriver.ChromeOptions()
-        if headless:
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-infobars')
-        chrome_options.add_argument('--disable-popup-blocking')  # 禁止弹出拦截
-        chrome_options.add_argument("--ignore-certificate-errors")  # 忽略 Chrome 浏览器证书错误报警提示
-        chrome_options.add_argument('lang=en_US')
+    def __init__(self, account_info, finger_print,
+                 headless=False, start_url="https://www.facebook.com/"):
+        """
+        初始化
+        :param account_info: 账号相关的信息，如账号、密码、性别等，必须是字典类型
+        :param finger_print: 指定浏览器指纹，包括devices/user-agent
+        :param headless: 是否指定浏览为无头浏览器
+        :param start_url: 启动的URL
+        """
+        super(FacebookPCActions, self).__init__(account_info, finger_print, headless, start_url)
 
-        prefs = {'profile.default_content_setting_values':{'notifications': 2}}
-        chrome_options.add_experimental_option('prefs', prefs)
-        logger.info('chrome options={}'.format(chrome_options.arguments))
-        driver = webdriver.Chrome(chrome_options=chrome_options)
-        time.sleep(1)
-        driver.set_window_size(1020, 1680)
-        driver.delete_all_cookies()
-        return driver, ''
-    except Exception as e:
-        logger.error("The browser did not start successfully driver:{}".format(str(e)))
-        return None, str(e)
+    def login(self):
+        """
+         登录facebook平台
+        :return:
+        """
+        # 登录FB
+        assert self.driver, "Driver is not valid! Please invoke start_chrome before login!"
+        self.driver.get(self.start_url)
+        self.sleep()
+        try:
+            # 先用cookies登录
+            if self.cookies:
+                logger.info("login by cookies start！ account={}".format(self.account))
+                for item in self.cookies:
+                    self.driver.add_cookie(item)
 
+                self.driver.get(self.start_url)
 
-def auto_login(driver:WebDriver, account, password, gender=1, cookies=None):
-    """
-     登录facebook平台
-    :param driver:  浏览器驱动
-    :param account: FB账号
-    :param password: FB密码
-    :param gender: 账号性别
-    :param cookies: 账号上次登录的cookies
-    :return:
-    """
-    # 登录FB
-    driver.get('https://www.facebook.com/')
-    try:
-        # 先用cookies登录
-        if cookies:
-            for item in cookies:
-                driver.add_cookie(item)
-            driver.get('https://www.facebook.com/')
-            WebDriverWait(driver, 6).until(
+                WebDriverWait(self.driver, 6).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
+                logger.info("login success by cookies！ account={}".format(self.account))
+                return True, 0
+        except Exception as e:
+            logger.exception("login by cookies failed. continue use password, account={}, e={}".format(self.account, e))
+            self.driver.delete_all_cookies()
+
+        try:
+            # FB登录
+            email_box = WebDriverWait(self.driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
+            # email_box.send_keys(account)
+            self.send_keys(email_box, self.account)
+            self.sleep()
+
+            password_tabindex = self.driver.find_elements_by_css_selector('input[tabindex^="-"]')
+            # 代表没有密码输入框
+            if password_tabindex:
+                login_btn = self.driver.find_element_by_css_selector('button[type="button"]')
+                login_btn.send_keys(Keys.ENTER)
+                self.sleep()
+
+            password_box = self.driver.find_element_by_name("pass")
+            # password_box.send_keys(password)
+            self.send_keys(password_box, self.password)
+
+            self.sleep()
+            password_box.send_keys(Keys.ENTER)
+            old_url = self.driver.current_url
+            self.sleep()
+            retry = 0
+            # wrong_password = driver.find_elements_by_css_selector('a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
+            while retry < 3:
+                now_url = self.driver.current_url
+                if now_url == old_url:
+                    password_box.send_keys(Keys.ENTER)
+                    self.sleep()
+                    wrong_password = self.driver.find_elements_by_css_selector(
+                        'a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]')
+                    if wrong_password:
+                        break
+                    retry += 1
+                else:
+                    break
+
+            # 检查是否在首页
+            WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="MComposer"]')))
-            logger.info("login success by cookies！ account={}".format(account))
+            logger.info("login success！username={}, password={}".format(self.account, self.password))
             return True, 0
-    except Exception as e:
-        logger.exception("login by cookies failed. continue use password, account={}, e={}".format(account, e))
-
-    try:
-        # FB登录
-        email_box = WebDriverWait(driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
-        super_sendkeys(email_box, account)
-        time.sleep(3)
-
-        password_tabindex = driver.find_elements_by_css_selector('input[tabindex^="-"]')
-        # 代表没有密码输入框
-        if password_tabindex:
-            login_btn = driver.find_element_by_css_selector('button[type="button"]')
-            login_btn.send_keys(Keys.ENTER)
-            time.sleep(2)
-
-        password_box = driver.find_element_by_name("pass")
-        super_sendkeys(password_box, password)
-
-        time.sleep(3)
-        password_box.send_keys(Keys.ENTER)
-        time.sleep(3)
-
-        # 检查是否在首页
-        WebDriverWait(driver, 6).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-testid="search_input"]')))
-        logger.info("login success！username={}, password={}".format(account, password))
-        return True, 0
-    except Exception as e:
-        logger.error('auto_login exception, stat process..\r\ne={}'.format(e))
-        fb_exp = FacebookExceptionProcessor(driver, env="pc", account=account, gender=gender)
-        return fb_exp.auto_process(4, wait=2)
 
 
 def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
@@ -144,318 +138,274 @@ def browse_page(driver, browse_times=0, distance=0, interval=0, back_top=True):
         return fb_exp.auto_process(3, wait=5)
 
 
-def home_browsing(driver):
-    """
-    首页内容浏览
-    :param driver: 浏览器驱动
-    :return: Ture False
-    """
-    try:
-        logger.info('home_browsing start.')
-        time.sleep(3)
-        url = "https://www.facebook.com"
-        driver.get(url)
-        browse_page(driver)
-        logger.info("home_browsing success")
-        return True, 0
-    except Exception as e:
-        logger.exception('home_browsing exception.e={}'.format(e))
-        fbexcept = FacebookExceptionProcessor(driver, env='pc')
-        return fbexcept.auto_process(3)
+    def browse_home(self):
+        """
+        首页内容浏览
+        :return: Ture/False
+        """
+        try:
+            logger.info('home_browsing start.')
+            self.driver.get(self.start_url)
+            self.sleep()
+            self.browse_page()
+            logger.info("home_browsing success")
+            return True, 0
+        except Exception as e:
+            logger.exception('home_browsing exception.e={}'.format(e))
+            return self.fb_exp.auto_process(3)
+
+    def add_friends(self, search_keys, limit=2):
+        """
+        添加朋友
+        :param search_keys: 搜索关键字集合.list
+        :param limit: 每个关键字添加好好的个数上限
+        :return:
+        """
+        try:
+            limit = 1 if limit <= 0 else limit
+            logger.info('增加好友: friends={}, limit={}'.format(search_keys, limit))
+            for friend in search_keys:
+                page_url = "https://www.facebook.com/search/people/?q={}&epa=SERP_TAB".format(friend)
+                self.driver.get(page_url)
+
+                # 判断是否进入了加好友页面
+                search_inputs = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "div[class='FriendButton'")))
+
+                # 找到新的好友列表
+                browse_page(driver, browse_times=5, distance=0, interval=5, back_top=True)
+                new_friends = driver.find_elements_by_css_selector("button[aria-label='Add Friend'")
+                if not new_friends:
+                    logger.warning('增加好友: can not find any friend. friend keyword={}'.format(friend))
+                    continue
+
+                # 组装要加的好友列表
+                limit = limit if limit < len(new_friends) else len(new_friends)-1
+                limit_friends = new_friends[:limit]
+
+                # 循环加好友
+                for idx in limit_friends:
+                    try:
+                        dig_alert = self.driver.switch_to.alert
+                        dig_alert.dismiss()
+                    except Exception as e:
+                        logger.info(str(e))
+                        pass
+                    finally:
+                        self.click(idx, driver)
+                        time.sleep(3)
+            logger.info("增加好友: add friend succeed.")
+            self.driver.get(self.start_url)
+            time.sleep(5)
+            return True, 0
+        except Exception as e:
+            logger.error("增加好友功能: 出现异常，开始异常检测-->{}".format(str(e)))
+            return self.fb_exp.auto_process(3)
 
 
-def local_surface(driver):
-    """
-    浏览本地新闻   [弃用]
-    :param driver:
-    :return: 浏览器驱动
-    """
-    try:
-        logger.info('local_surface start.')
-        driver.get("https://m.facebook.com/bookmarks/sidenav")
-        time.sleep(3)
-        browse_page(driver)
-        logger.info("local_surface success")
-        return True, 0
-    except Exception as e:
-        logger.error('local_surface catch exception. start process.., e={}'.format(e))
-        fbexcept = FacebookExceptionProcessor(driver, env='pc')
-        return fbexcept.auto_process(3)
+    def chat(self, contents=["How are you?"], friends=2):
+        """
+        跟好友聊天功能
+        :param contents: 聊天内容, 列表
+        :param friends: 一共跟多少好友聊
+        :return:
+        """
+        try:
+
+            # 打开好友界面
+            logger.info('好友聊天功能: begning friends={}, chat content={}'.format(friends, contents))
+            message_url = "https://www.facebook.com/profile.php?sk=friends"
+            self.driver.get(message_url)
+            time.sleep(5)
+
+            # 检查是否进入好友列表页面
+            fridens_page = WebDriverWait(driver, 4).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="pagelet_main_column_personal"]')))
+            if not fridens_page:
+                logger.error("好友聊天功能: 该账户未进入好友界面")
+                return None
+
+            # 找到该用户的好友
+            list_fridens = driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
+            if not list_fridens:
+                logger.error("好友聊天功能: 该账户没有好友")
+                return None
+
+            # 列表打乱顺序后重新组装好友列表
+            random.shuffle(list_fridens)
+            list_fridens = list_fridens[:friends] if friends < len(list_fridens) else len(list_fridens)
+
+            # 进入好友界面，开启聊天
+            for friend_instance in list_fridens:
+
+                # 进入某个好友页面
+                friend_instance.click()
+                time.sleep(3)
+
+                # 打开聊天窗口
+                message_page = driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
+                self.click(message_page,driver)
+                time.sleep(3)
+
+                # 定位聊天内容窗口最上层的div属性
+                message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
+                for item in message_info:
+                    if item.text == 'Type a message...\n\nThumbs Up Sign':
+                        message_instance = item
+                if not message_instance:
+                    break
+
+                # 循环div，聊天，如果有异常证明当前的div不是聊天的div，如果是跳出循环
+                div_list = message_instance.find_elements_by_css_selector('div')
+                for div_instance in div_list:
+                    try:
+                        # div.send_keys(keywords)
+                        self.send_keys(div_instance, contents[0])
+                        self.sendkey
+                        msg_instance = div_instance
+                        break
+                    except Exception as e:
+                        pass
+                # 开始发送消息
+                for word in contents:
+                    self.send_keys(msg_instance, word)
+                    send_button = message_instance.find_element_by_css_selector('a[label="send"]')
+                    send_button.click()
+
+            self.driver.get(self.start_url)
+            time.sleep(5)
+            logger.error("好友聊天功能: send_messages succeed, limit={}, chat content={}".format(friends, contents))
+            return True, 0
+        except Exception as e:
+            logger.exception('send_messages failed, friends={}, chat content={}'.format(friends, contents))
+            return self.fb_exp.auto_process(3)
 
 
-def add_friends(driver:WebDriver, search_keys, limit=5):
-    """
-    添加朋友
-    :param driver: 浏览器驱动
-    :param search_keys: 搜索关键字集合.list
-    :param limit: 每个关键字添加好好的个数上限
-    :return:
-    """
-    try:
-        limit = 1 if limit <= 0 else limit
-        logger.info('增加好友: friends={}, limit={}'.format(search_keys, limit))
-        for friend in search_keys:
-            page_url = "https://www.facebook.com/search/people/?q={}&epa=SERP_TAB".format(friend)
-            driver.get(page_url)
+    def post_status(self, contents):
+        """
+        发送facebook状态
+        :contents 发送的内容及图片, 字典形式{‘post’:'', 'img':[]}
+        :images 图片的路径, list
+        :return:
+        """
 
-            # 判断是否进入了加好友页面
-            search_inputs = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div[class='FriendButton'")))
+        try:
+            logger.info("发送状态功能: sentence={},".format(contents,))
+            message_url = "https://www.facebook.com/home.php?sk=h_chr&ref=bookmarks"
+            self.driver.get(message_url)
 
-            # 找到新的好友列表
-            browse_page(driver, browse_times=5, distance=0, interval=5, back_top=True)
-            new_friends = driver.find_elements_by_css_selector("button[aria-label='Add Friend'")
-            if not new_friends:
-                logger.warning('增加好友: can not find any friend. friend keyword={}'.format(friend))
-                continue
+            # 检查发送状态的页面存在
+            send_state = WebDriverWait(driver, 3).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[class="linkWrap noCount"]')))
+            if not send_state:
+                logger.warning("发送状态功能: 没有进入到个人中心页面")
+                return False, -1
 
-            # 组装要加的好友列表
-            limit = limit if limit < len(new_friends) else len(new_friends)-1
-            limit_friends = new_friends[:limit]
+            # 查找输入框单击弹出消息框
+            time.sleep(2)
+            send_state_page = driver.find_element_by_css_selector('div[id="feedx_sprouts_container"]')
+            self.click(send_state_page)
+            # 输入需要发送的文本
+            time.sleep(1)
 
-            # 循环加好友
-            for idx in limit_friends:
-                try:
-                    dig_alert = driver.switch_to.alert
-                    dig_alert.dismiss()
-                except Exception as e:
-                    logger.info(str(e))
-                    pass
-                finally:
-                    super_click(idx, driver)
-                    time.sleep(3)
-        logger.info("增加好友: add friend succeed.")
-        driver.get('https://www.facebook.com')
-        time.sleep(5)
-        return True, 0
-    except Exception as e:
-        logger.error("增加好友功能: 出现异常，开始异常检测-->{}".format(str(e)))
-        fbexcept = FacebookExceptionProcessor(driver, env='pc')
-        return fbexcept.auto_process(3)
-
-
-def send_messages(driver:WebDriver, keywords_list, limit=2):
-    """
-    好友聊天功能
-    :param driver:
-    :param keywords: list 聊天内容
-    :param limit: int  一共和几个好友聊天
-    :return:
-    """
-    try:
-
-        # 打开好友界面
-        logger.info('好友聊天功能: begning limit={}, chat content={}'.format(limit, keywords_list))
-        message_url = "https://www.facebook.com/profile.php?sk=friends"
-        driver.get(message_url)
-        time.sleep(5)
-
-        # 检查是否进入好友列表页面
-        fridens_page = WebDriverWait(driver, 4).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="pagelet_main_column_personal"]')))
-        if not fridens_page:
-            logger.error("好友聊天功能: 该账户未进入好友界面")
-            return None
-
-        # 找到该用户的好友
-        list_fridens = driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
-        if not list_fridens:
-            logger.error("好友聊天功能: 该账户没有好友")
-            return None
-
-        # 列表打乱顺序后重新组装好友列表
-        random.shuffle(list_fridens)
-        list_fridens = list_fridens[:limit] if limit < len(list_fridens) else len(list_fridens)
-
-        # 进入好友界面，开启聊天
-        for friend_instance in list_fridens:
-
-            # 进入某个好友页面
-            friend_instance.click()
-            time.sleep(3)
-
-            # 打开聊天窗口
-            message_page = driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
-            super_click(message_page, driver)
-            time.sleep(3)
-
-            # 定位聊天内容窗口最上层的div属性
+            # 找到输入框的对象
             message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
             for item in message_info:
-                if item.text == 'Type a message...\n\nThumbs Up Sign':
-                    message_instance = item
-            if not message_instance:
-                break
-
-            # 循环div，聊天，如果有异常证明当前的div不是聊天的div，如果是跳出循环
-            div_list = message_instance.find_elements_by_css_selector('div')
-            for div_instance in div_list:
-                try:
-                    # div.send_keys(keywords)
-                    super_sendkeys(div_instance, keywords_list[0])
-                    msg_instance = div_instance
+                if "What\'s on your mind" in item.text:
+                    div_info = item.find_elements_by_css_selector('div')
+                    for row in div_info:
+                        try:
+                            if "What's on your mind" in row.text:
+                                try:
+                                    self.send_keys(row,contents)
+                                except Exception as e:
+                                    continue
+                                else:
+                                    message_instance = row
+                                    break
+                        except:
+                            continue
                     break
-                except Exception as e:
-                    pass
-            # 开始发送消息
-            for word in keywords_list:
-                super_sendkeys(msg_instance, word)
-                send_button = message_instance.find_element_by_css_selector('a[label="send"]')
-                send_button.click()
 
-        driver.get('https://m.facebook.com')
-        time.sleep(5)
-        logger.error("好友聊天功能: send_messages succeed, limit={}, chat content={}".format(limit, keywords_list))
-        return True, 0
-    except Exception as e:
-        logger.error("好友聊天功能: 出现异常，开始异常检测-->{}".format(str(e)))
-        fbexcept = FacebookExceptionProcessor(driver, env="pc")
-        return fbexcept.auto_process(3)
+            time.sleep(1)
+            submit = None
+            for i in message_info:
+                try:
+                    submit = i.find_element_by_css_selector('button[type="submit"]')
+                    break
+                except:
+                    continue
+            time.sleep(2)
+            self.click(submit)
 
-
-def send_facebook_state(driver:WebDriver, sentence):
-    """
-    发送facebook状态
-
-    :param driver:
-    :keyword    发送的内容
-    :return:
-    """
-    try:
-        logger.info("发送状态功能: sentence={},".format(sentence,))
-        message_url = "https://www.facebook.com/home.php?sk=h_chr&ref=bookmarks"
-        driver.get(message_url)
-
-        # 检查发送状态的页面存在
-        send_state = WebDriverWait(driver, 3).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[class="linkWrap noCount"]')))
-        if not send_state:
-            logger.warning("发送状态功能: 没有进入到个人中心页面")
-            return False, -1
-
-        # 查找输入框单击弹出消息框
-        time.sleep(2)
-        send_state_page = driver.find_element_by_css_selector('div[id="feedx_sprouts_container"]')
-        send_state_page.click()
-        # 输入需要发送的文本
-        time.sleep(1)
-
-        # 找到输入框的对象
-        message_info = driver.find_elements_by_xpath('//div[@role="presentation"]')
-        for item in message_info:
-            if "What\'s on your mind" in item.text:
-                div_info = item.find_elements_by_css_selector('div')
-                for row in div_info:
-                    try:
-                        if "What's on your mind" in row.text:
-                            try:
-                                super_sendkeys(row,sentence)
-                            except Exception as e:
-                                continue
-                            else:
-                                message_instance = row
-                                break
-                    except:
-                        continue
-                break
-
-        time.sleep(1)
-        submit = None
-        for i in message_info:
-            try:
-                submit = i.find_element_by_css_selector('button[type="submit"]')
-                break
-            except:
-                continue
-        time.sleep(2)
-        submit.click()
-
-        driver.get('https://www.facebook.com')
-        time.sleep(5)
-        return True, 0
-    except Exception as e:
-        logger.exception('send post failed, post={}'.format(str(e)))
-        fbexcept = FacebookExceptionProcessor(driver, env='pc')
-        return fbexcept.auto_process(3)
+            self.driver.get('https://www.facebook.com')
+            time.sleep(5)
+            return True, 0
+        except Exception as e:
+            logger.exception('send post failed, post={}'.format(contents))
+            return self.fb_exp.auto_process(3)
 
 
-def user_home(driver:WebDriver, limit):
-    """
-    # 用户中心浏览
-    :param driver:
-    :return:
-    """
-    try:
-        logger.info("user_home start, limit={}".format(limit))
-        driver.get("https://m.facebook.com")
-        # browse_page(driver)
-        user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-        super_click(user_news, driver)
+    def browse_user_center(self, limit=3):
+        """
+        # 用户中心浏览
+        :param limit: 浏览的项目数
+        :return:
+        """
+        try:
+            logger.info("user_home start, limit={}".format(limit))
+            self.driver.get(self.start_url)
+            # browse_page(driver)
+            user_news = self.driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
+            self.click(user_news)
 
-        time.sleep(5)
-        browse_page(driver, browse_times=random.randint(1, 3))
-        # 个人中心全部的菜单栏
-        user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
-        list_rang = range(len(user_list))
-        # 随机浏览limit个个人中心页面
-        slice = random.sample(list_rang, limit)
-        for i in slice:
-            # browse_page(driver, browse_times=5)
-            user_list = driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
-            # user_list[i].click()
-            super_click(user_list[i], driver)
-            browse_page(driver, browse_times=random.randint(3, 5))
-            driver.back()
-            browse_page(driver, browse_times=random.randint(1, 3))
-            user_news = driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
-            # user_news.click()
-            super_click(user_news, driver)
-            browse_page(driver, browse_times=random.randint(3, 5))
-        logger.info("user_home browsing completed")
-        return True, 0
-    except Exception as e:
-        logger.exception("user_home browsing failed  error ={}".format(e))
-        fbexcept = FacebookExceptionProcessor(driver, env='pc')
-        return fbexcept.auto_process(3)
-
-
-def post_status(driver):
-    try:
-        fb = FacebookExceptionProcessor(driver, env="pc")
-        if 0 == fb.auto_check():
-            pass
-
-    except Exception as e:
-        pass
+            self.sleep(3, 6)
+            self.browse_page(browse_times=random.randint(1, 3))
+            # 个人中心全部的菜单栏
+            user_list = self.driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
+            list_rang = range(len(user_list))
+            # 随机浏览limit个个人中心页面
+            slice = random.sample(list_rang, limit)
+            for i in slice:
+                user_list = self.driver.find_elements_by_css_selector('div[data-sigil="touchable"]')
+                # user_list[i].click()
+                self.click(user_list[i])
+                self.browse_page(browse_times=random.randint(3, 5))
+                self.driver.back()
+                self.browse_page(browse_times=random.randint(1, 3))
+                user_news = self.driver.find_element_by_css_selector('div[id="bookmarks_jewel"]')
+                self.click(user_news)
+                self.browse_page(browse_times=random.randint(3, 5))
+            logger.info("user_home browsing completed")
+            return True, 0
+        except Exception as e:
+            logger.exception("user_home browsing failed  error ={}".format(e))
+            return self.fb_exp.auto_process(3)
 
 
 if __name__ == '__main__':
-    # filename = '../../resource/facebook_account.txt'
-    # with open(filename, 'r') as line:
-    #     all_readline = line.readlines()
-    #     for date in all_readline:
-    #         str_info = date.split('---')
-    #         user_account = str(str_info[0]).strip()
-    #         user_password = str(str_info[1]).strip()
+    filename = '../../resource/facebook_account.txt'
+    with open(filename, 'r') as line:
+        all_readline = line.readlines()
+        for date in all_readline:
+            str_info = date.split('---')
+            user_account = str(str_info[0]).strip()
+            user_password = str(str_info[1]).strip()
 
-    user_account = str(17610069110)
-    user_password = str("sanmang111..fb").strip()
-
-    # 1.启动浏览器
-    driver, msg = start_chrome(headless=False)
-    # 2.登陆
-    res, statu = auto_login(driver, user_account, user_password)
-    if res:
-        # 3.页面浏览
-        #browse_page(driver)
-        # 4.增加好友
-        # add_friends(driver, ["pig"],10)
-        # 5.好友聊天
-        # send_messages(driver, ["Hi"], 2)
-        # 6.发送状态
-        send_facebook_state(driver, "I learn English")
-
-    time.sleep(300)
+            # 登陆
+            fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
+            if not fma.start_chrome():
+                print("start chrome failed")
+            fma.set_exception_processor(
+                FacebookExceptionProcessor(fma.driver, env="pc", account=fma.account, gender=fma.gender))
+            # fma.set_exception_processor()
+            res, status = fma.login()
+            if not res:
+                continue
+            cookies = fma.get_cookies()
+            print(cookies)
+            fma.browse_user_center(3)
+            time.sleep(100)
 
 
 
