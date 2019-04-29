@@ -5,6 +5,7 @@
 import time
 import random
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from config import logger
@@ -61,13 +62,6 @@ class FacebookPCActions(FacebookActions):
             self.send_keys(email_box, self.account)
             self.sleep()
 
-            password_tabindex = self.driver.find_elements_by_css_selector('input[tabindex^="-"]')
-            # 代表没有密码输入框
-            if password_tabindex:
-                login_btn = self.driver.find_element_by_css_selector('button[type="button"]')
-                login_btn.send_keys(Keys.ENTER)
-                self.sleep()
-
             password_box = self.driver.find_element_by_name("pass")
             # password_box.send_keys(password)
             self.send_keys(password_box, self.password)
@@ -83,6 +77,8 @@ class FacebookPCActions(FacebookActions):
             return True, 0
         except Exception as e:
             logger.exception("login by cookies failed. continue use password, account={}, e={}".format(self.account, e))
+            return self.fb_exp.auto_process(4, wait=2)
+
 
     def browse_home(self):
         """
