@@ -255,55 +255,28 @@ class FacebookPCActions(FacebookActions):
         """
 
         try:
-            logger.info("发送状态功能: contents={},".format(contents,))
-            message_url = "https://www.facebook.com/home.php?sk=h_chr&ref=bookmarks"
-            self.driver.get(message_url)
+
+            logger.info("发送状态功能: contents={},".format(contents, ))
 
             # 检查发送状态的页面存在
             send_state = WebDriverWait(self.driver, 3).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'div[class="linkWrap noCount"]')))
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'textarea')))
             if not send_state:
                 logger.warning("发送状态功能: 没有进入到个人中心页面")
                 return False, -1
-
-            # 查找输入框单击弹出消息框
-            time.sleep(2)
-            send_state_page = self.driver.find_element_by_css_selector('div[id="feedx_sprouts_container"]')
-            self.click(send_state_page)
-            # 输入需要发送的文本
-            time.sleep(1)
-
-            # 找到输入框的对象
-            message_info = self.driver.find_elements_by_xpath('//div[@role="presentation"]')
-            for item in message_info:
-                if "What\'s on your mind" in item.text:
-                    div_info = item.find_elements_by_css_selector('div')
-                    for row in div_info:
-                        try:
-                            if "What's on your mind" in row.text:
-                                try:
-                                    row.send_keys(contents)
-                                    # self.send_keys(row,contents)
-                                except Exception as e:
-                                    continue
-                                else:
-                                    message_instance = row
-                                    break
-                        except:
-                            continue
+            self.sleep()
+            textarea = self.driver.find_element_by_css_selector('textarea')
+            # self.send_keys(textarea, contents)
+            self.sleep()
+            textarea.send_keys(contents)
+            self.sleep()
+            # 选择share
+            share_list = self.driver.find_elements_by_css_selector('button[type="submit"] span')
+            for row in share_list:
+                if row.text and row.text == "Share":
+                    row.click()
+                    self.sleep()
                     break
-
-            time.sleep(1)
-            submit = None
-            for i in message_info:
-                try:
-                    submit = i.find_element_by_css_selector('button[type="submit"]')
-                    break
-                except:
-                    continue
-            time.sleep(2)
-            self.click(submit)
-
             self.driver.get(self.start_url)
             time.sleep(5)
             return True, 0
@@ -396,11 +369,11 @@ if __name__ == '__main__':
             # 增加好友
             # fma.add_friends(["pig","dog"], 2)
             # 发送状态
-            #fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
+            #fma.post_status("Jesus conquered death, so that through him, we can conquer life. Happy Easter!")
             # 用户中心浏览
             #fma.browse_user_center()
             # 好友聊天
-            fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
+            #fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
             #
             break
 
