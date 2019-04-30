@@ -176,27 +176,29 @@ class FacebookPCActions(FacebookActions):
                 logger.error("好友聊天功能: 该账户未进入好友界面")
                 return None
 
-            # 找到该用户的好友
-            list_fridens = self.driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
-            if not list_fridens:
-                logger.error("好友聊天功能: 该账户没有好友")
-                return None
+            already_chart = []
+            for i in range(friends):
+                # 找到该用户的好友
+                list_fridens = self.driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
+                if not list_fridens:
+                    logger.error("好友聊天功能: 该账户没有好友")
+                    return None
 
-            # 列表打乱顺序后重新组装好友列表
-            random.shuffle(list_fridens)
-            list_fridens = list_fridens[:friends] if friends < len(list_fridens) else len(list_fridens)
-
-            # 进入好友界面，开启聊天
-            for friend_instance in list_fridens:
-
+                for key, val in enumerate(list_fridens):
+                    if val.text in already_chart:
+                        list_fridens.pop(key)
+                # 列表打乱顺序后重新组装好友列表
+                random.shuffle(list_fridens)
+                friend_instance = list_fridens[0]
+                already_chart.append(friend_instance.text)
                 # 进入某个好友页面
                 friend_instance.click()
-                time.sleep(3)
+                self.sleep()
 
                 # 打开聊天窗口
                 message_page = self.driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
                 self.click(message_page, self.driver)
-                time.sleep(3)
+                self.sleep()
 
                 # 定位聊天内容窗口最上层的div属性
                 message_info = self.driver.find_elements_by_xpath('//div[@role="presentation"]')
@@ -204,23 +206,37 @@ class FacebookPCActions(FacebookActions):
                     if item.text == 'Type a message...\n\nThumbs Up Sign':
                         message_instance = item
                 if not message_instance:
-                    break
+                    self.driver.back()
+                    self.sleep()
+                    continue
 
+                msg_instance, send_button = None, None
                 # 循环div，聊天，如果有异常证明当前的div不是聊天的div，如果是跳出循环
                 div_list = message_instance.find_elements_by_css_selector('div')
                 for div_instance in div_list:
                     try:
-                        # div.send_keys(keywords)
-                        self.send_keys(div_instance, contents[0])
+                        div_instance.send_keys(contents[0])
+                        self.sleep()
+                        send_button = message_instance.find_element_by_css_selector('a[label="send"]')
+                        send_button.click()
                         msg_instance = div_instance
+                        self.sleep()
                         break
                     except Exception as e:
                         pass
+                if len(contents) == 1:
+                    self.driver.get(message_url)
+                    continue
+
                 # 开始发送消息
-                for word in contents:
-                    self.send_keys(msg_instance, word)
+                for word in contents[1:]:
+                    self.sleep()
+                    msg_instance.send_keys(word)
+                    self.sleep()
                     send_button = message_instance.find_element_by_css_selector('a[label="send"]')
                     send_button.click()
+                    self.sleep()
+                    self.driver.get(message_url)
 
             self.driver.get(self.start_url)
             time.sleep(5)
@@ -288,7 +304,7 @@ class FacebookPCActions(FacebookActions):
             time.sleep(2)
             self.click(submit)
 
-            self.driver.get('https://www.facebook.com')
+            self.driver.get(self.start_url)
             time.sleep(5)
             return True, 0
         except Exception as e:
@@ -366,8 +382,7 @@ if __name__ == '__main__':
             user_password = str(str_info[1]).strip()
 
             # 初始化
-            # cookies=[{'domain': '.facebook.com', 'httpOnly': False, 'name': 'presence', 'path': '/', 'secure': True, 'value': 'EDvF3EtimeF1556521496EuserFA21B35381807782A2EstateFDt3F_5b_5dG556521496536CEchFDp_5f1B35381807782F2CC'}, {'domain': '.facebook.com', 'expiry': 1564297494.289986, 'httpOnly': True, 'name': 'fr', 'path': '/', 'secure': True, 'value': '14Cgytn5XS9ADvrMS.AWWAmG4Z8RUATBEoDXsVDoRqB1g.BcxqHO.Is.FzG.0.0.BcxqIW.AWVueXRy'}, {'domain': '.facebook.com', 'expiry': 1564297485.612012, 'httpOnly': True, 'name': 'xs', 'path': '/', 'secure': True, 'value': '31%3AzbNHAuA7vvOB-Q%3A2%3A1556521482%3A-1%3A-1'}, {'domain': '.facebook.com', 'expiry': 1557126281, 'httpOnly': False, 'name': 'dpr', 'path': '/', 'secure': True, 'value': '2'}, {'domain': '.facebook.com', 'expiry': 1619593469.742837, 'httpOnly': True, 'name': 'datr', 'path': '/', 'secure': True, 'value': 'zqHGXKNTrxN8ELHDhr2hXAEo'}, {'domain': '.facebook.com', 'expiry': 1564297485.611967, 'httpOnly': False, 'name': 'c_user', 'path': '/', 'secure': True, 'value': '100035381807782'}, {'domain': '.facebook.com', 'expiry': 1556611487.566037, 'httpOnly': True, 'name': 'spin', 'path': '/', 'secure': True, 'value': 'r.1000651590_b.trunk_t.1556521485_s.1_v.2_'}, {'domain': '.facebook.com', 'expiry': 1557126293, 'httpOnly': False, 'name': 'wd', 'path': '/', 'secure': True, 'value': '1200x754'}, {'domain': '.facebook.com', 'expiry': 1619593485.611922, 'httpOnly': True, 'name': 'sb', 'path': '/', 'secure': True, 'value': 'zqHGXDSVQ0-0sXJTMh0cHnju'}]
-            cookies={}
+            cookies=[{'domain': '.facebook.com', 'httpOnly': False, 'name': 'presence', 'path': '/', 'secure': True, 'value': 'EDvF3EtimeF1556521496EuserFA21B35381807782A2EstateFDt3F_5b_5dG556521496536CEchFDp_5f1B35381807782F2CC'}, {'domain': '.facebook.com', 'expiry': 1564297494.289986, 'httpOnly': True, 'name': 'fr', 'path': '/', 'secure': True, 'value': '14Cgytn5XS9ADvrMS.AWWAmG4Z8RUATBEoDXsVDoRqB1g.BcxqHO.Is.FzG.0.0.BcxqIW.AWVueXRy'}, {'domain': '.facebook.com', 'expiry': 1564297485.612012, 'httpOnly': True, 'name': 'xs', 'path': '/', 'secure': True, 'value': '31%3AzbNHAuA7vvOB-Q%3A2%3A1556521482%3A-1%3A-1'}, {'domain': '.facebook.com', 'expiry': 1557126281, 'httpOnly': False, 'name': 'dpr', 'path': '/', 'secure': True, 'value': '2'}, {'domain': '.facebook.com', 'expiry': 1619593469.742837, 'httpOnly': True, 'name': 'datr', 'path': '/', 'secure': True, 'value': 'zqHGXKNTrxN8ELHDhr2hXAEo'}, {'domain': '.facebook.com', 'expiry': 1564297485.611967, 'httpOnly': False, 'name': 'c_user', 'path': '/', 'secure': True, 'value': '100035381807782'}, {'domain': '.facebook.com', 'expiry': 1556611487.566037, 'httpOnly': True, 'name': 'spin', 'path': '/', 'secure': True, 'value': 'r.1000651590_b.trunk_t.1556521485_s.1_v.2_'}, {'domain': '.facebook.com', 'expiry': 1557126293, 'httpOnly': False, 'name': 'wd', 'path': '/', 'secure': True, 'value': '1200x754'}, {'domain': '.facebook.com', 'expiry': 1619593485.611922, 'httpOnly': True, 'name': 'sb', 'path': '/', 'secure': True, 'value': 'zqHGXDSVQ0-0sXJTMh0cHnju'}]
             fma = FacebookPCActions(account_info={"account": user_account, "password": user_password, "cookies": cookies}, finger_print={"user_agent": ""}, headless=False)
             if not fma.start_chrome():
                 print("start chrome failed")
@@ -381,8 +396,12 @@ if __name__ == '__main__':
             # 增加好友
             # fma.add_friends(["pig","dog"], 2)
             # 发送状态
-            # fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
+            #fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
             # 用户中心浏览
-            fma.browse_user_center()
+            #fma.browse_user_center()
+            # 好友聊天
+            fma.chat(contents=["I just played facebook.", "How are you"], friends=2)
+            #
+            break
 
 
