@@ -226,7 +226,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         iframe = key_words.get("iframe", None)  # 查找关键字之前需要切换至的iframe, 类型为list, 其中元素可以为int或str, int代表iframe的索引, str-代表iframe的id.
         if not any([css_keywords, xpath_keywords]):
             self.exception_type = -1
-            logger.error("check func keywords is empty.")
+            logger.warning("check func keywords is empty.")
             return False
 
         key_words_type = By.CSS_SELECTOR
