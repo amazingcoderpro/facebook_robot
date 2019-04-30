@@ -25,6 +25,7 @@ django-filter = "*"
 mysqlclient = "*"
 pyvirtualdisplay = "*"
 log-config = "*"
+urllib2 = "*"
 
 [requires]
 python_version = "3.6"
