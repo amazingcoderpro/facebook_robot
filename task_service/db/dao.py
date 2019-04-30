@@ -628,7 +628,6 @@ def init_db_data():
     # TaskOpt.save_task(category_id=3, creator_id=1, scheduler_id=2, account_ids=[1, 2, 4, 9], name=u'thumb', limit_counts=5)
     #
 
-
     AgentOpt.save_agent(1, status=-1)
     AgentOpt.save_agent(2, status=0)
     AgentOpt.save_agent(3, status=2)
