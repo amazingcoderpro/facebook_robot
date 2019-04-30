@@ -91,14 +91,14 @@ class FacebookPCActions(FacebookActions):
         :return: Ture/False
         """
         try:
-            logger.info('home_browsing start.')
+            logger.info('首页浏览功能: home_browsing start.')
             self.driver.get(self.start_url)
             self.sleep()
             self.browse_page()
-            logger.info("home_browsing success")
+            logger.info("首页浏览功能: home_browsing success")
             return True, 0
         except Exception as e:
-            logger.exception('home_browsing exception.e={}'.format(e))
+            logger.exception('首页浏览功能: home_browsing error-->{}'.format(e))
             return self.fb_exp.auto_process(3)
 
     def add_friends(self, search_keys, limit=2):
@@ -110,7 +110,7 @@ class FacebookPCActions(FacebookActions):
         """
         try:
             limit = 1 if limit <= 0 else limit
-            logger.info('增加好友: friends={}, limit={}'.format(search_keys, limit))
+            logger.info('增加好友功能: friends={}, limit={}'.format(search_keys, limit))
             result = {item: 0 for item in search_keys}
             for friend in search_keys:
                 page_url = "https://www.facebook.com/search/people/?q={}&epa=SERP_TAB".format(friend)
@@ -121,10 +121,11 @@ class FacebookPCActions(FacebookActions):
                     EC.presence_of_element_located((By.CSS_SELECTOR, "div[class='FriendButton'")))
 
                 # 找到新的好友列表
-                self.browse_page(browse_times=5, distance=0, interval=5, back_top=True)
+                self.browse_page(browse_times=5, distance=100, interval=5, back_top=True)
                 new_friends = self.driver.find_elements_by_css_selector("button[aria-label='Add Friend'")
+                new_friends = [item for item in new_friends if item.text == "Add Friend"]
                 if not new_friends:
-                    logger.warning('增加好友: can not find any friend. friend keyword={}'.format(friend))
+                    logger.warning('增加好友功能: can not find any friend. friend keyword={}'.format(friend))
                     continue
 
                 # 组装要加的好友列表
@@ -133,22 +134,24 @@ class FacebookPCActions(FacebookActions):
 
                 # 循环加好友
                 for idx in limit_friends:
+                    self.click(idx, self.driver)
+                    self.sleep()
                     try:
-                        dig_alert = self.driver.switch_to.alert
-                        dig_alert.dismiss()
-                    except Exception as e:
-                        logger.info(str(e))
+                        alert_ele = self.driver.find_element_by_link_text('Cancel')
+                        if alert_ele:
+                            self.click(alert_ele)
+                            continue
+                    except:
                         pass
-                    finally:
-                        self.click(idx, self.driver)
-                        time.sleep(3)
-                        result[friend] += 1
-            logger.info("增加好友: 增加结果为-->{}".format(result))
+                    time.sleep(3)
+                    result[friend] += 1
+
+            logger.info("增加好友功能: 增加结果为-->{}".format(result))
             self.driver.get(self.start_url)
             time.sleep(5)
             return True, 0
         except Exception as e:
-            logger.error("增加好友功能: 出现异常，开始异常检测-->{}".format(str(e)))
+            logger.error("增加好友功能: 出现异常，error-->{}".format(str(e)))
             return self.fb_exp.auto_process(3)
 
     def chat(self, contents=["How are you?"], friends=2):
@@ -327,7 +330,7 @@ class FacebookPCActions(FacebookActions):
         """
         # 浏览页面js
         try:
-            logger.info('browse_page start.')
+            logger.info('浏览页面功能: browse_page start.')
             y_dis = 0
             if browse_times <= 0:
                 browse_times = random.randint(3, 15)
@@ -349,7 +352,7 @@ class FacebookPCActions(FacebookActions):
                 self.driver.execute_script("window.scrollTo(0,0)")
             return True
         except Exception as e:
-            logger.exception('browse_page exception. e={}'.format(e))
+            logger.exception('浏览页面功能: browse_page error={}'.format(e))
             return self.fb_exp.auto_process(3)
 
 
@@ -396,10 +399,10 @@ if __name__ == '__main__':
     # 浏览页面
     # fma.browse_home()
     # 增加好友
-    # fma.add_friends(["pig","dog"], 2)
+    # fma.add_friends(["mac", "xiaomi"], 2)
     # 发送状态
-    # fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
+    fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
     # 用户中心浏览
-    fma.browse_user_center()
+    # fma.browse_user_center()
 
 
