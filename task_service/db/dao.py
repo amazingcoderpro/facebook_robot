@@ -739,6 +739,24 @@ def produce_account():
             print(ret)
 
 
+def produce_useragent():
+    # 添加账号
+    import random
+    idx = random.randint(1, 100)
+    filename = 'E:/facebook_auto/task_service/utils/xiaoning.text'
+    with open(filename, 'r') as line:
+        all_readline = line.readlines()
+        for i in all_readline:
+            if "Android" in i:
+                continue
+            import json
+            user_info = {"user_agent": str(i.strip('\n'))}
+            user_dict = json.dumps(user_info)
+            ret = FingerPrintOpt.save_finger_print(name="chrome"+str(idx), value=user_dict)
+            print(ret)
+
+
+
 def produce_tasks():
     # 创建任务
     for i in range(3):
@@ -800,7 +818,8 @@ if __name__ == '__main__':
     # init_db_data()
     # show_test_data()
     # test_db()
-    produce_account()
+    # produce_account()
+    produce_useragent()
     # print(11)
     # produce_tasks()
     # generate_fb_json()

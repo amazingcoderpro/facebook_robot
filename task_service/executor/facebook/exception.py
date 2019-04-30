@@ -101,8 +101,8 @@ class FacebookExceptionProcessor(BaseException, WebActions):
                            "pc": {"css": []}},
              'account_status': 'verifying_policy_clause'},
         15: {"name": 'robot_verify',
-             'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'],'iframe': ["captcha-recaptcha"]},
-                           "pc": {"css": ['div[class="g-recaptcha"]'],'iframe': ["captcha-recaptcha"]}},
+             'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'], 'iframe': ["captcha-recaptcha"]},
+                           "pc": {"css": ['div[class="g-recaptcha"]'], 'iframe': ["captcha-recaptcha"]}},
              'account_status': 'verifying_robot'},
     }
 
