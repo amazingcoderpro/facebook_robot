@@ -162,12 +162,11 @@ class FacebookPCActions(FacebookActions):
         :return:
         """
         try:
-
             # 打开好友界面
             logger.info('好友聊天功能: begning friends={}, chat content={}'.format(friends, contents))
             message_url = "https://www.facebook.com/profile.php?sk=friends"
             self.driver.get(message_url)
-            time.sleep(5)
+            self.sleep()
 
             # 检查是否进入好友列表页面
             fridens_page = WebDriverWait(self.driver, 4).until(
@@ -176,74 +175,75 @@ class FacebookPCActions(FacebookActions):
                 logger.error("好友聊天功能: 该账户未进入好友界面")
                 return None
 
-            already_chart = []
-            for i in range(friends):
-                # 找到该用户的好友
-                list_fridens = self.driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
-                if not list_fridens:
-                    logger.error("好友聊天功能: 该账户没有好友")
-                    return None
+            # 找到该用户的好友
+            list_fridens = self.driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
+            if not list_fridens:
+                logger.error("好友聊天功能: 该账户没有好友")
+                return None
 
-                for key, val in enumerate(list_fridens):
-                    if val.text in already_chart:
-                        list_fridens.pop(key)
-                # 列表打乱顺序后重新组装好友列表
-                random.shuffle(list_fridens)
-                friend_instance = list_fridens[0]
-                already_chart.append(friend_instance.text)
+            already_chart_friends = []
+            count = 0
+            while count < friends:
+                list_fridens = self.driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
+                # 已经聊过天的好友不再聊天
+                filter_fridends = [item for item in list_fridens if item.text not in already_chart_friends]
+                # 随机取一个好友聊天
+                random.shuffle(filter_fridends)
+                if not filter_fridends: break
+                friend_instance = filter_fridends[0]
+                already_chart_friends.append(friend_instance.text)
+
                 # 进入某个好友页面
-                friend_instance.click()
+                self.click(friend_instance)
                 self.sleep()
 
                 # 打开聊天窗口
-                message_page = self.driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
-                self.click(message_page, self.driver)
-                self.sleep()
-
-                # 定位聊天内容窗口最上层的div属性
-                message_info = self.driver.find_elements_by_xpath('//div[@role="presentation"]')
-                for item in message_info:
-                    if item.text == 'Type a message...\n\nThumbs Up Sign':
-                        message_instance = item
-                if not message_instance:
-                    self.driver.back()
+                try:
+                    message_page = self.driver.find_element_by_css_selector('a[role="button"][href^="/messages/t"]')
+                    self.click(message_page, self.driver)
+                    self.sleep()
+                except:
+                    logger.info("好友聊天功能: 该好友不能聊天，重新选择好友")
+                    self.driver.get(message_url)
                     self.sleep()
                     continue
 
-                msg_instance, send_button = None, None
-                # 循环div，聊天，如果有异常证明当前的div不是聊天的div，如果是跳出循环
-                div_list = message_instance.find_elements_by_css_selector('div')
-                for div_instance in div_list:
+                # 发送消息
+                message_instance = None
+                message_info = self.driver.find_elements_by_css_selector('div[role="presentation"] span div div div')
+                for item in message_info:
                     try:
-                        div_instance.send_keys(contents[0])
+                        item.send_keys(contents[0])
                         self.sleep()
-                        send_button = message_instance.find_element_by_css_selector('a[label="send"]')
+                        send_button = self.driver.find_element_by_css_selector('a[data-tooltip-content="Press Enter to send"]')
                         send_button.click()
-                        msg_instance = div_instance
+                        message_instance = item
                         self.sleep()
                         break
                     except Exception as e:
                         pass
+
                 if len(contents) == 1:
+                    count += 1
                     self.driver.get(message_url)
                     continue
 
-                # 开始发送消息
                 for word in contents[1:]:
                     self.sleep()
-                    msg_instance.send_keys(word)
+                    message_instance.send_keys(word)
                     self.sleep()
-                    send_button = message_instance.find_element_by_css_selector('a[label="send"]')
+                    send_button = self.driver.find_element_by_css_selector('a[data-tooltip-content="Press Enter to send"]')
                     send_button.click()
                     self.sleep()
-                    self.driver.get(message_url)
+                self.driver.get(message_url)
+                count += 1
 
             self.driver.get(self.start_url)
             time.sleep(5)
-            logger.error("好友聊天功能: send_messages succeed, limit={}, chat content={}".format(friends, contents))
+            logger.info("好友聊天功能: send_messages succeed, limit={}, chat content={}".format(friends, contents))
             return True, 0
         except Exception as e:
-            logger.exception('send_messages failed, friends={}, chat content={}'.format(friends, contents))
+            logger.exception('好友聊天功能: send_messages failed, friends={}, chat content={}'.format(friends, contents))
             return self.fb_exp.auto_process(3)
 
     def post_status(self, contents):
@@ -400,7 +400,7 @@ if __name__ == '__main__':
             # 用户中心浏览
             #fma.browse_user_center()
             # 好友聊天
-            fma.chat(contents=["I just played facebook.", "How are you"], friends=2)
+            fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
             #
             break
 
