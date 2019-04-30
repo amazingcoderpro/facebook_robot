@@ -17,6 +17,7 @@ from celery import Task
 from start_worker import app
 from config import logger
 from executor.facebook.mobile_actions import FacebookMobileActions
+from executor.facebook.pc_actions import FacebookPCActions
 from executor.facebook.exception import FacebookExceptionProcessor
 from tasks.task_help import TaskHelper
 
@@ -61,43 +62,55 @@ def fb_auto_feed(self, inputs):
             logger.warning('is_in_verifying return True, task id={}, account={}'.format(tsk_hlp.task_id, tsk_hlp.account))
             return tsk_hlp.make_result(err_msg='is_in_verifying return True')
 
-        # 分步执行任务
-        # 启动浏览器
-        facebook_mobile = FacebookMobileActions(account_info=tsk_hlp.account_info,
+        # 根据账号携带的finger_print 信息来决定启动pc或者mobile
+        if tsk_hlp.active_browser.get("device", ""):
+            chrome_env = "mobile"
+            fb_actions = FacebookMobileActions(account_info=tsk_hlp.account_info,
                                                 finger_print=tsk_hlp.active_browser,
                                                 headless=tsk_hlp.headless)
-        ret = facebook_mobile.start_chrome()
+        else:
+            chrome_env = "pc"
+            fb_actions = FacebookPCActions(account_info=tsk_hlp.account_info,
+                                                finger_print=tsk_hlp.active_browser,
+                                                headless=tsk_hlp.headless)
+
+
+        # 分步执行任务
+        # 启动浏览器
+        ret = fb_actions.start_chrome()
         if not ret:
             logger.error('start chrome failed.')
             return tsk_hlp.make_result()
 
-        facebook_mobile.set_exception_processor(FacebookExceptionProcessor(facebook_mobile.driver, env="mobile", account=facebook_mobile.account, gender=facebook_mobile.gender))
+        fb_exp = FacebookExceptionProcessor(fb_actions.driver, env=chrome_env, account=fb_actions.account,
+                                            gender=fb_actions.gender)
+        fb_actions.set_exception_processor(fb_exp)
         account = tsk_hlp.account
         password = tsk_hlp.password
-        ret, err_code = facebook_mobile.login()
+        ret, err_code = fb_actions.login()
         if not ret:
             msg = 'login failed, account={}, password={}, err_code={}'.format(account, password, err_code)
             logger.error(msg)
-            tsk_hlp.screenshots(facebook_mobile.driver, err_code=err_code)
+            tsk_hlp.screenshots(fb_actions.driver, err_code=err_code)
             return tsk_hlp.make_result(err_code=err_code, err_msg=msg)
 
         last_login = datetime.datetime.now()
-        cookies = facebook_mobile.get_cookies()
+        cookies = fb_actions.get_cookies()
         logger.info('login succeed. account={}, password={}, cookies={}'.format(account, password, cookies))
 
-        ret, err_code = facebook_mobile.browse_home()
+        ret, err_code = fb_actions.browse_home()
         if not ret:
             msg = 'home_browsing, account={}, err_code={}'.format(account, err_code)
             logger.error(msg)
-            tsk_hlp.screenshots(facebook_mobile.driver, err_code=err_code)
+            tsk_hlp.screenshots(fb_actions.driver, err_code=err_code)
             return tsk_hlp.make_result(err_code=err_code, err_msg=msg, last_login=last_login, cookies=cookies)
 
         tsk_hlp.random_sleep()
         # if tsk_hlp.random_select():
-        ret, err_code = facebook_mobile.browse_user_center(limit=random.randint(2, 5))
+        ret, err_code = fb_actions.browse_user_center(limit=random.randint(2, 5))
         if not ret:
             err_msg = 'user_home failed, err_code={}'.format(err_code)
-            tsk_hlp.screenshots(facebook_mobile.driver, err_code=err_code)
+            tsk_hlp.screenshots(fb_actions.driver, err_code=err_code)
             return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg, last_login=last_login, cookies=cookies)
 
         # 账号是否可以继续用作其他用途
@@ -109,20 +122,20 @@ def fb_auto_feed(self, inputs):
         if tsk_hlp.is_should_add_friend():
             fks = tsk_hlp.get_friend_keys(1)
             if fks:
-                ret, err_code = facebook_mobile.add_friends(search_keys=fks, limit=random.randint(1, 3))
+                ret, err_code = fb_actions.add_friends(search_keys=fks, limit=random.randint(1, 3))
                 if not ret:
                     err_msg = 'add_friends failed, err_code={}'.format(err_code)
-                    tsk_hlp.screenshots(facebook_mobile.driver, err_code=err_code)
+                    tsk_hlp.screenshots(fb_actions.driver, err_code=err_code)
                     return tsk_hlp.make_result(err_code=err_code, err_msg=err_msg, last_login=last_login, cookies=cookies)
                 last_add_friend = datetime.datetime.now()
 
         tsk_hlp.random_sleep()
         msgs = tsk_hlp.get_chat_msgs()
         if msgs:
-            ret, err_code = facebook_mobile.chat(contents=msgs, friends=random.randint(1, 3))
+            ret, err_code = fb_actions.chat(contents=msgs, friends=random.randint(1, 3))
             if not ret:
                 msg = "send_message failed, err_code={}".format(err_code)
-                tsk_hlp.screenshots(facebook_mobile.driver, err_code=msg)
+                tsk_hlp.screenshots(fb_actions.driver, err_code=msg)
                 return tsk_hlp.make_result(err_code=err_code, err_msg=msg, last_login=last_login, cookies=cookies)
 
             last_chat = datetime.datetime.now()
@@ -131,10 +144,10 @@ def fb_auto_feed(self, inputs):
         if tsk_hlp.is_should_post():
             send_state = tsk_hlp.get_posts()
             if send_state and send_state.get('post', ''):
-                ret, err_code = facebook_mobile.post_status(contents=send_state)
+                ret, err_code = fb_actions.post_status(contents=send_state)
                 if not ret:
                     msg = "send_facebook_state failed, err_code={}".format(err_code)
-                    tsk_hlp.screenshots(facebook_mobile.driver, err_code=err_code)
+                    tsk_hlp.screenshots(fb_actions.driver, err_code=err_code)
                     return tsk_hlp.make_result(err_code=err_code, err_msg=msg, last_login=last_login, cookies=cookies)
                 last_post = datetime.datetime.now()
 
@@ -146,7 +159,7 @@ def fb_auto_feed(self, inputs):
         # self.retry(countdown=10 ** self.request.retries)
         return tsk_hlp.make_result(err_msg=err_msg)
     finally:
-        facebook_mobile.quit()
+        fb_actions.quit()
     return tsk_hlp.make_result(True, last_login=last_login, last_chat=last_chat,
                                last_post=last_post, last_add_friend=last_add_friend, cookies=cookies)
 
