@@ -24,7 +24,7 @@ def dispatch_test():
         time.sleep(600)
 
 
-def run(task_start_mode='new', update_interval=30):
+def run(task_start_mode='new', update_interval=60):
     """
     启动任务调度系统
     :param task_start_mode: 'new':清空缓存,从头开始； 'restart': 则继续上一次结束点开始, 之前未处理完的任务将继续被执行
@@ -59,8 +59,8 @@ def run(task_start_mode='new', update_interval=30):
 
 
 if __name__ == '__main__':
-    # run(task_start_mode=task_start_mode, update_interval=interval)
-    run(task_start_mode="restart", update_interval=30)
+    # global env, task_start_mode, interval
+    run(task_start_mode=task_start_mode, update_interval=interval)
 
 # pipenv run python3 start_task.py [test|pro] [new|restart]
 # eg: python3 start_task.py test new

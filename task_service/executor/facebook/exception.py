@@ -242,7 +242,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
                 if iframe:
                     for ifa in iframe:
                         self.driver.switch_to.frame(ifa)
-                        time.sleep(1)
+                        self.sleep(1,1)
 
                 WebDriverWait(self.driver, wait).until(
                     EC.presence_of_element_located((key_words_type, key)))
@@ -291,7 +291,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             tel_number = WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(2))))
             self.click(tel_number)
-            time.sleep(3)
+            self.sleep()
         except Exception as e:
             logger.exception("忽略输入电话号码处理异常, e={}".format(e))
             return False, 2
@@ -322,7 +322,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         :return: 成功返回 True, 失败返回 False
         """
 
-        time.sleep(3)
+        self.sleep()
         try:
             logger.info('忽略下载app处理中')
             never_save_number = WebDriverWait(self.driver, 6).until(
@@ -433,7 +433,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
                     self.click(sub_button)
             except:
                 pass
-            rtime = random.randint(2, 4)
+
             try:
                 tel_button = self.driver.find_elements_by_css_selector('i[class^="img sp_"]')
                 if not tel_button:
@@ -444,11 +444,11 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             tel_stutas = self.driver.find_elements_by_css_selector('a[role="menuitemcheckbox"]')
             self.click(tel_stutas[45])
 
-            time.sleep(rtime)
+            self.sleep()
             send_tel = self.driver.find_element_by_css_selector('input[type="tel"]')
             self.send_keys(send_tel, "16500000000")
 
-            time.sleep(rtime)
+            self.sleep()
             submit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
             self.click(submit_button)
 
@@ -462,11 +462,11 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             except:
                pass
             # 短信验证码
-            time.sleep(rtime)
+            self.sleep()
             tel_code = self.driver.find_element_by_css_selector('input[name="p_c"]')
             self.send_keys(tel_code, "414141")
 
-            time.sleep(rtime)
+            self.sleep()
             submit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
             self.click(submit_button)
 
