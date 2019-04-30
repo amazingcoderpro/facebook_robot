@@ -13,7 +13,9 @@ from users.api.category.views import UserCategoryViewSet
 from users.api.user.views import UserViewSet
 from vps.view import AreaViewSet, AgentViewSet, AreaAccountCount
 from web_service.views import render_page
-
+def abc():
+    print(122222)
+    pass
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
 # vps
@@ -33,7 +35,7 @@ router.register(r'task/(\d*?)/account', TaskAccountViewSet)
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
-    url(r'^api/areaAccountCount/', AreaAccountCount.as_view()),      # 区域账号个数
+    url(r'^api/areaAccountCount/', AreaAccountCount.as_view(test_func=abc)),      # 区域账号个数
     url(r'^api/user/', include('users.api.urls')),
     url(r'^api/task/sum/', TaskSumView.as_view()),
     url(r'^api/', include(router.urls)),
