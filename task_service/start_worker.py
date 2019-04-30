@@ -8,6 +8,7 @@
 """
 import os
 import sys
+import datetime
 from celery import Celery, platforms
 from kombu import Exchange, Queue
 from config import load_config, get_broker_and_backend
@@ -31,7 +32,7 @@ tasks = [
 broker, backend = get_broker_and_backend()
 worker_log_path = ''
 beat_log_path = ''
-worker_log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)) + '/logs', 'celery.log')
+worker_log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)) + '/logs', 'celery_{}.log'.format(datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S")))
 beat_log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)) + '/logs', 'beat.log')
 
 
@@ -61,4 +62,27 @@ app.conf.update(
 #         'options': {'queue': 'feed_account_queue', 'routing_key': 'for_feed_account'}
 #     }
 # }
-#celery -A tasks.workers -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env pro
+#celery -A start_worker -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env pro
+
+if __name__ == '__main__':
+    import subprocess
+    env = "pro"
+    save_log = True
+    input_env = input("Please input execute environment(pro/test):")
+    if input_env and input_env in ["pro", 'test']:
+        env = input_env
+    else:
+        print("use default env: pro")
+
+    is_log_file = input("is save log to file(yes/no):")
+    if is_log_file and is_log_file in ["yes", 'no']:
+        if "no" in is_log_file:
+            save_log = False
+
+    if save_log:
+        subprocess.call("celery -A start_worker -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery_{}.log -env {}".format(
+            datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S"), env), shell=True)
+    else:
+        subprocess.call(
+            "celery -A start_worker -Q default,China,American,Japan worker -l info -c 4 -Ofair -env {}".format(env), shell=True)
+

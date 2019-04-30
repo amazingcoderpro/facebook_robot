@@ -19,15 +19,17 @@ class WebActions:
         self.driver = None
         self.options = None
 
-    def start_chrome(self):
+    def start_chrome(self, force_display=False, force_client=""):
         """
         配置并启动浏览器
-        :return:
+        :param force_display: 强制显示chrome界面
+        :param force_client: 强制指定启动chrome的环境， 可选输入项为"pc"或“mobile"
+        :return: True/False
         """
         try:
             # 定制浏览器启动项
             chrome_options = webdriver.ChromeOptions()
-            if self.headless:
+            if self.headless and not force_display:
                 chrome_options.add_argument('--headless')
                 chrome_options.add_argument('--no-sandbox')
                 chrome_options.add_argument('--disable-extensions')
@@ -41,17 +43,16 @@ class WebActions:
             prefs = {'profile.default_content_setting_values':{'notifications': 2}}
             chrome_options.add_experimental_option('prefs', prefs)
 
-            if self.user_agent:
+            if self.user_agent and force_client != "mobile":
                 chrome_options.add_argument('--user-agent={}'.format(self.user_agent))
 
-            if self.device:
+            if self.device and force_client != "pc":
                 # 移动设备仿真
                 mobile_emulation = {
                     'deviceName': self.device
                     # "deviceMetrics": {"width": 600, "height":800, "pixelRatio": 4.0},
                     # "userAgent": "Mozilla/5.0 (Linux; Android 8.0.0; XT1635-02 Build/OPNS27.76-12-22-9)"
                 }
-
                 chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
 
             chrome_driver = webdriver.Chrome(chrome_options=chrome_options)
