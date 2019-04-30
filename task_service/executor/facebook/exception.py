@@ -47,7 +47,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         -1: {'name': 'unknown'},
         0: {'name': 'home',
             'key_words': {'mobile': {"css": ['div[id="MComposer"]'], "xpath": []},
-                          "pc": {"css": ['div[id="MComposerPC"]']}}},
+                          "pc": {"css": ['input[data-testid="search_input"]']}}},
         1: {'name': 'remember_password',
             'key_words': {"mobile": {"css": ['a[href^="/login/save-device/cancel/?"]', 'button[type="submit"]']},
                           "pc": {"css": []}}},
@@ -62,7 +62,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
                           "pc": {"css": []}}},
         5: {'name': 'account_invalid',
             'key_words': {"mobile": {"css": ['div[class^="mvm uiP fsm"]']},
-                          "pc": {"css": ['div[class^="mvm uiP fsm"]']}},
+                          "pc": {"css": ['button[name="submit[Download Your Information]"]']}},
             'account_status': 'invalid'},
         6: {'name': 'auth_button_two_verify',
             'key_words': {"mobile": {"css": ('button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]')},
@@ -74,7 +74,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             'account_status': 'verifying_sms'},
         8: {'name': 'photo_verify',
             'key_words': {"mobile": {"css": ['input[name="photo-input"]', 'input[id="photo-input"]']},
-                          "pc": {"css": []}},
+                          "pc": {"css": ['input[name="photo-input"]', 'input[id="photo-input"]']}},
             'account_status': 'verifying_photo'},
         9: {'name': 'auth_button_one_verify',
             'key_words': {"mobile": {"css": ['button[name="submit[Secure Account]"]']},
@@ -82,7 +82,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             'account_status': 'verifying_auth_button_one'},
         10: {'name': 'email_verify',
              'key_words': {"mobile": {"css": ['input[placeholder="######"]']},
-                           "pc": {"css": []}},
+                           "pc": {"css": ['input[placeholder="######"]']}},
              'account_status': 'verifying_email_code'},
         11: {'name': 'sms_verify',
              'key_words': {"mobile": {"css": ['input[name="p_c"]']},
@@ -90,7 +90,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
              'account_status': 'verifying_sms_code'},
         12: {'name': 'wrong_password',
              'key_words': {"mobile": {"css": ['a[href^="/recover/initiate/?ars=facebook_login_pw_error&lwv"]']},
-                           "pc": {"css": []}},
+                           "pc": {"css": ['a[class="accessible_elem layer_close_elem"]']}},
              'account_status': 'verifying_wrong_password'},
         13: {'name': 'shared_login',
              'key_words': {"mobile": {"css": ['a[href^="https://facebook.com/mobile/click/?redir_url=https"]']},
@@ -352,6 +352,23 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         logger.info("账号被封杀")
         return False, 5
 
+    def process_account_invalid_pc(self):
+        """
+        # 账号被封杀
+        :param kwargs:
+        :return: 成功返回 True, 失败返回 False
+        """
+        try:
+            logger.info('账号被封杀处理中')
+            never_save_number = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(5))))
+            self.click(never_save_number)
+        except Exception as e:
+            logger.exception("账号被封杀处理异常, e={}".format(e))
+            return False, 5
+        logger.info("账号被封杀")
+        return False, 5
+
     def process_auth_button_two_verify_mobile(self):
         """
         身份验证类型二，跳转按钮
@@ -501,6 +518,47 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         logger.info("处理上传图片验证的完成")
         return True, 8
 
+    def process_photo_verify_pc(self):
+        """
+        # 上传图片验证
+        :param kwargs:
+       :return: 成功返回 True, 失败返回 False
+        """
+        try:
+            logger.info("处理上传图片验证处理中")
+            photo_upload = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(8))))
+
+            photo_path = get_photo(self.account, self.gender)
+            logger.info('process_photo_verify photo path={}'.format(photo_path))
+            if not photo_path:
+                return False, 8
+            # photo_path = 'E:\\IMG_3563.JPG'
+            # 上传图片
+            self.send_keys(photo_upload, photo_path)
+            # photo_upload.send_keys(photo_path)
+            # 点击继续
+            phone_button = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[id="checkpointSubmitButton-actual-button"]')))
+            self.click(phone_button)
+            # 重新检查页面
+            photo_btn = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[name="submit[OK]"]')))
+            if photo_btn:
+                logger.info("photo uploaded successfully!")
+                account_photo_path = os.path.join(os.path.dirname(os.path.dirname(photo_path)),
+                                                  "{}.jpg".format(self.account))
+                shutil.move(photo_path, account_photo_path)
+                logger.info("process photo verify succeed, photo path={}".format(account_photo_path))
+            else:
+                logger.warning("process photo verify unfinished, photo path={}".format(photo_path))
+                os.remove(photo_path)
+        except Exception as e:
+            logger.exception("上传照片验证异常, e={}".format(e))
+            return False, 8
+        logger.info("处理上传图片验证的完成")
+        return True, 8
+
     def process_auth_button_one_verify_mobile(self):
         """
         身份验证类型一，跳转按钮
@@ -520,6 +578,24 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         return True, 9
 
     def process_email_verify_mobile(self):
+        """
+        登录邮箱数字验证码验证
+        :param kwargs:
+        :return: 成功返回 True, 失败返回 False
+        """
+        try:
+            logger.info("登录邮箱数字验证码验证处理中")
+            check_button =WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, self.get_key_words(10))))
+            self.click(check_button)
+        except Exception as e:
+            logger.exception("登录邮箱数字验证码验证处理异常, e={}".format(e))
+            return False, 10
+        logger.info("登录邮箱数字验证码验证处理完成")
+        return True, 10
+
+    def process_email_verify_pc(self):
         """
         登录邮箱数字验证码验证
         :param kwargs:
@@ -557,6 +633,23 @@ class FacebookExceptionProcessor(BaseException, WebActions):
         return True, 11
 
     def process_wrong_password_mobile(self):
+        """
+        账号密码不正确
+        :param kwargs:
+        :return: 成功返回 True, 失败返回 False
+        """
+        try:
+            logger.info("账号密码不正确 处理中")
+            WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, self.get_key_words(12))))
+        except Exception as e:
+            logger.exception("账号密码不正确处理异常, e={}".format(e))
+            return False, -1
+        logger.info("账号密码不正确")
+        return False, -1
+
+    def process_wrong_password_pc(self):
         """
         账号密码不正确
         :param kwargs:
