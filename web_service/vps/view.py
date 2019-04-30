@@ -63,3 +63,6 @@ class AreaAccountCount(View):
         # result = {item["name"]:item["count"] for item in ser.data}
         ret = json.dumps(ser.data,ensure_ascii=False)
         return HttpResponse(ret)
+
+    def test_func(self):
+        print(1111)
