@@ -48,6 +48,7 @@ def fb_auto_feed(self, inputs):
         last_post = None
         last_add_friend = None
         cookies = None
+        fb_actions = None
         tsk_hlp = TaskHelper(inputs)
 
         if not tsk_hlp.is_inputs_valid():
@@ -77,7 +78,7 @@ def fb_auto_feed(self, inputs):
 
         # 分步执行任务
         # 启动浏览器
-        ret = fb_actions.start_chrome()
+        ret = fb_actions.start_chrome(force_display=True)
         if not ret:
             logger.error('start chrome failed.')
             return tsk_hlp.make_result()
@@ -159,7 +160,8 @@ def fb_auto_feed(self, inputs):
         # self.retry(countdown=10 ** self.request.retries)
         return tsk_hlp.make_result(err_msg=err_msg)
     finally:
-        fb_actions.quit()
+        if fb_actions:
+            fb_actions.quit()
     return tsk_hlp.make_result(True, last_login=last_login, last_chat=last_chat,
                                last_post=last_post, last_add_friend=last_add_friend, cookies=cookies)
 
