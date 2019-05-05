@@ -3,9 +3,9 @@
 ```
 pipenv shell
 cd web_service
-env=[pro|test] python3 manager.py runserver 0.0.0.0:80
+env=[pro|test] python3 manage.py runserver 0.0.0.0:80
 ```
-*例: env=test python3 main.py runserver 0.0.0.0:80* 
+*例: env=test python3 manage.py runserver 0.0.0.0:80* 
 
 *注：env用以配置环境信息*
 - pro 代表生产环境, 若不设置env, pro为默认
