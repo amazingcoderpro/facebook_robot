@@ -17,6 +17,8 @@ env=[pro|test] python3 manager.py runserver 0.0.0.0:80
 pipenv shell
 cd task_service
 python3 start_task.py [pro|test]  [restart|new]
+or
+python3 start_task.py
 ```
 *例: python3 start_task.py test restart* 
 
@@ -35,6 +37,9 @@ python3 start_task.py [pro|test]  [restart|new]
 pipenv shell
 cd task_service
 celery -A start_worker -Q *queuenames worker -l info -c 4 -Ofair -f *log_path -env [pro|test]
+or
+cd task_service
+python3 start_worker.py 
 ```
 *例：celery -A start_worker -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery.log -env test*
 
