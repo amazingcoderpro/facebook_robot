@@ -78,7 +78,7 @@ def fb_auto_feed(self, inputs):
 
         # 分步执行任务
         # 启动浏览器
-        ret = fb_actions.start_chrome(force_display=True)
+        ret = fb_actions.start_chrome()
         if not ret:
             logger.error('start chrome failed.')
             return tsk_hlp.make_result()

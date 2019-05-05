@@ -34,7 +34,7 @@ system:
     screenshots_force: 0            # 是否强制在异常时截图，默认为false,代表只有在无头环境下才截图, 开发人员可以选择打开，更改为1即可
     screenshots_dir: screenshots    # 截图保存目录
     screenshots_keep: 5             # 默认保存最近5天的截图
-    force_display: 0                # 是否强制显示浏览器界面，默认为否
+    force_display: 1                # 是否强制显示浏览器界面，默认为否
 
 support:
     captcha_in_api: "http://2captcha.com/in.php"
