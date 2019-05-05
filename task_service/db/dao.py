@@ -716,7 +716,7 @@ def test_db():
 def produce_account():
     # 添加账号
     import random
-    filename = 'E:/facebook.txt'
+    filename = 'E:/facebook30.txt'
     with open(filename, 'r') as line:
         all_readline = line.readlines()
         for i in all_readline:
@@ -734,7 +734,7 @@ def produce_account():
                             password=user_password, owner=3, category=1,
                             email=user_account, email_pwd=email_password,
                             gender=gender, birthday=birthday, profile_id=profile_id, status='valid', active_browser=(t%6+1),
-                                    configure=json.dumps({'last_login': '', 'last_post': '', 'login_counts': 0}), using=0, active_area=1, last_update=datetime.datetime.now())
+                                    configure=json.dumps({'last_login': '', 'last_post': '', 'login_counts': 0}), using=0, active_area=8, last_update=datetime.datetime.now())
             print(ret)
 
 
@@ -812,13 +812,12 @@ def generate_fb_json():
         f.write(str_cfg)
 
 
-
 if __name__ == '__main__':
     # init_db_data()
     # show_test_data()
     # test_db()
-    # produce_account()
-    produce_useragent()
+    produce_account()
+    # produce_useragent()
     # print(11)
     # produce_tasks()
     # generate_fb_json()
