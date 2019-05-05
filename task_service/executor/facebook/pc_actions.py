@@ -173,13 +173,13 @@ class FacebookPCActions(FacebookActions):
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'div[id="pagelet_main_column_personal"]')))
             if not fridens_page:
                 logger.error("好友聊天功能: 该账户未进入好友界面")
-                return None
+                return False, 0
 
             # 找到该用户的好友
             list_fridens = self.driver.find_elements_by_css_selector('div[class="fsl fwb fcb"]')
             if not list_fridens:
                 logger.error("好友聊天功能: 该账户没有好友")
-                return None
+                return True, 0
 
             already_chart_friends = []
             count = 0
@@ -293,12 +293,19 @@ class FacebookPCActions(FacebookActions):
         try:
             logger.info("用户中心浏览功能: browsing beginning")
             message_url = "https://www.facebook.com/profile.php"
-            self.driver.get(message_url)
 
-            user_lines = self.driver.find_elements_by_css_selector('div[id="fbTimelineHeadline"] li a')[1:4]
-            random.shuffle(user_lines)
-            for row in user_lines:
-                self.click(row)
+            page_instance = None
+            ready_browse = []
+            for i in range(3):
+                self.driver.get(message_url)
+                user_lines = self.driver.find_elements_by_css_selector('div[id="fbTimelineHeadline"] li a')[1:4]
+                for row in user_lines:
+                    if row.text not in ready_browse:
+                        page_instance = row
+                        ready_browse.append(row.text)
+                        break
+
+                self.click(page_instance)
                 self.browse_page()
                 self.sleep()
             logger.info("用户中心浏览功能: browsing completed")
@@ -370,11 +377,11 @@ if __name__ == '__main__':
             # fma.add_friends(["James","Jolin"], 2)
             # 发送状态
 
-            fma.post_status("Today is a sun day!")
+            #fma.post_status("Today is a sun day!")
 
             #fma.post_status("Jesus conquered death, so that through him, we can conquer life. Happy Easter!")
             # 用户中心浏览
-            # fma.browse_user_center()
+            #fma.browse_user_center()
             # 好友聊天
             # fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
 
@@ -382,5 +389,17 @@ if __name__ == '__main__':
 
             #
             break
+
+
+
+
+
+
+
+
+
+
+
+
 
 
