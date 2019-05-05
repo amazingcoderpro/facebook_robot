@@ -394,13 +394,13 @@ if __name__ == '__main__':
             # 浏览页面
             # fma.browse_home()
             # 增加好友
-            # fma.add_friends(["pig","dog"], 2)
+            # fma.add_friends(["James","Jolin"], 2)
             # 发送状态
-            #fma.post_status("wo shi yi zhi xiaoxiaoniao 鸟")
+            fma.post_status("Today is a sun day!")
             # 用户中心浏览
-            #fma.browse_user_center()
+            # fma.browse_user_center()
             # 好友聊天
-            fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
+            # fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
             #
             break
 
