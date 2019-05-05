@@ -6,7 +6,7 @@ import json
 import datetime
 from start_worker import app
 from db import JobOpt, Job, Task, TaskCategory, Agent, TaskAccountGroup, Account, Scheduler, FingerPrint, Area
-from config import logger, get_environment
+from config import logger, get_environment, get_system_args
 from db.basic import ScopedSession
 from sqlalchemy import and_
 
@@ -124,10 +124,14 @@ def send_task_2_worker(task_id):
 
             active_browser = db_scoped_session.query(FingerPrint.value).filter(FingerPrint.id == active_browser_id).first()
 
+            if get_system_args()["force_display"] == 0:
+                headless = True if get_environment() == 'pro' else False
+            else:
+                headless = False
             # 构建任务执行必备参数
             inputs = {
                 'system': {
-                    'headless': True if get_environment() == 'pro' else False
+                    'headless': headless
                 },
                 'task': {
                     'task_id': task_id,

@@ -68,21 +68,44 @@ if __name__ == '__main__':
     import subprocess
     env = "pro"
     save_log = True
+    queue_names = "default"
+    concurrent = 4
     input_env = input("Please input execute environment(pro/test):")
     if input_env and input_env in ["pro", 'test']:
         env = input_env
     else:
-        print("use default env: pro")
+        print("use default env: {}".format(env))
 
-    is_log_file = input("is save log to file(yes/no):")
+    queue_names_input = input("Please input queue name(separate multiples with commas):")
+    if queue_names_input:
+        queue_names = queue_names_input
+        queue_names = queue_names.replace(' ', '')
+    else:
+        print("use default queue: {}".format(queue_names))
+
+    concurrent_input = input("Please input concurrent numbers(default:4):")
+    try:
+        concurrent = int(concurrent_input)
+    except:
+        print("use default concurrent: {}".format(concurrent))
+
+    is_log_file = input("Is save log to file(yes/no):")
     if is_log_file and is_log_file in ["yes", 'no']:
         if "no" in is_log_file:
             save_log = False
+            print("don't save log in file")
+        else:
+            print("Save log in file")
+    else:
+        print("Save log in file")
 
     if save_log:
-        subprocess.call("celery -A start_worker -Q default,China,American,Japan worker -l info -c 4 -Ofair -f logs/celery_{}.log -env {}".format(
-            datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S"), env), shell=True)
+        celery_cmd = "celery -A start_worker -Q {} worker -l info -c {} -Ofair -f logs/celery_{}.log -env {}".format(
+            queue_names, concurrent, datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S"), env)
     else:
-        subprocess.call(
-            "celery -A start_worker -Q default,China,American,Japan worker -l info -c 4 -Ofair -env {}".format(env), shell=True)
+        celery_cmd = "celery -A start_worker -Q {} worker -l info -c {} -Ofair -env {}".format(
+            queue_names, concurrent, env)
+
+    print("Celery cmd: {}".format(celery_cmd))
+    subprocess.call(celery_cmd, shell=True)
 
