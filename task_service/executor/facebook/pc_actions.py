@@ -363,8 +363,8 @@ if __name__ == '__main__':
             user_password = str(str_info[1]).strip()
 
             # 初始化
-            cookies=[{'domain': '.facebook.com', 'httpOnly': False, 'name': 'presence', 'path': '/', 'secure': True, 'value': 'EDvF3EtimeF1556521496EuserFA21B35381807782A2EstateFDt3F_5b_5dG556521496536CEchFDp_5f1B35381807782F2CC'}, {'domain': '.facebook.com', 'expiry': 1564297494.289986, 'httpOnly': True, 'name': 'fr', 'path': '/', 'secure': True, 'value': '14Cgytn5XS9ADvrMS.AWWAmG4Z8RUATBEoDXsVDoRqB1g.BcxqHO.Is.FzG.0.0.BcxqIW.AWVueXRy'}, {'domain': '.facebook.com', 'expiry': 1564297485.612012, 'httpOnly': True, 'name': 'xs', 'path': '/', 'secure': True, 'value': '31%3AzbNHAuA7vvOB-Q%3A2%3A1556521482%3A-1%3A-1'}, {'domain': '.facebook.com', 'expiry': 1557126281, 'httpOnly': False, 'name': 'dpr', 'path': '/', 'secure': True, 'value': '2'}, {'domain': '.facebook.com', 'expiry': 1619593469.742837, 'httpOnly': True, 'name': 'datr', 'path': '/', 'secure': True, 'value': 'zqHGXKNTrxN8ELHDhr2hXAEo'}, {'domain': '.facebook.com', 'expiry': 1564297485.611967, 'httpOnly': False, 'name': 'c_user', 'path': '/', 'secure': True, 'value': '100035381807782'}, {'domain': '.facebook.com', 'expiry': 1556611487.566037, 'httpOnly': True, 'name': 'spin', 'path': '/', 'secure': True, 'value': 'r.1000651590_b.trunk_t.1556521485_s.1_v.2_'}, {'domain': '.facebook.com', 'expiry': 1557126293, 'httpOnly': False, 'name': 'wd', 'path': '/', 'secure': True, 'value': '1200x754'}, {'domain': '.facebook.com', 'expiry': 1619593485.611922, 'httpOnly': True, 'name': 'sb', 'path': '/', 'secure': True, 'value': 'zqHGXDSVQ0-0sXJTMh0cHnju'}]
-            fma = FacebookPCActions(account_info={"account": user_account, "password": user_password, "cookies": cookies}, finger_print={"user_agent": ""}, headless=False)
+            # cookies=[{'domain': '.facebook.com', 'httpOnly': False, 'name': 'presence', 'path': '/', 'secure': True, 'value': 'EDvF3EtimeF1556521496EuserFA21B35381807782A2EstateFDt3F_5b_5dG556521496536CEchFDp_5f1B35381807782F2CC'}, {'domain': '.facebook.com', 'expiry': 1564297494.289986, 'httpOnly': True, 'name': 'fr', 'path': '/', 'secure': True, 'value': '14Cgytn5XS9ADvrMS.AWWAmG4Z8RUATBEoDXsVDoRqB1g.BcxqHO.Is.FzG.0.0.BcxqIW.AWVueXRy'}, {'domain': '.facebook.com', 'expiry': 1564297485.612012, 'httpOnly': True, 'name': 'xs', 'path': '/', 'secure': True, 'value': '31%3AzbNHAuA7vvOB-Q%3A2%3A1556521482%3A-1%3A-1'}, {'domain': '.facebook.com', 'expiry': 1557126281, 'httpOnly': False, 'name': 'dpr', 'path': '/', 'secure': True, 'value': '2'}, {'domain': '.facebook.com', 'expiry': 1619593469.742837, 'httpOnly': True, 'name': 'datr', 'path': '/', 'secure': True, 'value': 'zqHGXKNTrxN8ELHDhr2hXAEo'}, {'domain': '.facebook.com', 'expiry': 1564297485.611967, 'httpOnly': False, 'name': 'c_user', 'path': '/', 'secure': True, 'value': '100035381807782'}, {'domain': '.facebook.com', 'expiry': 1556611487.566037, 'httpOnly': True, 'name': 'spin', 'path': '/', 'secure': True, 'value': 'r.1000651590_b.trunk_t.1556521485_s.1_v.2_'}, {'domain': '.facebook.com', 'expiry': 1557126293, 'httpOnly': False, 'name': 'wd', 'path': '/', 'secure': True, 'value': '1200x754'}, {'domain': '.facebook.com', 'expiry': 1619593485.611922, 'httpOnly': True, 'name': 'sb', 'path': '/', 'secure': True, 'value': 'zqHGXDSVQ0-0sXJTMh0cHnju'}]
+            fma = FacebookPCActions(account_info={"account": user_account, "password": user_password}, finger_print={"user_agent": ""}, headless=False)
             if not fma.start_chrome():
                 print("start chrome failed")
             fma.set_exception_processor(
@@ -378,17 +378,16 @@ if __name__ == '__main__':
             # fma.add_friends(["James","Jolin"], 2)
             # 发送状态
 
-            #fma.post_status("Today is a sun day!")
+            # fma.post_status("Today is a sun day!")
 
-            #fma.post_status("Jesus conquered death, so that through him, we can conquer life. Happy Easter!")
+            # fma.post_status("Jesus conquered death, so that through him, we can conquer life. Happy Easter!")
             # 用户中心浏览
-            #fma.browse_user_center()
+            # fma.browse_user_center()
             # 好友聊天
             # fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
 
-            #fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
+            # fma.chat(contents=["Hello", "Hi", "you good"], friends=2)
 
-            #
             break
 
 

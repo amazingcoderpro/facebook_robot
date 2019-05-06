@@ -89,7 +89,7 @@ require(['vue', 'utils/global', 'utils/table', 'utils/form', 'task/common'], fun
                 },
                 {
                     title: '区域',
-                    data: 'account.area_name'
+                    data: 'account.active_area.name'
                 },
                 {
                     title: '账号',
