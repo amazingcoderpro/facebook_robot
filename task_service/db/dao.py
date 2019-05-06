@@ -733,7 +733,7 @@ def produce_account():
             ret = AccountOpt.save_account(account=user_account,
                             password=user_password, owner=3, category=1,
                             email=user_account, email_pwd=email_password,
-                            gender=gender, birthday=birthday, profile_id=profile_id, status='valid', active_browser=(t%6+1),
+                            gender=gender, birthday=birthday, profile_id=profile_id, status='valid', active_browser=(t%6+518),
                                     configure=json.dumps({'last_login': '', 'last_post': '', 'login_counts': 0}), using=0, active_area=8, last_update=datetime.datetime.now())
             print(ret)
 

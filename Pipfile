@@ -26,6 +26,7 @@ mysqlclient = "*"
 pyvirtualdisplay = "*"
 log-config = "*"
 urllib2 = "*"
+captcha2upload = "*"
 
 [requires]
 python_version = "3.6"

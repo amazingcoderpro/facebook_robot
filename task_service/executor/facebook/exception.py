@@ -6,13 +6,14 @@ import os
 import traceback
 import shutil
 import time
-import random
+import base64
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from config import logger
 from executor.utils.facebook_captcha import CaptchaVerify
+from executor.utils.normal_captcha import NormalVerify
 from executor.utils.utils import get_photo
 from executor.web_actions import WebActions
 
@@ -36,12 +37,13 @@ class FacebookExceptionProcessor(BaseException, WebActions):
     7： 手机短信验证
     8： 上传上传图片验证
     9： 身份验证类型一，跳转按钮
-    10： 登录 邮箱数字验证码验证
-    11:  登录 手机短信验证码验证
-    12： 账号密码不正确
-    13： 移动端共享登录验证
-    14:  条款和使用政策验证
-    15:  机器人验证
+    10：登录 邮箱数字验证码验证
+    11: 登录 手机短信验证码验证
+    12：账号密码不正确
+    13：移动端共享登录验证
+    14: 条款和使用政策验证
+    15: 机器人验证
+    16: 文字验证码验证
     """
     MAP_EXP_PROCESSOR = {
         -1: {'name': 'unknown'},
@@ -66,7 +68,7 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             'account_status': 'invalid'},
         6: {'name': 'auth_button_two_verify',
             'key_words': {"mobile": {"css": ('button[name="submit[Continue]', 'div[id="checkpoint_subtitle"]')},
-                          "pc": {"css": []}},
+                          "pc": {"css": ['button[name^="submit[Secure Account]"]']}},
             'account_status': 'verifying_auth_button_two'},
         7: {'name': 'phone_sms_verify',
             'key_words': {"mobile": {"css": ['option[value="US"]']},
@@ -104,6 +106,11 @@ class FacebookExceptionProcessor(BaseException, WebActions):
              'key_words': {"mobile": {"css": ['div[class="g-recaptcha"]'], 'iframe': ["captcha-recaptcha"]},
                            "pc": {"css": ['div[class="g-recaptcha"]'], 'iframe': ["captcha-recaptcha"]}},
              'account_status': 'verifying_robot'},
+
+        16: {"name": 'code_verify',
+             'key_words': {"pc": {"css": ['input[id="captcha_persist_data"]']}},
+                           "mobile": {"css": []},
+             'account_status': 'verifying_code'},
     }
 
     def __init__(self, driver: WebDriver, env="mobile", account="", gender=1):
@@ -379,6 +386,24 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             logger.info('身份验证类型二，跳转按钮,处理中')
             WebDriverWait(self.driver, 6).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(6))))
+        except Exception as e:
+            logger.exception("身份验证类型二,跳转按钮, e={}".format(e))
+            return False, 6
+        logger.info('身份验证类型二，跳转按钮,处理成功')
+        return False, 6
+
+    def process_auth_button_two_verify_pc(self):
+        """
+        身份验证类型二，跳转按钮
+        :param kwargs:
+        :return: 成功返回 True, 失败返回 False
+        将两步验证的函数设置为False
+        """
+        try:
+            logger.info('身份验证类型二，跳转按钮,处理中')
+            button_commit = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(6))))
+            self.click(button_commit)
         except Exception as e:
             logger.exception("身份验证类型二,跳转按钮, e={}".format(e))
             return False, 6
@@ -735,6 +760,37 @@ class FacebookExceptionProcessor(BaseException, WebActions):
             logger.info("机器人验证: endding")
         except Exception as e:
             logger.error("机器人验证: 异常-->{}".format(str))
+            return False, 15
+        if not result:
+            return False, 15
+        return True, 15
+
+    def process_code_verify_pc(self):
+        """
+        图形验证码验证
+        :param kwargs:
+        :return:
+        """
+        try:
+            code_page = WebDriverWait(self.driver, 6).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, self.get_key_words(16))))
+            if code_page:
+                code_img = self.driver.find_element_by_css_selector('img[src^="https://www.facebook.com/captcha"]')
+                captch_name = "{}.png".format(self.account)
+                code_img.screenshot(captch_name)
+                with open(captch_name, "rb") as f:
+                    base64_data = base64.b64encode(f.read())
+                os.remove("{}.png".format(self.account))
+                # 获取到文字验证码
+                result = NormalVerify(self.driver).get_captcha_id(base64_data)
+                # 输入文字验证码
+                input_code = self.driver.find_element_by_css_selector('input[id="captcha_response"]')
+                self.send_keys(input_code, result)
+                commit_button = self.driver.find_element_by_css_selector('button[id="checkpointSubmitButton"]')
+                self.click(commit_button)
+
+        except Exception as e:
+            logger.error("文字验证码: 异常-->{}".format(str))
             return False, 15
         if not result:
             return False, 15
