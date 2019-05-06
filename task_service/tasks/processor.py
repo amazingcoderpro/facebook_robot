@@ -66,17 +66,17 @@ def send_task_2_worker(task_id):
             if limit_counts:
                 # 如果当前任务的成功数大于需求数, 或者成功数加上正在运行的job数目大于用于需求数110%, 则不需要继续产生job
                 if succeed_counts >= int(limit_counts*1.2):
-                    logger.error('send_task_2_worker ignore, task already finished, task id={}, succeed jobs({}) >= limit counts({})*1.2'.format(task_id, succeed_counts, limit_counts))
+                    logger.warning('send_task_2_worker ignore, task already finished, task id={}, succeed jobs({}) >= limit counts({})*1.2'.format(task_id, succeed_counts, limit_counts))
                     return True
 
                 task_running_jobs = db_scoped_session.query(Job).filter(and_(Job.task == task_id, Job.status == 'running')).count()
                 if task_running_jobs + succeed_counts >= int(limit_counts*1.2):
-                    logger.error('send_task_2_worker ignore, task will finish, task id={}, succeed jobs({})+running jobs({})  >= limit counts({})*1.2'.format(task_id, succeed_counts, task_running_jobs, limit_counts))
+                    logger.warning('send_task_2_worker ignore, task will finish, task id={}, succeed jobs({})+running jobs({})  >= limit counts({})*1.2'.format(task_id, succeed_counts, task_running_jobs, limit_counts))
                     return True
 
                 # 一个任务正在运行job积压过多时, 暂时停止产生新的jobs
                 if task_running_jobs >= 10000:
-                    logger.error('task({}) jobs num={} has reached jobs limit 10000'.format(task_id, task_running_jobs))
+                    logger.warning('task({}) jobs num={} has reached jobs limit 10000'.format(task_id, task_running_jobs))
                     return True
 
         # 根据task的类别，找到task对应的处理函数
