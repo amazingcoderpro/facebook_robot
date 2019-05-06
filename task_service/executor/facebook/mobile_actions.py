@@ -52,10 +52,11 @@ class FacebookMobileActions(FacebookActions):
                 logger.info("login success by cookies！ account={}".format(self.account))
                 return True, 0
         except Exception as e:
-            logger.exception("login by cookies failed. continue use password, account={}, e={}".format(self.account, e))
+            logger.exception("login failed by cookies! continue use password, account={}, e={}".format(self.account, e))
             self.driver.delete_all_cookies()
 
         try:
+            self.driver.get(self.start_url)
             # FB登录
             email_box = WebDriverWait(self.driver, 6).until(EC.presence_of_element_located((By.NAME, 'email')))
             # email_box.send_keys(account)
@@ -359,8 +360,8 @@ if __name__ == '__main__':
             fma.set_exception_processor(FacebookExceptionProcessor(fma.driver, env="mobile", account=fma.account, gender=fma.gender))
 
             res, status = fma.login()
-            if not res:
-                continue
+            # if not res:
+            #     continue
             cookies = fma.get_cookies()
             print(cookies)
             fma.browse_user_center(3)

@@ -72,11 +72,18 @@ class WebActions:
         if self.driver:
             self.driver.quit()
 
-    def get_cookies(self):
+    def get_cookies(self, domain="facebook"):
+        cookies_list = []
         if self.driver:
-            return self.driver.get_cookies()
-        else:
-            return None
+            all_cookies = self.driver.get_cookies()
+            if domain:
+                for cookie in all_cookies:
+                    if domain in cookie.get("domain", ""):
+                        cookies_list.append(cookie)
+            else:
+                cookies_list = all_cookies
+
+        return cookies_list
 
     def browse_page(self, browse_times=0, distance=0, interval=0, back_top=True):
         """

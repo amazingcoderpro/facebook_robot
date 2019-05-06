@@ -27,7 +27,7 @@ class FacebookActions(WebActions):
         self.password = account_info.get("password", "")
         self.gender = account_info.get("gender", 1)
         self.phone_number = account_info.get("phone_number", "")
-        self.cookies = account_info.get("cookies", "")
+        self.cookies = account_info.get("configure", {}).get("cookies", "")
         self.start_url = start_url
         self.fb_exp = None
         super(FacebookActions, self).__init__(finger_print=finger_print, headless=headless)
